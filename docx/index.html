@@ -1,0 +1,59 @@
+---
+layout: default
+title: DOCX Reporting
+description: >-
+  TerraFluent.Docx.Reporting — a fluent .NET library that writes real Word documents
+  as Open XML. Charts, templates, barcodes, and document protection with no Word automation.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot" style="background: var(--accent-docx)"></span> TerraFluent.Docx.Reporting</span>
+    <h1>Native Word documents, <span class="grad">no Word required</span></h1>
+    <p class="hero-lede">
+      Writes Open XML packages directly — real <code>.docx</code> invoices, proposals, policy
+      documents, and branded templates from any .NET runtime, on any OS.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  {% include install-row.html package="TerraFluent.Docx.Reporting" %}
+
+  <h2>A fluent API for Word documents</h2>
+
+{% highlight csharp %}
+Document.Create(doc =>
+{
+    doc.Page(page =>
+    {
+        page.Header().Text("Quarterly Proposal");
+        page.Content().H1("Executive Summary");
+        page.Content().Text("Prepared for Contoso Ltd.");
+    });
+}).PublishDocx("proposal.docx");
+{% endhighlight %}
+
+  <h2>Highlights</h2>
+  <ul>
+    <li><strong>Direct Open XML generation</strong> — no Word installation, no COM automation; output validated with the Open XML SDK.</li>
+    <li><strong>Full document styling</strong> — tables, headers, footers, page margins, columns, text formatting.</li>
+    <li><strong>Charts</strong> — legends, axis titles, data labels, stacked bars, custom sizing.</li>
+    <li><strong>Templates</strong> — placeholder replacement for company-branded documents.</li>
+    <li><strong>Document protection</strong> — password-protected editing restrictions.</li>
+    <li><strong>Vector Code 128 barcodes</strong>, auto-numbered captions, and table of figures.</li>
+    <li><strong>Images</strong> — with wrapping and cropping options.</li>
+  </ul>
+
+  <h2>Compatibility</h2>
+  <p>
+    Targets <code>netstandard2.0</code> (works on .NET Framework 4.6.1+ and .NET Core 2.0+)
+    with a dedicated <code>net10.0</code> build. Runs on Windows, Linux, and macOS. MIT licensed.
+  </p>
+
+  <h2>Dive deeper</h2>
+  <ul>
+    <li><a href="{{ site.repos.docx }}/tree/main/docs" target="_blank" rel="noopener">Full documentation</a> — getting started, core concepts, feature guide, API reference, troubleshooting.</li>
+    <li><a href="{{ site.repos.docx }}" target="_blank" rel="noopener">Source on GitHub</a> · <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">Package on NuGet</a></li>
+  </ul>
+</div>

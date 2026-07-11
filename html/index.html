@@ -1,0 +1,65 @@
+---
+layout: default
+title: HTML Reporting
+description: >-
+  TerraFluent.Html.Reporting — a fluent .NET library for paginated, print-ready
+  HTML reports with fixed page layout. PDF-style output with no PDF engine.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> TerraFluent.Html.Reporting</span>
+    <h1>Print-ready HTML reports, <span class="grad">no PDF engine required</span></h1>
+    <p class="hero-lede">
+      Fixed-page, paginated reports as self-contained HTML/CSS — view them in any browser,
+      print them to PDF, ship them from any .NET runtime.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  {% include install-row.html package="TerraFluent.Html.Reporting" %}
+
+  <h2>A fluent API for paginated documents</h2>
+
+{% highlight csharp %}
+var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
+    .SetMargins(40, 40, 60, 60)
+    .Header(h => h.AddText("Monthly Sales Report").AlignCenter().Bold())
+    .Footer(f => f.AddPageNumber("Page {page} of {totalPages}"))
+    .Content(c =>
+    {
+        c.AddHeading("Sales Summary", HeadingLevel.H1);
+        c.AddTable(t =>
+        {
+            t.AddColumns("Product", "Qty", "Revenue");
+            t.AddRow("Widget A", "120", "$2,400");
+        });
+    })
+    .Build();
+{% endhighlight %}
+
+  <h2>Highlights</h2>
+  <ul>
+    <li><strong>Fixed page geometry</strong> — A4, Letter, Legal, portrait/landscape, and custom sizes.</li>
+    <li><strong>Repeating headers &amp; footers</strong> — including page-number templates.</li>
+    <li><strong>Rich content elements</strong> — paragraphs, headings, images, tables, lists, rules, spacers, page breaks, raw HTML.</li>
+    <li><strong>Native Code 128 barcodes</strong> — no external libraries or services.</li>
+    <li><strong>Advanced pagination</strong> — line-level splitting, table row pagination, numbered-list continuation.</li>
+    <li><strong>Streaming APIs</strong> — async file rendering for large reports.</li>
+    <li><strong>Extensible</strong> — custom elements, renderers, and <code>ITextMeasurer</code> for pixel-perfect layout.</li>
+  </ul>
+
+  <h2>Compatibility</h2>
+  <p>
+    Targets <code>netstandard2.0</code> (works on .NET Framework 4.6.1+ and .NET Core 2.0+)
+    with a dedicated <code>net10.0</code> build. Zero-dependency core. MIT licensed.
+  </p>
+
+  <h2>Dive deeper</h2>
+  <ul>
+    <li><a href="{{ site.repos.html }}/tree/main/docs" target="_blank" rel="noopener">Full documentation</a> — getting started, core concepts, styling, tables, pagination, cookbook, extensibility.</li>
+    <li><a href="{{ site.repos.html }}/tree/main/samples" target="_blank" rel="noopener">Thirteen runnable sample reports</a></li>
+    <li><a href="{{ site.repos.html }}" target="_blank" rel="noopener">Source on GitHub</a> · <a href="{{ site.nuget.html }}" target="_blank" rel="noopener">Package on NuGet</a></li>
+  </ul>
+</div>

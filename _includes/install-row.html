@@ -1,0 +1,13 @@
+{% comment %}
+  Usage: include install-row.html with package="TerraFluent.Html.Reporting"
+{% endcomment %}
+<div class="install-row">
+  <code>dotnet add package {{ include.package }}</code>
+  <button class="copy-btn" type="button" data-copy="dotnet add package {{ include.package }}" aria-label="Copy install command">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="12" height="12" rx="2"/>
+      <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+    </svg>
+    <span class="copy-label">Copy</span>
+  </button>
+</div>

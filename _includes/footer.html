@@ -1,0 +1,43 @@
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="{{ '/' | relative_url }}" aria-label="TerraFluent home">
+        {% include logo-mark.svg %}
+        <span class="brand-name">Terra<span class="brand-accent">Fluent</span></span>
+      </a>
+      <p>{{ site.tagline }}. Open source under the MIT license.</p>
+    </div>
+
+    <nav class="footer-col" aria-label="Products">
+      <h2>Products</h2>
+      <ul>
+        <li><a href="{{ '/html/' | relative_url }}">TerraFluent.Html.Reporting</a></li>
+        <li><a href="{{ '/docx/' | relative_url }}">TerraFluent.Docx.Reporting</a></li>
+        <li><a href="{{ '/getting-started/' | relative_url }}">Getting started</a></li>
+      </ul>
+    </nav>
+
+    <nav class="footer-col" aria-label="Source and packages">
+      <h2>Source &amp; packages</h2>
+      <ul>
+        <li><a href="{{ site.repos.html }}" target="_blank" rel="noopener">Html.Reporting on GitHub</a></li>
+        <li><a href="{{ site.repos.docx }}" target="_blank" rel="noopener">Docx.Reporting on GitHub</a></li>
+        <li><a href="{{ site.nuget.html }}" target="_blank" rel="noopener">Html.Reporting on NuGet</a></li>
+        <li><a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">Docx.Reporting on NuGet</a></li>
+      </ul>
+    </nav>
+
+    <nav class="footer-col" aria-label="Documentation">
+      <h2>Docs</h2>
+      <ul>
+        <li><a href="{{ site.repos.html }}/tree/main/docs" target="_blank" rel="noopener">HTML Reporting docs</a></li>
+        <li><a href="{{ site.repos.docx }}/tree/main/docs" target="_blank" rel="noopener">DOCX Reporting docs</a></li>
+        <li><a href="{{ site.repos.html }}/tree/main/samples" target="_blank" rel="noopener">Sample reports</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="container footer-meta">
+    <p>© {{ 'now' | date: '%Y' }} TerraFluent. MIT licensed — free for personal, commercial, and open-source use.</p>
+  </div>
+</footer>

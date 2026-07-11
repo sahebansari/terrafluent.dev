@@ -1,0 +1,75 @@
+---
+layout: default
+title: Getting Started
+description: >-
+  Install TerraFluent and generate your first report in five minutes —
+  a paginated HTML report or a native Word document from fluent C#.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Five-minute quickstart</span>
+    <h1>Your first report in <span class="grad">five minutes</span></h1>
+    <p class="hero-lede">
+      Pick an output, add one package, write one fluent builder. Both libraries share the
+      same mental model, so everything you learn transfers.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  <h2>1. Choose your output</h2>
+  <ul>
+    <li><strong>Need a printable page / PDF-style report?</strong> Use <a href="{{ '/html/' | relative_url }}">TerraFluent.Html.Reporting</a> — paginated HTML that prints beautifully from any browser.</li>
+    <li><strong>Need an editable Word deliverable?</strong> Use <a href="{{ '/docx/' | relative_url }}">TerraFluent.Docx.Reporting</a> — real <code>.docx</code> written as Open XML.</li>
+  </ul>
+
+  <h2>2. Install</h2>
+  {% include install-row.html package="TerraFluent.Html.Reporting" %}
+  <p style="margin-top: 10px"></p>
+  {% include install-row.html package="TerraFluent.Docx.Reporting" %}
+  <p style="margin-top: 20px">
+    Both target <code>netstandard2.0</code> and <code>net10.0</code>, so they run on
+    .NET Framework 4.6.1+, .NET Core 2.0+, and the latest .NET.
+  </p>
+
+  <h2>3. Write a report</h2>
+
+  <h3>Paginated HTML</h3>
+{% highlight csharp %}
+var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
+    .SetMargins(40, 40, 60, 60)
+    .Header(h => h.AddText("Monthly Sales Report").AlignCenter().Bold())
+    .Footer(f => f.AddPageNumber("Page {page} of {totalPages}"))
+    .Content(c =>
+    {
+        c.AddHeading("Sales Summary", HeadingLevel.H1);
+        c.AddTable(t =>
+        {
+            t.AddColumns("Product", "Qty", "Revenue");
+            t.AddRow("Widget A", "120", "$2,400");
+        });
+    })
+    .Build();
+{% endhighlight %}
+
+  <h3>Native Word document</h3>
+{% highlight csharp %}
+Document.Create(doc =>
+{
+    doc.Page(page =>
+    {
+        page.Header().Text("Quarterly Proposal");
+        page.Content().H1("Executive Summary");
+        page.Content().Text("Prepared for Contoso Ltd.");
+    });
+}).PublishDocx("proposal.docx");
+{% endhighlight %}
+
+  <h2>4. Go deeper</h2>
+  <ul>
+    <li><a href="{{ site.repos.html }}/tree/main/docs" target="_blank" rel="noopener">HTML Reporting documentation</a> — core concepts, styling, tables, pagination, cookbook.</li>
+    <li><a href="{{ site.repos.docx }}/tree/main/docs" target="_blank" rel="noopener">DOCX Reporting documentation</a> — feature guide, API reference, troubleshooting.</li>
+    <li><a href="{{ site.repos.html }}/tree/main/samples" target="_blank" rel="noopener">Runnable sample projects</a> — thirteen example reports to copy from.</li>
+  </ul>
+</div>
