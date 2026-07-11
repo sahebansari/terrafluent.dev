@@ -20,56 +20,105 @@ description: >-
 <div class="container prose">
   <h2>1. Choose your output</h2>
   <ul>
-    <li><strong>Need a printable page / PDF-style report?</strong> Use <a href="{{ '/html/' | relative_url }}">TerraFluent.Html.Reporting</a> — paginated HTML that prints beautifully from any browser.</li>
+    <li><strong>Need a printable page / PDF-style report?</strong> Use <a href="{{ '/html/' | relative_url }}">TerraFluent.Html.Reporting</a> — paginated HTML that opens in any browser and prints or saves to PDF.</li>
     <li><strong>Need an editable Word deliverable?</strong> Use <a href="{{ '/docx/' | relative_url }}">TerraFluent.Docx.Reporting</a> — real <code>.docx</code> written as Open XML.</li>
+    <li><strong>Not sure?</strong> Both share the fluent-builder mental model; start with the output your users open most.</li>
   </ul>
 
   <h2>2. Install</h2>
   {% include install-row.html package="TerraFluent.Html.Reporting" %}
-  <p style="margin-top: 10px"></p>
+  <div style="height: 10px"></div>
   {% include install-row.html package="TerraFluent.Docx.Reporting" %}
   <p style="margin-top: 20px">
     Both target <code>netstandard2.0</code> and <code>net10.0</code>, so they run on
-    .NET Framework 4.6.1+, .NET Core 2.0+, and the latest .NET.
+    .NET Framework 4.6.1+, .NET Core 2.0+, and the latest .NET — on Windows, Linux, and macOS.
   </p>
 
   <h2>3. Write a report</h2>
 
   <h3>Paginated HTML</h3>
 {% highlight csharp %}
+using TerraFluent.Html.Reporting.Model;
+
 var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
     .SetMargins(40, 40, 60, 60)
-    .Header(h => h.AddText("Monthly Sales Report").AlignCenter().Bold())
-    .Footer(f => f.AddPageNumber("Page {page} of {totalPages}"))
-    .Content(c =>
+    .Header(header => header
+        .AddText("Monthly Sales Report")
+        .AlignCenter()
+        .Bold())
+    .Footer(footer => footer.AddPageNumber("Page {page} of {totalPages}"))
+    .Content(content =>
     {
-        c.AddHeading("Sales Summary", HeadingLevel.H1);
-        c.AddTable(t =>
+        content.AddHeading("Sales Summary", HeadingLevel.H1);
+        content.AddParagraph("This report summarizes sales activity for the period.");
+        content.AddTable(table =>
         {
-            t.AddColumns("Product", "Qty", "Revenue");
-            t.AddRow("Widget A", "120", "$2,400");
+            table.AddColumns("Product", "Qty", "Revenue");
+            table.AddRow("Widget A", "120", "$2,400");
+            table.AddRow("Widget B", "85", "$1,700");
         });
     })
     .Build();
+
+var html = report.RenderHtml();                     // as a string
+report.RenderHtmlDocument("monthly-sales.html");    // or straight to a file
 {% endhighlight %}
+  <p>
+    Open <code>monthly-sales.html</code> in a browser, then print or save it as PDF from
+    the browser's print dialog. The output is self-contained HTML/CSS — nothing else to deploy.
+  </p>
 
   <h3>Native Word document</h3>
 {% highlight csharp %}
+using TerraFluent.Docx.Reporting;
+
 Document.Create(doc =>
 {
+    doc.MetadataTitle("Quarterly Report")
+       .MetadataAuthor("Northwind Consulting");
+
     doc.Page(page =>
     {
-        page.Header().Text("Quarterly Proposal");
-        page.Content().H1("Executive Summary");
-        page.Content().Text("Prepared for Contoso Ltd.");
-    });
-}).PublishDocx("proposal.docx");
-{% endhighlight %}
+        page.Size(PageSize.A4);
+        page.Margin(Unit.Centimetre(2));
+        page.Header().Text("Quarterly Report", t => t.Bold().AlignCenter());
+        page.Footer().Text(t =>
+        {
+            t.Span("Page ");
+            t.CurrentPageNumber();
+            t.Span(" of ");
+            t.TotalPages();
+            t.AlignCenter();
+        });
 
-  <h2>4. Go deeper</h2>
+        page.Content().H1("Executive Summary");
+        page.Content().Text("Revenue improved across every practice.");
+    });
+}).PublishDocx("quarterly-report.docx");
+{% endhighlight %}
+  <p>
+    <code>quarterly-report.docx</code> opens in Microsoft Word or LibreOffice — with real
+    page-number fields and document metadata, not baked-in text.
+  </p>
+
+  <h2>4. Run the samples</h2>
+  <p>Each repository ships a runnable sample project — the fastest way to see every feature:</p>
+{% highlight shell %}
+# Thirteen HTML reports: invoices, certificates, barcodes, span tables …
+dotnet run --project samples/TerraFluent.Html.Reporting.Sample
+
+# Word documents: invoices, an annual report, template output, layout showcase
+dotnet run --project samples/TerraFluent.Docx.Reporting.Sample/TerraFluent.Docx.Reporting.Sample.csproj
+{% endhighlight %}
+  <p>
+    Or skip the build entirely and
+    <a href="https://sahebansari.github.io/TerraFluent.Html.Reporting/SampleReports/index.html" target="_blank" rel="noopener">browse the rendered HTML sample reports online</a>.
+  </p>
+
+  <h2>5. Go deeper</h2>
   <ul>
-    <li><a href="{{ site.repos.html }}/tree/main/docs" target="_blank" rel="noopener">HTML Reporting documentation</a> — core concepts, styling, tables, pagination, cookbook.</li>
-    <li><a href="{{ site.repos.docx }}/tree/main/docs" target="_blank" rel="noopener">DOCX Reporting documentation</a> — feature guide, API reference, troubleshooting.</li>
-    <li><a href="{{ site.repos.html }}/tree/main/samples" target="_blank" rel="noopener">Runnable sample projects</a> — thirteen example reports to copy from.</li>
+    <li><a href="{{ site.repos.html }}/blob/main/docs/01-getting-started.md" target="_blank" rel="noopener">HTML Reporting documentation</a> — core concepts, styling, tables, pagination, a cookbook of recipes.</li>
+    <li><a href="{{ site.repos.docx }}/blob/master/docs/GETTING_STARTED.md" target="_blank" rel="noopener">DOCX Reporting documentation</a> — feature guide, API reference, troubleshooting.</li>
+    <li>Product pages on this site: <a href="{{ '/html/' | relative_url }}">HTML Reporting</a> · <a href="{{ '/docx/' | relative_url }}">DOCX Reporting</a>.</li>
   </ul>
 </div>

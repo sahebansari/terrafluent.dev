@@ -2,27 +2,56 @@
 layout: default
 title: HTML Reporting
 description: >-
-  TerraFluent.Html.Reporting — a fluent .NET library for paginated, print-ready
-  HTML reports with fixed page layout. PDF-style output with no PDF engine.
+  TerraFluent.Html.Reporting — a fluent, dependency-free .NET library for paginated,
+  print-ready HTML reports. Fixed page sizes, repeating headers/footers, smart
+  pagination, native barcodes. PDF-style output with no PDF engine.
 ---
 
 <section class="hero page-hero">
   <div class="container">
-    <span class="hero-badge"><span class="dot"></span> TerraFluent.Html.Reporting</span>
+    <span class="hero-badge"><span class="dot"></span> TerraFluent.Html.Reporting · v1.1.1</span>
     <h1>Print-ready HTML reports, <span class="grad">no PDF engine required</span></h1>
     <p class="hero-lede">
-      Fixed-page, paginated reports as self-contained HTML/CSS — view them in any browser,
-      print them to PDF, ship them from any .NET runtime.
+      A fluent, dependency-free library for paginated reports with fixed page sizes,
+      measured content flow, and self-contained HTML/CSS — opens in any browser,
+      prints to PDF.
     </p>
+    <div class="hero-ctas" style="margin-top: 28px">
+      <a class="btn btn-primary" href="https://sahebansari.github.io/TerraFluent.Html.Reporting/SampleReports/index.html" target="_blank" rel="noopener">View live sample reports</a>
+      <a class="btn btn-ghost" href="{{ site.repos.html }}" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-ghost" href="{{ site.nuget.html }}" target="_blank" rel="noopener">NuGet</a>
+    </div>
   </div>
 </section>
 
-<div class="container prose">
-  {% include install-row.html package="TerraFluent.Html.Reporting" %}
+<div class="container">
+  <div class="prose" style="padding-bottom: 0">
+    {% include install-row.html package="TerraFluent.Html.Reporting" %}
+  </div>
 
-  <h2>A fluent API for paginated documents</h2>
+  <div class="features">
 
+    <!-- Quick start -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Quick start</span>
+        <h3>A complete report in one fluent chain</h3>
+        <p>
+          Fixed page geometry, a repeating header, a page-numbered footer, and measured
+          content flow — then render to a string or straight to a file. Open the result
+          in a browser, or print/save it as PDF.
+        </p>
+        <ul>
+          <li>A4, Letter, Legal, portrait/landscape, or custom page sizes</li>
+          <li><code>{page}</code> / <code>{totalPages}</code> footer templates</li>
+          <li>Self-contained HTML/CSS output — nothing else to deploy</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
 {% highlight csharp %}
+using TerraFluent.Html.Reporting.Model;
+
 var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
     .SetMargins(40, 40, 60, 60)
     .Header(h => h.AddText("Monthly Sales Report").AlignCenter().Bold())
@@ -30,36 +59,197 @@ var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
     .Content(c =>
     {
         c.AddHeading("Sales Summary", HeadingLevel.H1);
+        c.AddParagraph("This report summarizes sales activity for the period.");
         c.AddTable(t =>
         {
             t.AddColumns("Product", "Qty", "Revenue");
             t.AddRow("Widget A", "120", "$2,400");
+            t.AddRow("Widget B", "85", "$1,700");
         });
     })
     .Build();
+
+report.RenderHtmlDocument("monthly-sales.html");
 {% endhighlight %}
+        </div>
+      </div>
+    </div>
 
-  <h2>Highlights</h2>
-  <ul>
-    <li><strong>Fixed page geometry</strong> — A4, Letter, Legal, portrait/landscape, and custom sizes.</li>
-    <li><strong>Repeating headers &amp; footers</strong> — including page-number templates.</li>
-    <li><strong>Rich content elements</strong> — paragraphs, headings, images, tables, lists, rules, spacers, page breaks, raw HTML.</li>
-    <li><strong>Native Code 128 barcodes</strong> — no external libraries or services.</li>
-    <li><strong>Advanced pagination</strong> — line-level splitting, table row pagination, numbered-list continuation.</li>
-    <li><strong>Streaming APIs</strong> — async file rendering for large reports.</li>
-    <li><strong>Extensible</strong> — custom elements, renderers, and <code>ITextMeasurer</code> for pixel-perfect layout.</li>
-  </ul>
+    <!-- Tables with spans -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Tables</span>
+        <h3>Merged cells that survive pagination</h3>
+        <p>
+          <code>ColSpan</code> and <code>RowSpan</code> handle merged summary cells and
+          category groupings — and the layout engine treats a <code>RowSpan</code> group
+          as atomic, so grouped rows never split across a page boundary.
+        </p>
+        <ul>
+          <li>Repeated table headers on every continued page</li>
+          <li>Configurable row splitting via <code>RowSplitBehavior</code></li>
+          <li>Cell-count validation throws early, not at render time</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+table.AddColumns("Category", "Item", "Qty", "Total");
 
-  <h2>Compatibility</h2>
-  <p>
-    Targets <code>netstandard2.0</code> (works on .NET Framework 4.6.1+ and .NET Core 2.0+)
-    with a dedicated <code>net10.0</code> build. Zero-dependency core. MIT licensed.
-  </p>
+table.AddRow(new TableCell[]
+{
+    new TableCell("Electronics") { RowSpan = 3 },
+    "Wireless Mouse", "2", "$39.98",
+});
+table.AddRow(new TableCell[] { "Mechanical Keyboard", "1", "$89.00" });
+table.AddRow(new TableCell[] { "USB-C Dock", "1", "$64.50" });
 
-  <h2>Dive deeper</h2>
-  <ul>
-    <li><a href="{{ site.repos.html }}/tree/main/docs" target="_blank" rel="noopener">Full documentation</a> — getting started, core concepts, styling, tables, pagination, cookbook, extensibility.</li>
-    <li><a href="{{ site.repos.html }}/tree/main/samples" target="_blank" rel="noopener">Thirteen runnable sample reports</a></li>
-    <li><a href="{{ site.repos.html }}" target="_blank" rel="noopener">Source on GitHub</a> · <a href="{{ site.nuget.html }}" target="_blank" rel="noopener">Package on NuGet</a></li>
-  </ul>
+table.AddRow(new TableCell[]
+{
+    new TableCell("Grand Total") { ColSpan = 3 },
+    "$193.48",
+});
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Barcodes -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Barcodes</span>
+        <h3>Native Code 128 — no external library</h3>
+        <p>
+          Barcodes are generated in-library as PNG images: no barcode package, no web
+          service. Available on content, header/footer, and row-column builders, with
+          the same alignment/margin/padding modifiers as any image.
+        </p>
+        <ul>
+          <li>Invoice numbers in headers, tracking numbers on labels</li>
+          <li>Tunable module width, height, and quiet zone</li>
+          <li>Accepts printable ASCII values</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+// Defaults are fine for most cases:
+c.AddBarcode("INV-1042");
+
+// Or tune the geometry:
+c.AddBarcode("20264471",
+    moduleWidthPx: 2, heightPx: 40, quietZoneModules: 10);
+
+// In an invoice header, right-aligned:
+h.AddBarcode(invoiceNumber, moduleWidthPx: 2, heightPx: 40)
+    .AlignRight();
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Layout warnings -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Layout safety</span>
+        <h3>Know before you ship: layout warnings</h3>
+        <p>
+          Content that can't fit on an empty page — an oversized image, an unsplittable
+          block — raises a <code>LayoutWarning</code> instead of silently clipping.
+          Inspect warnings after pagination and reject a bad report before a user sees it.
+        </p>
+        <ul>
+          <li>Line-level paragraph splitting and numbered-list continuation</li>
+          <li>Explicit page breaks where you want them</li>
+          <li>Warnings name the page and the element that didn't fit</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+using TerraFluent.Html.Reporting.Layout;
+
+var layout = LayoutEngine.Paginate(report);
+
+foreach (var warning in layout.Warnings)
+{
+    // "Page 1: A ReportImage required 300px but only ..."
+    logger.LogWarning("{ReportWarning}", warning);
+}
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Streaming -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Scale</span>
+        <h3>Stream large reports to disk</h3>
+        <p>
+          For reports too large to hold as one in-memory string, the async streaming API
+          writes one page at a time — and won't block a thread-pool thread on the final
+          flush inside an ASP.NET request handler.
+        </p>
+        <ul>
+          <li><code>RenderHtml()</code> for strings, <code>RenderHtmlDocument()</code> for files</li>
+          <li><code>RenderHtmlDocumentAsync()</code> with cancellation support</li>
+          <li>Pluggable <code>ITextMeasurer</code> via <code>UseTextMeasurer(...)</code> when page breaks must match a specific engine pixel-perfectly</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+await report.RenderHtmlDocumentAsync(
+    Path.Combine(outputDir, "report.html"),
+    cancellationToken: cancellationToken);
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's new -->
+  <div class="whatsnew">
+    <span class="version-chip">v1.1.1 · July 2026</span>
+    <h2>What's new</h2>
+    <ul>
+      <li><strong>Native Code 128 barcodes</strong> — <code>AddBarcode(...)</code> on content, header/footer, and row-column builders; returns the same builder as <code>AddImage</code>.</li>
+      <li><strong>Table cell <code>ColSpan</code>/<code>RowSpan</code></strong> — merged header/summary cells and category groups, atomic during pagination.</li>
+    </ul>
+    <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.html }}/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
+  </div>
+
+  <!-- Docs -->
+  <section aria-labelledby="docs-title" style="padding-top: 0">
+    <div class="section-head">
+      <span class="eyebrow">Documentation</span>
+      <h2 id="docs-title">Documented like a product</h2>
+      <p>Thirteen guides from first report to custom renderers, plus a cookbook of runnable recipes.</p>
+    </div>
+    <div class="docs-grid">
+      <a href="{{ site.repos.html }}/blob/main/docs/01-getting-started.md" target="_blank" rel="noopener">Getting Started<span>Your first paginated report</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/02-core-concepts.md" target="_blank" rel="noopener">Core Concepts<span>Pages, flow, and measurement</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/03-content-elements.md" target="_blank" rel="noopener">Content Elements<span>Paragraphs to barcodes</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/04-styling.md" target="_blank" rel="noopener">Styling<span>Text, margins, alignment</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/05-tables.md" target="_blank" rel="noopener">Tables<span>Spans, splitting, headers</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/07-pagination-and-layout.md" target="_blank" rel="noopener">Pagination &amp; Layout<span>How pages break</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/08-rendering.md" target="_blank" rel="noopener">Rendering<span>Strings, files, streaming</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/10-cookbook.md" target="_blank" rel="noopener">Cookbook<span>Invoices, certificates, labels</span></a>
+      <a href="{{ site.repos.html }}/blob/main/docs/11-extending.md" target="_blank" rel="noopener">Extending<span>Custom elements &amp; renderers</span></a>
+    </div>
+  </section>
+
+  <!-- Quality -->
+  <section class="cta-band" aria-labelledby="html-cta">
+    <h2 id="html-cta">Thirteen runnable samples included</h2>
+    <p>
+      Invoices, certificates, barcoded labels, row layouts, span tables — run
+      <code>dotnet run --project samples/TerraFluent.Html.Reporting.Sample</code> or browse the rendered output online.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="https://sahebansari.github.io/TerraFluent.Html.Reporting/SampleReports/index.html" target="_blank" rel="noopener">Live sample reports</a>
+      <a class="btn btn-ghost" href="{{ '/getting-started/' | relative_url }}">Getting started</a>
+    </div>
+  </section>
 </div>

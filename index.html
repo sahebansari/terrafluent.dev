@@ -57,6 +57,8 @@ var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
         c.AddBarcode("INV-2026-0042");
     })
     .Build();
+
+report.RenderHtmlDocument("monthly-sales.html");
 {% endhighlight %}
       </div>
       <div class="showcase-output">
@@ -228,7 +230,7 @@ var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
     <p>Add a package, write a fluent builder, ship a professional document.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary" href="{{ '/getting-started/' | relative_url }}">Get started</a>
-      <a class="btn btn-ghost" href="{{ site.repos.html }}/tree/main/samples" target="_blank" rel="noopener">Browse samples</a>
+      <a class="btn btn-ghost" href="https://sahebansari.github.io/TerraFluent.Html.Reporting/SampleReports/index.html" target="_blank" rel="noopener">See live sample reports</a>
     </div>
   </div>
 </section>

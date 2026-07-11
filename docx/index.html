@@ -3,57 +3,300 @@ layout: default
 title: DOCX Reporting
 description: >-
   TerraFluent.Docx.Reporting — a fluent .NET library that writes real Word documents
-  as Open XML. Charts, templates, barcodes, and document protection with no Word automation.
+  as Open XML. Styled tables, charts, images, vector barcodes, templates, and
+  document protection with no Word automation.
 ---
 
 <section class="hero page-hero">
   <div class="container">
-    <span class="hero-badge"><span class="dot" style="background: var(--accent-docx)"></span> TerraFluent.Docx.Reporting</span>
+    <span class="hero-badge"><span class="dot" style="background: var(--accent-docx)"></span> TerraFluent.Docx.Reporting · v1.3.0</span>
     <h1>Native Word documents, <span class="grad">no Word required</span></h1>
     <p class="hero-lede">
-      Writes Open XML packages directly — real <code>.docx</code> invoices, proposals, policy
-      documents, and branded templates from any .NET runtime, on any OS.
+      Writes Open XML packages directly — real <code>.docx</code> reports, invoices,
+      proposals, and branded templates from any .NET runtime on Windows, Linux, or macOS.
     </p>
+    <div class="hero-ctas" style="margin-top: 28px">
+      <a class="btn btn-primary" style="background: var(--accent-docx)" href="{{ site.repos.docx }}" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-ghost" href="{{ site.nuget.docx }}" target="_blank" rel="noopener">NuGet</a>
+      <a class="btn btn-ghost" href="{{ site.repos.docx }}/blob/master/docs/FEATURES.md" target="_blank" rel="noopener">Feature guide</a>
+    </div>
   </div>
 </section>
 
-<div class="container prose">
-  {% include install-row.html package="TerraFluent.Docx.Reporting" %}
+<div class="container accent-scope-docx">
+  <div class="prose" style="padding-bottom: 0">
+    {% include install-row.html package="TerraFluent.Docx.Reporting" %}
+  </div>
 
-  <h2>A fluent API for Word documents</h2>
+  <div class="features">
 
+    <!-- Quick start -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Quick start</span>
+        <h3>A complete document in one lambda</h3>
+        <p>
+          Metadata, page setup, header, page-numbered footer, and content — published
+          straight to a <code>.docx</code> that opens cleanly in Word and LibreOffice.
+        </p>
+        <ul>
+          <li>No Word installation, no COM automation</li>
+          <li>Real page-number fields, not baked-in text</li>
+          <li>Metric and imperial units via <code>Unit</code> helpers</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+using TerraFluent.Docx.Reporting;
+
+Document.Create(doc =>
+{
+    doc.MetadataTitle("Quarterly Report")
+       .MetadataAuthor("Northwind Consulting");
+
+    doc.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Margin(Unit.Centimetre(2));
+        page.Header().Text("Quarterly Report", t => t.Bold().AlignCenter());
+        page.Footer().Text(t =>
+        {
+            t.Span("Page ");
+            t.CurrentPageNumber();
+            t.Span(" of ");
+            t.TotalPages();
+            t.AlignCenter();
+        });
+
+        page.Content().H1("Executive Summary");
+        page.Content().Text("Revenue improved across every practice.");
+    });
+}).PublishDocx("quarterly-report.docx");
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tables -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Tables</span>
+        <h3>Styled tables with a real column model</h3>
+        <p>
+          Relative column widths, styled header rows, alternating row backgrounds, and
+          per-cell text styling — the table structure Word users expect, defined fluently.
+        </p>
+        <ul>
+          <li>A full <code>Colors</code> palette (Material-style shade scales)</li>
+          <li>Cell padding, borders, and minimum row heights</li>
+          <li>Header and data rows declared separately</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+page.Content().Table(table =>
+{
+    table.CellPadding(5, 7)
+         .HeaderBackground(Colors.Blue.L700)
+         .AlternateRowBackground(Colors.Grey.L100)
+         .Border(0.75f, Colors.Grey.L300);
+
+    table.ColumnsDefinition(cols =>
+    {
+        cols.RelativeColumn(3);
+        cols.RelativeColumn(1);
+    });
+
+    table.HeaderRow(row =>
+    {
+        row.Cell().Text("Item", t => t.Bold().FontColor(Colors.White.Default));
+        row.Cell().Text("Amount", t => t.Bold().FontColor(Colors.White.Default).AlignRight());
+    });
+
+    table.Row(row =>
+    {
+        row.Cell().Text("Implementation");
+        row.Cell().Text("$4,500", t => t.AlignRight());
+    });
+});
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Charts</span>
+        <h3>Bar, line, pie — as native Word charts</h3>
+        <p>
+          Charts are written as real Open XML chart parts, so they stay editable in Word.
+          v1.3.0 adds legend placement, axis titles, data labels, stacked and
+          percent-stacked bars, and custom sizing.
+        </p>
+        <ul>
+          <li>Multiple series with per-series colors</li>
+          <li><code>Legend(ChartLegendPosition.Bottom)</code> or <code>HideLegend()</code></li>
+          <li><code>Stacked()</code> / <code>PercentStacked()</code> for bar charts</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+page.Content().Chart(chart => chart
+    .Title("Stacked Revenue by Quarter")
+    .Width(430).Height(250)
+    .AlignCenter()
+    .Legend(ChartLegendPosition.Bottom)
+    .CategoryAxisTitle("Quarter")
+    .ValueAxisTitle("Revenue ($M)")
+    .DataLabels()
+    .Stacked()
+    .Series("Product",  s => s.Bar("Q1", 4.1).Bar("Q2", 4.3).Color(Colors.Blue.L700))
+    .Series("Services", s => s.Bar("Q1", 2.2).Bar("Q2", 2.6).Color(Colors.Orange.L700)));
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Images & barcodes -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Images &amp; barcodes</span>
+        <h3>Wrapped images, vector barcodes, numbered captions</h3>
+        <p>
+          Images support square wrapping, floating, borders, rounding, and cropping.
+          Code 128 barcodes render as crisp vector shapes — they stay sharp at any zoom
+          and print resolution. Both take auto-numbered captions that feed a table of figures.
+        </p>
+        <ul>
+          <li>Alt text for accessibility</li>
+          <li>From file path or <code>byte[]</code></li>
+          <li>Barcode color, size, and alignment control</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+page.Content().Image(bytes, "photo.png", img => img
+    .Width(140)
+    .WrapSquare(8)
+    .FloatRight(8)
+    .Border(1, Colors.Grey.L400)
+    .Rounded()
+    .Caption("Figure 1. Site photo"));
+
+page.Content().Barcode("ACME-99887766", bc => bc
+    .Width(220)
+    .Height(50)
+    .BarColor(Colors.Blue.L700)
+    .AlignCenter()
+    .Caption("Figure 2. Product tracking code"));
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Templates</span>
+        <h3>Fill existing branded documents</h3>
+        <p>
+          When a <code>.docx</code> template already exists — a letterhead, a contract,
+          a company form — open it, replace placeholders and content controls, and save.
+          No document rebuild required.
+        </p>
+        <ul>
+          <li>Plain-text placeholder replacement</li>
+          <li>Content-control replacement for structured fields</li>
+          <li>Keeps every style and asset the template already has</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+DocxTemplate.Open("template.docx")
+    .Replace("CustomerName", "Ada Lovelace")
+    .ReplaceContentControl("InvoiceTotal", "$1,250.00")
+    .SaveAs("output.docx");
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Protection -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Protection</span>
+        <h3>Restrict editing, straight from code</h3>
+        <p>
+          Apply Word's "Restrict Editing" protection with an optional password —
+          <code>ReadOnly</code>, <code>CommentsOnly</code>, <code>TrackedChangesOnly</code>,
+          or <code>FormsOnly</code>. The password verifier is stored as a salted, spun
+          SHA-512 hash per ISO/IEC 29500.
+        </p>
+        <ul>
+          <li>Ideal for policy documents and issued invoices</li>
+          <li>A guard rail against accidental edits (the file itself is not encrypted)</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
 {% highlight csharp %}
 Document.Create(doc =>
 {
-    doc.Page(page =>
-    {
-        page.Header().Text("Quarterly Proposal");
-        page.Content().H1("Executive Summary");
-        page.Content().Text("Prepared for Contoso Ltd.");
-    });
-}).PublishDocx("proposal.docx");
+    doc.RestrictEditing(DocumentProtection.ReadOnly, "secret123");
+    doc.Page(page => page.Content().Text("Read-only content."));
+}).PublishDocx("policy.docx");
 {% endhighlight %}
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <h2>Highlights</h2>
-  <ul>
-    <li><strong>Direct Open XML generation</strong> — no Word installation, no COM automation; output validated with the Open XML SDK.</li>
-    <li><strong>Full document styling</strong> — tables, headers, footers, page margins, columns, text formatting.</li>
-    <li><strong>Charts</strong> — legends, axis titles, data labels, stacked bars, custom sizing.</li>
-    <li><strong>Templates</strong> — placeholder replacement for company-branded documents.</li>
-    <li><strong>Document protection</strong> — password-protected editing restrictions.</li>
-    <li><strong>Vector Code 128 barcodes</strong>, auto-numbered captions, and table of figures.</li>
-    <li><strong>Images</strong> — with wrapping and cropping options.</li>
-  </ul>
+  <!-- What's new -->
+  <div class="whatsnew">
+    <span class="version-chip">v1.3.0</span>
+    <h2>What's new</h2>
+    <ul>
+      <li><strong>Code 128 barcodes</strong> rendered as crisp vector shapes.</li>
+      <li><strong>Auto-numbered figure/table captions</strong> with a table of figures.</li>
+      <li><strong>Document protection</strong> — Word's "Restrict Editing", with password.</li>
+      <li><strong>Richer charts</strong> — legend placement, axis titles, data labels, stacked bars, sizing and alignment.</li>
+    </ul>
+    <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.docx }}/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
+  </div>
 
-  <h2>Compatibility</h2>
-  <p>
-    Targets <code>netstandard2.0</code> (works on .NET Framework 4.6.1+ and .NET Core 2.0+)
-    with a dedicated <code>net10.0</code> build. Runs on Windows, Linux, and macOS. MIT licensed.
-  </p>
+  <!-- Docs -->
+  <section aria-labelledby="docs-title" style="padding-top: 0">
+    <div class="section-head">
+      <span class="eyebrow">Documentation</span>
+      <h2 id="docs-title">Guides, reference, and samples</h2>
+      <p>Generated packages are validated with the Open XML SDK test suite and smoke-checked in Microsoft Word and LibreOffice.</p>
+    </div>
+    <div class="docs-grid">
+      <a href="{{ site.repos.docx }}/blob/master/docs/GETTING_STARTED.md" target="_blank" rel="noopener">Getting Started<span>Your first document</span></a>
+      <a href="{{ site.repos.docx }}/blob/master/docs/CORE_CONCEPTS.md" target="_blank" rel="noopener">Core Concepts<span>Documents, pages, builders</span></a>
+      <a href="{{ site.repos.docx }}/blob/master/docs/FEATURES.md" target="_blank" rel="noopener">Feature Guide<span>Every feature, with examples</span></a>
+      <a href="{{ site.repos.docx }}/blob/master/docs/API.md" target="_blank" rel="noopener">API Reference<span>The full fluent surface</span></a>
+      <a href="{{ site.repos.docx }}/blob/master/docs/SAMPLES.md" target="_blank" rel="noopener">Samples<span>Invoices, annual report, showcase</span></a>
+      <a href="{{ site.repos.docx }}/blob/master/docs/TROUBLESHOOTING.md" target="_blank" rel="noopener">Troubleshooting<span>Common issues, resolved</span></a>
+    </div>
+  </section>
 
-  <h2>Dive deeper</h2>
-  <ul>
-    <li><a href="{{ site.repos.docx }}/tree/main/docs" target="_blank" rel="noopener">Full documentation</a> — getting started, core concepts, feature guide, API reference, troubleshooting.</li>
-    <li><a href="{{ site.repos.docx }}" target="_blank" rel="noopener">Source on GitHub</a> · <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">Package on NuGet</a></li>
-  </ul>
+  <!-- CTA -->
+  <section class="cta-band" aria-labelledby="docx-cta">
+    <h2 id="docx-cta">Runs everywhere .NET runs</h2>
+    <p>
+      <code>netstandard2.0</code> for .NET Framework 4.6.1+ and .NET Core 2.0+, plus a
+      dedicated <code>net10.0</code> build. Windows, Linux, macOS. MIT licensed.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" style="background: var(--accent-docx)" href="{{ '/getting-started/' | relative_url }}">Get started</a>
+      <a class="btn btn-ghost" href="{{ site.repos.docx }}/blob/master/docs/SAMPLES.md" target="_blank" rel="noopener">Browse samples</a>
+    </div>
+  </section>
 </div>
