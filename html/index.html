@@ -1,10 +1,12 @@
 ---
 layout: default
-title: HTML Reporting
+title: C# HTML Report Generator — Print-Ready Pages, No PDF Engine
+nav_title: HTML Reporting
 description: >-
-  TerraFluent.Html.Reporting — a fluent, dependency-free .NET library for paginated,
-  print-ready HTML reports. Fixed page sizes, repeating headers/footers, smart
-  pagination, native barcodes. PDF-style output with no PDF engine.
+  Generate paginated, print-ready HTML reports in C# with TerraFluent.Html.Reporting —
+  a fluent, dependency-free .NET report generator. Fixed page sizes (A4, Letter, Legal),
+  repeating headers/footers, page numbers, smart pagination, native Code 128 barcodes.
+  PDF-style output with no PDF engine and no headless browser.
 software:
   name: TerraFluent.Html.Reporting
   version: 1.1.1
@@ -29,7 +31,7 @@ software:
     <div class="badge-row">
       <a href="{{ site.nuget.html }}" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/v/TerraFluent.Html.Reporting?label=nuget&color=0e7c7b" alt="NuGet version" width="106" height="20"></a>
       <a href="{{ site.nuget.html }}" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/dt/TerraFluent.Html.Reporting?label=downloads&color=2f4858" alt="NuGet downloads" width="120" height="20"></a>
-      <a href="{{ site.repos.html }}/blob/main/LICENSE" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/license-MIT-2f4858" alt="MIT license" width="82" height="20"></a>
+      <a href="{{ site.repos.html }}/blob/master/LICENSE" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/license-MIT-2f4858" alt="MIT license" width="82" height="20"></a>
     </div>
   </div>
 </section>
@@ -227,7 +229,7 @@ await report.RenderHtmlDocumentAsync(
       <li><strong>Native Code 128 barcodes</strong> — <code>AddBarcode(...)</code> on content, header/footer, and row-column builders; returns the same builder as <code>AddImage</code>.</li>
       <li><strong>Table cell <code>ColSpan</code>/<code>RowSpan</code></strong> — merged header/summary cells and category groups, atomic during pagination.</li>
     </ul>
-    <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.html }}/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
+    <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.html }}/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
   </div>
 
   <!-- Docs -->
@@ -238,15 +240,15 @@ await report.RenderHtmlDocumentAsync(
       <p>Thirteen guides from first report to custom renderers, plus a cookbook of runnable recipes.</p>
     </div>
     <div class="docs-grid">
-      <a href="{{ site.repos.html }}/blob/main/docs/01-getting-started.md" target="_blank" rel="noopener">Getting Started<span>Your first paginated report</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/02-core-concepts.md" target="_blank" rel="noopener">Core Concepts<span>Pages, flow, and measurement</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/03-content-elements.md" target="_blank" rel="noopener">Content Elements<span>Paragraphs to barcodes</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/04-styling.md" target="_blank" rel="noopener">Styling<span>Text, margins, alignment</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/05-tables.md" target="_blank" rel="noopener">Tables<span>Spans, splitting, headers</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/07-pagination-and-layout.md" target="_blank" rel="noopener">Pagination &amp; Layout<span>How pages break</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/08-rendering.md" target="_blank" rel="noopener">Rendering<span>Strings, files, streaming</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/10-cookbook.md" target="_blank" rel="noopener">Cookbook<span>Invoices, certificates, labels</span></a>
-      <a href="{{ site.repos.html }}/blob/main/docs/11-extending.md" target="_blank" rel="noopener">Extending<span>Custom elements &amp; renderers</span></a>
+      <a href="{{ '/docs/html/getting-started/' | relative_url }}">Getting Started<span>Your first paginated report</span></a>
+      <a href="{{ '/docs/html/core-concepts/' | relative_url }}">Core Concepts<span>Pages, flow, and measurement</span></a>
+      <a href="{{ '/docs/html/content-elements/' | relative_url }}">Content Elements<span>Paragraphs to barcodes</span></a>
+      <a href="{{ '/docs/html/styling/' | relative_url }}">Styling<span>Text, margins, alignment</span></a>
+      <a href="{{ '/docs/html/tables/' | relative_url }}">Tables<span>Spans, splitting, headers</span></a>
+      <a href="{{ '/docs/html/pagination-and-layout/' | relative_url }}">Pagination &amp; Layout<span>How pages break</span></a>
+      <a href="{{ '/docs/html/rendering/' | relative_url }}">Rendering<span>Strings, files, streaming</span></a>
+      <a href="{{ '/docs/html/cookbook/' | relative_url }}">Cookbook<span>Invoices, certificates, labels</span></a>
+      <a href="{{ '/docs/html/extending/' | relative_url }}">Extending<span>Custom elements &amp; renderers</span></a>
     </div>
   </section>
 

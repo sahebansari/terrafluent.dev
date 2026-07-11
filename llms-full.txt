@@ -1,0 +1,3686 @@
+# TerraFluent — Full Documentation
+# Fluent report generation for .NET: print-ready paginated HTML (TerraFluent.Html.Reporting)
+# and native Word .docx documents (TerraFluent.Docx.Reporting). MIT licensed.
+# Site: https://terrafluent.dev/
+
+
+
+====================================================================
+TerraFluent.Html.Reporting — Getting Started
+URL: https://terrafluent.dev/docs/html/getting-started/
+====================================================================
+
+# Getting Started
+
+## Installation
+
+TerraFluent.Html.Reporting targets both `netstandard2.0` and `net10.0` and has zero
+third-party dependencies. Add the package to your project:
+
+```
+dotnet add package TerraFluent.Html.Reporting
+```
+
+## The four-step pipeline
+
+Every report follows the same shape:
+
+```csharp
+using TerraFluent.Html.Reporting.Model;
+using TerraFluent.Html.Reporting.Model.Elements;
+
+var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)  // 1. start
+    .SetMargins(40, 40, 60, 60)
+    .Header(h => h.AddText("Monthly Sales Report").AlignCenter().Bold())   // 2. configure
+    .Footer(f => f.AddPageNumber("Page {page} of {totalPages}"))
+    .Content(c =>
+    {
+        c.AddHeading("Sales Summary", HeadingLevel.H1);
+        c.AddParagraph("This report summarizes sales activity for the period.");
+        c.AddImage("logo.png", widthPx: 120, heightPx: 60);
+        c.AddTable(table =>
+        {
+            table.AddColumns("Product", "Qty", "Revenue");
+            table.AddRow("Widget A", "120", "$2,400");
+        });
+    })
+    .Build();                                                              // 3. build
+
+string html = report.RenderHtml();                                        // 4. render
+```
+
+1. **`ReportDocument.Create(pageSize, orientation)`** returns a
+   [`ReportDocumentBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/ReportDocumentBuilder.cs)
+   - despite living on `ReportDocument`, this is the fluent entry point, not
+   the document itself.
+2. **`.SetMargins(...)`, `.Header(...)`, `.Footer(...)`, `.Content(...)`**
+   configure the builder. `Header`/`Footer`/`Content` each take an
+   `Action<TBuilder>` callback - calling any of them more than once *appends*
+   to the same section rather than replacing it.
+3. **`.Build()`** produces an immutable [`ReportDocument`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/ReportDocument.cs).
+   Nothing is measured or paginated yet.
+4. **`.RenderHtml(...)`** (or one of its siblings - see
+   [Rendering](/docs/html/rendering/)) paginates the document and returns a single,
+   self-contained HTML string: inline `<style>`, `@page` sizing, and one
+   absolutely-positioned `<div>` per page. Open it directly in a browser, or
+   use the browser's "Print to PDF" to get a paginated PDF with the same fixed
+   page geometry and computed breaks.
+
+## Anatomy of the example above
+
+- **`PageSize.A4`** is one of three built-in sizes (`A4`, `Letter`, `Legal`);
+  you can also build a custom size from millimeters, inches, or raw pixels.
+  See [Core Concepts: Page geometry](/docs/html/core-concepts/#page-geometry-pagesize-margins-orientation).
+- **`SetMargins(40, 40, 60, 60)`** sets top/right/bottom/left margins in
+  pixels (there's also a `SetMargins(allEdgesPx)` overload for a uniform
+  margin).
+- **`Header`/`Footer`** are fixed-height sections repeated on every page. Their
+  height is the sum of their elements' measured heights - there's no way to
+  set an explicit header/footer height directly.
+- **`Content`** is the paginated flow: the engine measures each element in
+  order and starts a new page whenever the current one runs out of room,
+  splitting at a line boundary (text) or row boundary (tables) where
+  possible. See [Pagination and Layout](/docs/html/pagination-and-layout/).
+- **`AddPageNumber("Page {page} of {totalPages}")`** is resolved per page
+  after the whole document has been paginated, so the total page count is
+  always correct even though you write the template before pagination
+  happens.
+
+## Running the sample project
+
+The fastest way to see the library in action is the bundled sample project:
+
+```
+dotnet run --project samples/TerraFluent.Html.Reporting.Sample
+```
+
+This writes thirteen HTML files (one per scenario, e.g.
+`01-getting-started.html`, `04-table-styling.html`,
+`10-sales-invoice.html`, `12-invoice-with-barcode.html`,
+`13-table-spans.html`) to the build output directory and prints how many
+pages each one produced, plus any `LayoutWarning`s. Open any of them in a
+browser - the fixed page geometry is what "Print to PDF" will produce. See
+[`samples/TerraFluent.Html.Reporting.Sample/Program.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Program.cs)
+for the full scenario list, and the [Cookbook](/docs/html/cookbook/) for some of
+them adapted into standalone recipes.
+
+## Where to go next
+
+- [Core Concepts](/docs/html/core-concepts/) for the document model and the
+  immutability pattern you'll see on every element.
+- [Content Elements](/docs/html/content-elements/) for the full list of `Add*`
+  methods available in a header, footer, or the main content.
+- [Cookbook](/docs/html/cookbook/) to copy a complete, working report.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Core Concepts
+URL: https://terrafluent.dev/docs/html/core-concepts/
+====================================================================
+
+# Core Concepts
+
+## The pipeline: model -> layout -> render
+
+TerraFluent.Html.Reporting is built as three distinct stages, each in its own
+namespace, connected only by simple data:
+
+```
+Fluent (builders)  -->  Model (immutable elements)  -->  Layout (pagination)  -->  Rendering (HTML)
+  ReportDocumentBuilder    ReportDocument                  LayoutEngine.Paginate    HtmlReportRenderer
+  ContentBuilder           IReportElement implementations  -> LayoutResult           -> HTML string
+  TableBuilder, RowBuilder ...                              (pages, placements)
+```
+
+- **`TerraFluent.Html.Reporting.Fluent`** - the builders you actually call
+  (`ReportDocumentBuilder`, `ContentBuilder`, `PageSectionBuilder`,
+  `TableBuilder`, `RowBuilder`, ...). These exist purely to give you a nice
+  chaining API; they hold mutable lists internally but produce immutable
+  model objects.
+- **`TerraFluent.Html.Reporting.Model`** (and `Model.Elements`, `Model.Styling`,
+  `Model.Sections`) - the immutable document: `ReportDocument`,
+  `IReportElement` implementations (`Paragraph`, `Table`, `Row`, ...),
+  `TextStyle`, `TableStyle`. Nothing here knows how to paginate or render
+  itself in isolation - each element only knows how to measure and split
+  *itself*.
+- **`TerraFluent.Html.Reporting.Layout`** - `LayoutEngine.Paginate` walks the document's
+  content elements once, in order, deciding what goes on which page. The
+  output, a `LayoutResult`, is a plain description of pages and placements -
+  no HTML anywhere yet.
+- **`TerraFluent.Html.Reporting.Rendering`** - `HtmlReportRenderer` walks a
+  `LayoutResult` and asks each placed element to render itself as HTML at its
+  resolved position.
+
+`ReportDocument.RenderHtml()` (and its siblings) just calls
+`LayoutEngine.Paginate` followed by `HtmlReportRenderer.RenderDocumentTo` for
+you. You can call both stages yourself - e.g. to inspect `LayoutResult.Warnings`
+before deciding whether to render at all. See
+[Pagination and Layout](/docs/html/pagination-and-layout/) and
+[Rendering](/docs/html/rendering/).
+
+## The document model
+
+[`ReportDocument`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/ReportDocument.cs) is the
+root: page geometry (`PageSize`, `Orientation`, `Margins`), an optional
+`Header`/`Footer` (`IPageSection`), the top-level `ContentElements`, and the
+`TextMeasurer` to lay out with. It is immutable and can only be constructed
+via `ReportDocument.Create(...)` followed by `ReportDocumentBuilder.Build()`.
+
+Every piece of content - a paragraph, a table, a row of columns - implements
+[`IReportElement`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/IReportElement.cs):
+
+```csharp
+public interface IReportElement
+{
+    ElementMeasurement Measure(LayoutContext context);
+    SplitResult Split(double availableHeightPx, LayoutContext context);
+    string RenderHtml(ElementPlacement placement, RenderContext context);
+}
+```
+
+The layout engine drives every element through exactly this contract and
+never inspects an element's concrete type - which is what makes it possible
+to add new element kinds (see [Extending the Library](/docs/html/extending/))
+without touching the engine. The full Measure/Split/Render contract,
+including what head/tail mean and how splitting interacts with widow/orphan
+control, is covered in [Pagination and Layout](/docs/html/pagination-and-layout/).
+
+## The rebuild-and-replace pattern
+
+Model types like `TextStyle`, `ReportImage`, `Row`, and `RowColumn` are
+immutable - every property is `init`-only, and each type exposes a `With(...)`
+method that returns a *new* instance with the given properties overridden.
+
+Fluent modifiers (`.Bold()`, `.AlignCenter()`, `.Margin(8)`, ...) are thin
+wrappers around this: when you write
+
+```csharp
+c.AddParagraph("Note").Bold().FontSize(16)
+```
+
+`AddParagraph` adds an initial `Paragraph` to the content list and returns a
+[`TextElementBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/TextElementBuilder.cs)
+that remembers *where* in that list the paragraph lives. Each chained call
+(`.Bold()`, then `.FontSize(16)`) calls `Style.With(...)`, builds a brand new
+`Paragraph` with the updated style, and replaces the old one at that same
+index. The builder itself holds no state that outlives the chain - it's a
+short-lived handle onto a slot in a list, not a long-lived wrapper around the
+element.
+
+The same pattern repeats for every element that supports chained modifiers:
+
+| Element | Builder/handle returned by `Add*` | Backing `With(...)` |
+|---|---|---|
+| `Paragraph` / `Heading` / `PageNumberText` | `TextElementBuilder` | `TextStyle.With(...)` |
+| `ReportImage` | `ImageElementBuilder` | `ReportImage.With(...)` |
+| `Row` | `RowHandle` | `Row.With(...)` |
+| `RowColumn` | `RowColumnHandle` | `RowColumn.With(...)` |
+
+Elements with no modifiers to chain (`HorizontalRule`, `Spacer`, `PageBreak`,
+`RawHtml`, `Table`, `ReportList`) have their `Add*` method return the owning
+builder itself (`ContentBuilder`/`PageSectionBuilder`) for plain method
+chaining instead.
+
+One practical consequence: because each `.With(...)` call only overrides the
+properties you pass, calling the *same* modifier twice in a chain just has
+the later call win - there's no accumulation (e.g. `.Margin(8).Margin(4)`
+ends at `4`, not `12`).
+
+## Units: everything is a CSS pixel
+
+Every length in the public API - page dimensions, margins, font sizes,
+padding, column widths, image dimensions - is expressed in CSS pixels
+(`px`), using the standard 96px = 1 inch conversion. There are no points,
+ems, or percentages anywhere.
+
+- `PageSize.FromMillimeters(...)` and `PageSize.FromInches(...)` are
+  convenience constructors that convert to pixels internally; `PageSize`
+  itself always stores `WidthPx`/`HeightPx`.
+- `PageSize.FromPixels(...)` skips the conversion entirely.
+- The renderer emits these pixel values directly into inline CSS
+  (`left:123.45px`, `@page { size: 794px 1123px; }`), so what the layout
+  engine measured is emitted without a unit translation step, so page boxes and
+  element placements do not drift between pagination and rendering.
+
+This matters most when picking a `TextMeasurer`: pagination correctness
+depends on the measurer's pixel measurements agreeing with however the
+browser eventually renders the same font at the same pixel size. See
+[Text Measurement](/docs/html/text-measurement/).
+
+## Page geometry: `PageSize`, `Margins`, `Orientation`
+
+- **`PageSize`** is a `readonly struct` storing `WidthPx`/`HeightPx`. Built-in
+  sizes - `PageSize.A4`, `PageSize.Letter`, `PageSize.Legal` - are defined
+  portrait-shaped (width < height). `WithOrientation(PageOrientation.Landscape)`
+  swaps width and height; `ReportDocument`'s constructor calls this for you
+  based on the `orientation` argument to `ReportDocument.Create`, so you
+  never call it directly. A size built via `PageSize.FromPixels(...)` is
+  *not* assumed portrait - landscape still swaps whatever width/height you
+  gave it, it's a plain 90-degree rotation either way.
+- **`Margins`** is a `readonly struct` with independent `Top`/`Right`/`Bottom`/`Left`
+  values. `Margins.All(value)` sets all four; `Margins.None` is all zero.
+  `SetMargins(...)` on the document builder has both a 4-argument
+  (top/right/bottom/left, matching CSS shorthand order) and a 1-argument
+  (uniform) overload.
+- **Content width** is `PageSize.WidthPx - Margins.Left - Margins.Right`,
+  computed once by `LayoutEngine.Paginate` and threaded through every
+  element's `Measure`/`Split` call via `LayoutContext.ContentWidthPx`.
+- **Content height per page** is `PageSize.HeightPx - Margins.Top - Margins.Bottom`
+  minus the header's and footer's *measured* height (header/footer height is
+  not configured directly - see [Pagination and Layout](/docs/html/pagination-and-layout/#headers-and-footers)).
+
+If margins (plus header/footer) leave zero or negative room for content,
+`LayoutEngine.Paginate` throws `InvalidOperationException` immediately rather
+than producing a nonsensical layout.
+
+## Where to go next
+
+- [Content Elements](/docs/html/content-elements/) for what you can actually put
+  inside `Header`/`Footer`/`Content`.
+- [Pagination and Layout](/docs/html/pagination-and-layout/) for exactly how the
+  engine decides where pages break.
+- [Extending the Library](/docs/html/extending/) if you want to implement
+  `IReportElement` yourself.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Content Elements
+URL: https://terrafluent.dev/docs/html/content-elements/
+====================================================================
+
+# Content Elements
+
+This page is the reference for every element you can add to a document, and
+exactly which `Add*` method produces it. "Content" below means the callback
+passed to `ReportDocumentBuilder.Content(...)`; "Header"/"Footer" means the
+callback passed to `.Header(...)`/`.Footer(...)`; "Row column" means a
+callback passed to `RowBuilder.AddColumn(...)` (see
+[Rows and Columns](/docs/html/rows-and-columns/)).
+
+## Three different builders, three different method sets
+
+Content, headers/footers, and row columns are configured by three distinct
+builder types, and they intentionally don't expose the same methods:
+
+| Method | [`ContentBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/ContentBuilder.cs) (Content) | [`PageSectionBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/PageSectionBuilder.cs) (Header/Footer) | [`RowColumnBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/RowColumnBuilder.cs) (row column) |
+|---|---|---|---|
+| Plain text line | `AddParagraph` | `AddText` | `AddText` |
+| Heading | `AddHeading` | - | `AddHeading` |
+| Page number | - | `AddPageNumber` | `AddPageNumber` |
+| Image (file/bytes) | `AddImage` | `AddImage` | `AddImage` |
+| Image (base64) | `AddImageFromBase64` | - | - |
+| Barcode (Code 128) | `AddBarcode` | `AddBarcode` | `AddBarcode` |
+| Table | `AddTable` | - | - |
+| List | `AddList` | - | - |
+| Horizontal rule | `AddRule` | `AddRule` | `AddRule` |
+| Row of columns | `AddRow` | `AddRow` | - (rows don't nest) |
+| Page break | `AddPageBreak` | - | - |
+| Spacer | `AddSpacer` | - | `AddSpacer` |
+| Raw HTML | `AddRawHtml` | - | - |
+| Custom `IReportElement` | `AddElement` | - | - |
+
+Rationale: a header/footer is a small, fixed-height, repeated block - it has
+no use for a page break or a multi-page table, and `AddText` (unlike
+`AddParagraph`) defaults to **no trailing margin** since a header/footer line
+typically shouldn't add bottom spacing the way body text does. A row column
+stacks simple content vertically inside a fixed-width slot - it supports
+headings/text/images/rules/spacers like a header/footer, but not a nested
+row, table, list, or raw HTML. Text elements inside a column also default to
+no trailing margin, for the same layout reason described in
+[Rows and Columns: Column content defaults](/docs/html/rows-and-columns/#column-content-defaults).
+
+## Paragraph
+
+A block of body text that word-wraps to the content width and may split
+across pages at a line boundary, with widow/orphan control (see
+[Pagination and Layout: Paragraph splitting](/docs/html/pagination-and-layout/#paragraph-splitting-widoworphan-control)).
+
+```csharp
+c.AddParagraph("This report summarizes sales activity for the period.");
+```
+
+`AddParagraph(text, style?)` returns a `TextElementBuilder` - see
+[Styling](/docs/html/styling/) for every chainable modifier (`.Bold()`,
+`.AlignCenter()`, `.FontSize(...)`, `.Margin(...)`, `.Padding(...)`, ...).
+
+Model type: [`Paragraph`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/Paragraph.cs).
+
+## Heading
+
+A semantic heading (H1-H6), rendered as the matching HTML tag
+(`<h1>`-`<h6>`). Unlike `Paragraph`, a heading never splits - one that
+doesn't fit moves whole to the next page.
+
+```csharp
+c.AddHeading("Sales Summary", HeadingLevel.H1);
+```
+
+Each `HeadingLevel` has a default font size/weight/bottom-margin (see
+[Styling: The heading scale](/docs/html/styling/#the-heading-scale)); pass an
+explicit `TextStyle` as the third argument to override it. `AddHeading`
+returns a `TextElementBuilder`, same as `AddParagraph`.
+
+Model type: [`Heading`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/Heading.cs).
+
+## Image
+
+An embedded image, base64-encoded inline as a data URI - the output HTML has
+no external file references. Never splits across pages.
+
+```csharp
+c.AddImage("logo.png", widthPx: 120, heightPx: 60);   // from a file path
+c.AddImage(imageBytes, "image/png", widthPx: 120);    // from bytes
+c.AddImageFromBase64(dataUriOrBase64, widthPx: 120);  // from base64 (Content only)
+```
+
+- **If both `widthPx` and `heightPx` are given**, the image is stretched/shrunk
+  to exactly that box.
+- **If only one is given**, the other is derived from the image's intrinsic
+  pixel dimensions (sniffed from the file's own header bytes - PNG, GIF, BMP,
+  and baseline/progressive JPEG are supported; see
+  [`ImageDimensionReader`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/ImageDimensionReader.cs))
+  so the aspect ratio is preserved.
+- **If neither is given**, the intrinsic dimensions are used directly.
+- If the format isn't recognized and neither dimension was supplied, loading
+  throws `InvalidOperationException` - specify at least one explicitly.
+
+`AddImage`/`AddImageFromBase64` return an `ImageElementBuilder` -
+`.AlignLeft()`/`.AlignCenter()`/`.AlignRight()` position the image within a
+container wider than itself, and `.Margin(...)`/`.Padding(...)` work the same
+as on text elements. See [Styling: Images](/docs/html/styling/#images).
+
+Model type: [`ReportImage`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/ReportImage.cs).
+
+## Barcode
+
+A Code 128 barcode, rendered natively as a generated PNG `ReportImage` - no
+external barcode library or web service involved. Useful for an invoice
+number, tracking number, or any other short identifier that needs to be both
+human-readable and machine-scannable.
+
+```csharp
+c.AddBarcode("INV-1042");                                            // defaults below
+c.AddBarcode("20264471", moduleWidthPx: 2, heightPx: 40, quietZoneModules: 10);
+```
+
+- `value` must be non-empty, printable ASCII (character codes 32-126) -
+  letters, digits, and most punctuation, but no newlines or control
+  characters; anything else throws `ArgumentException`.
+- `moduleWidthPx` (default `2`) is the width of the narrowest bar/space; the
+  generated image's total width is derived from the encoded value's module
+  count, so it varies with `value`'s length.
+- `heightPx` (default `60`) is the bar height in pixels.
+- `quietZoneModules` (default `10`) is the blank margin on each side, in
+  modules - scanners need this clear space to lock onto the barcode; most
+  scanners are unreliable without it, so don't reduce it to `0` for a barcode
+  meant to actually be scanned.
+
+`AddBarcode` returns the same `ImageElementBuilder` as `AddImage` - chain
+`.AlignRight()`/`.AlignCenter()`/`.Margin(...)`/`.Padding(...)` exactly as you
+would on any other image, e.g. to pin it to the top-right corner of a header
+column. See [Styling: Images](/docs/html/styling/#images).
+
+**Sizing a fixed-width column to hold the barcode.** Unlike text, a barcode
+doesn't wrap or shrink to fit - its rendered width is fixed by the encoded
+value's length, `moduleWidthPx`, and `quietZoneModules`. If you place it in a
+`row.AddColumn(widthPx, ...)` that's narrower than the barcode itself (e.g.
+to pin it to a header's top-right corner via `AlignRight()`), the barcode
+overflows past the column - and past the page's right margin - instead of
+stopping at it. Size the column to at least the barcode's rendered width: for
+Code 128, that's `(quietZoneModules * 2 + sum of per-character module
+widths) * moduleWidthPx`, where each encoded character (including the
+start/checksum codes) is 11 modules wide and the stop character is 13; an
+8-digit value at the defaults shown above (`moduleWidthPx: 2`,
+`quietZoneModules: 10`) renders to 286px wide, so a 300px column leaves a
+small safety margin. See [Cookbook: A Barcode in the Header](/docs/html/cookbook/#a-barcode-in-the-header-invoice-number).
+
+Model type: [`ReportImage`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/ReportImage.cs)
+(generated by [`BarcodeImage`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/BarcodeImage.cs)).
+
+## Table
+
+A table with a repeated header row, optional zebra striping, two
+configurable behaviors for what happens when a row doesn't fit on the
+remaining space of a page, and cells that can span multiple columns/rows via
+`ColSpan`/`RowSpan`.
+
+```csharp
+c.AddTable(table =>
+{
+    table.AddColumns("Product", "Qty", "Revenue");
+    table.AddRow("Widget A", "120", "$2,400");
+});
+```
+
+Tables are involved enough to warrant their own page - see
+[Tables](/docs/html/tables/) for column width resolution, `TableStyle`, per-cell
+style overrides, [column and row spans](/docs/html/tables/#column-and-row-spans),
+and `RowSplitBehavior`.
+
+Model type: [`Table`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/Table.cs).
+
+## List
+
+A bulleted or numbered list, rendered as a native `<ul>`/`<ol>` so the
+browser handles marker layout and line wrapping itself. Splits at item
+boundaries (an individual item's wrapped lines are never separated), and a
+numbered list resumes counting correctly across a page break instead of
+restarting at 1.
+
+```csharp
+c.AddList(ListStyle.Numbered, new[]
+{
+    "Revenue figures are pre-tax.",
+    "Quantities reflect units shipped, not units ordered.",
+});
+```
+
+`AddList(style, items, textStyle?)` returns the `ContentBuilder` itself (no
+chainable modifiers today - pass `textStyle` directly for font/color
+control).
+
+Model type: [`ReportList`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/ReportList.cs).
+
+## Row
+
+Side-by-side columns - e.g. a logo next to a company name - laid out
+horizontally within the content width. Unlike a table, a row never splits
+across pages.
+
+```csharp
+c.AddRow(row =>
+{
+    row.AddColumn(48, col => col.AddImage("logo.png", widthPx: 40));
+    row.AddColumn(col => col.AddText("Acme Corporation").Bold().FontSize(20));
+});
+```
+
+Rows are covered in depth in [Rows and Columns](/docs/html/rows-and-columns/).
+
+Model type: [`Row`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/Row.cs) /
+[`RowColumn`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/RowColumn.cs).
+
+## Horizontal rule
+
+A divider line spanning the content width.
+
+```csharp
+c.AddRule();                          // 1px, #d8dde0
+c.AddRule(thicknessPx: 3, color: "#2f4858");
+```
+
+Has fixed default margins (8px top and bottom) baked into the model type
+rather than the fluent call - there's no chainable modifier for a rule today;
+construct [`HorizontalRule`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/HorizontalRule.cs)
+directly and add it via a lower-level path if you need different margins.
+
+## Spacer
+
+An invisible, fixed-height gap - useful for manual vertical spacing between
+elements that don't otherwise have a margin between them.
+
+```csharp
+c.AddSpacer(20); // 20px of blank vertical space
+```
+
+Throws `ArgumentOutOfRangeException` for a negative height. Model type:
+[`Spacer`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/Spacer.cs).
+
+## Page break
+
+A structural marker that forces the next content element to start on a fresh
+page, regardless of how much room is left on the current one. It has no
+height and produces no visible output - the layout engine special-cases it
+before the usual fit-or-split logic. A page break with nothing yet placed on
+the current page is a no-op, so a *leading* page break never produces a
+blank first page (and consecutive page breaks don't produce blank pages
+between them either).
+
+```csharp
+c.AddHeading("Chapter 1", HeadingLevel.H1);
+c.AddParagraph("...");
+c.AddPageBreak();
+c.AddHeading("Chapter 2", HeadingLevel.H1);
+```
+
+Content-only (no header/footer/row-column equivalent - a page break inside a
+fixed-height repeated section wouldn't mean anything). Model type:
+[`PageBreak`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/PageBreak.cs).
+
+## Raw HTML
+
+An escape hatch for markup the built-in elements don't cover - a styled
+callout box, a QR code `<img>`, an inline SVG diagram. Since the layout
+engine cannot measure arbitrary HTML it doesn't understand, **you must supply
+the height it will occupy**; the engine treats it as an opaque, unsplittable
+block at exactly that height (like an oversized image, it can produce a
+`LayoutWarning` if it doesn't fit even on an empty page - see
+[Pagination and Layout: Warnings](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit)).
+
+```csharp
+c.AddRawHtml(
+    "<div style=\"border:2px dashed #2f4858;padding:16px;\">Custom callout</div>",
+    heightPx: 110);
+```
+
+The HTML is emitted **verbatim, with no encoding** - unlike text elements
+(which HTML-encode their content automatically), this is your one place to
+inject markup, so don't pass it unsanitized end-user input. Content-only.
+Model type: [`RawHtml`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/RawHtml.cs).
+
+## Page number text
+
+Text containing `{page}`/`{totalPages}` tokens, resolved once the whole
+document has been paginated.
+
+```csharp
+f.AddPageNumber("Page {page} of {totalPages}").AlignCenter();
+f.AddPageNumber(); // same default template
+```
+
+Only available via `AddPageNumber` on a header/footer/row-column builder (not
+directly in `Content`, since the main content area isn't a fixed, once-per-page
+position). Returns a `TextElementBuilder`, same modifiers as `AddParagraph`.
+
+Model type: [`PageNumberText`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/PageNumberText.cs).
+
+## Where to go next
+
+- [Styling](/docs/html/styling/) for every fluent modifier available on text and
+  image elements.
+- [Tables](/docs/html/tables/) and [Rows and Columns](/docs/html/rows-and-columns/) for
+  the two most involved element types.
+- [Cookbook](/docs/html/cookbook/) for these elements combined into complete,
+  working reports.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Styling
+URL: https://terrafluent.dev/docs/html/styling/
+====================================================================
+
+# Styling
+
+## `TextStyle`
+
+[`TextStyle`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Styling/TextStyle.cs) is the
+immutable style record behind every text-bearing element (`Paragraph`,
+`Heading`, `PageNumberText`, list items, table cells). `TextStyle.Default` is
+used when an element doesn't specify one:
+
+| Property | Default | Notes |
+|---|---|---|
+| `FontFamily` | `"Segoe UI, Arial, sans-serif"` | A CSS font-family list, used verbatim in the rendered `font-family`. |
+| `FontSizePx` | `14` | CSS pixels. |
+| `FontWeight` | `FontWeight.Normal` | `Normal` or `Bold`. |
+| `FontStyle` | `FontStyle.Normal` | `Normal` or `Italic`. |
+| `Color` | `"#222222"` | Any CSS color string. |
+| `LineHeightMultiplier` | `1.4` | Resolved line height = `FontSizePx * LineHeightMultiplier`; see `LineHeightPx`. |
+| `Alignment` | `TextAlignment.Left` | `Left`, `Center`, `Right`, or `Justify`. |
+| `MarginTopPx`/`MarginRightPx`/`MarginBottomPx`/`MarginLeftPx` | `0`/`0`/`8`/`0` | See [Margin vs. padding](#margin-vs-padding) below. |
+| `PaddingTopPx`/`PaddingRightPx`/`PaddingBottomPx`/`PaddingLeftPx` | `0` each | See [Margin vs. padding](#margin-vs-padding) below. |
+
+Derived, read-only properties:
+
+- **`LineHeightPx`** = `FontSizePx * LineHeightMultiplier`.
+- **`HorizontalInsetPx`** = left+right margin + left+right padding - what's
+  subtracted from the container width before word-wrapping.
+- **`VerticalInsetPx`** = top+bottom margin + top+bottom padding - what's
+  added on top of the wrapped text's height when measuring the element.
+
+Call `style.With(...)` to derive a modified copy - every property above has a
+matching nullable parameter, so `style.With(fontSizePx: 18)` changes only the
+font size.
+
+## Fluent modifiers (`TextElementBuilder`)
+
+`AddParagraph`/`AddHeading`/`AddText`/`AddPageNumber` all return a
+[`TextElementBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/TextElementBuilder.cs),
+which exposes:
+
+```csharp
+c.AddParagraph("Note")
+    .AlignCenter()      // AlignLeft / AlignCenter / AlignRight / AlignJustify
+    .Bold()              // FontWeight.Bold
+    .Italic()            // FontStyle.Italic
+    .FontSize(16)         // px
+    .FontColor("#b23b3b") // any CSS color
+    .FontFamily("Georgia, 'Times New Roman', serif")
+    .MarginTop(8).MarginRight(0).MarginBottom(8).MarginLeft(0)
+    .Margin(8)                    // uniform, all four sides
+    .Margin(8, 0, 8, 0)           // top, right, bottom, left (CSS shorthand order)
+    .Padding(12)                  // uniform
+    .Padding(12, 8, 12, 8);       // top, right, bottom, left
+```
+
+Each call rebuilds the element with an updated `TextStyle` and replaces it in
+the owning content/section list - see
+[Core Concepts: The rebuild-and-replace pattern](/docs/html/core-concepts/#the-rebuild-and-replace-pattern)
+for why this is safe to chain repeatedly. Because each call only overrides
+what you pass, calling the same modifier twice just has the later value win
+(no accumulation).
+
+## Margin vs. padding
+
+Both shrink the space available to the text, but at different edges of the
+element's box:
+
+- **Margin** is space *outside* the element's own box - it pushes the box
+  away from its container's edge (left/right margin) or from neighboring
+  elements (top/bottom margin). `MarginBottomPx` defaults to `8`, which is
+  why elements added via `AddParagraph`/`AddHeading` in `Content` get
+  natural spacing between them with no extra effort.
+- **Padding** is space *inside* the element's own box - it insets the text
+  from the box's own edges without affecting where the box itself sits
+  relative to its neighbors. Padding is what you'd reach for to inset text
+  away from a border or a colored background you've drawn around it (e.g.
+  with `AddRawHtml`, or a `RawHtml`-wrapped frame).
+
+Text wraps within whatever width is left after *both* are subtracted from
+the container width (`HorizontalInsetPx`), and the element's measured height
+includes both (`VerticalInsetPx`).
+
+**Default margins differ between builders.** `ContentBuilder.AddParagraph`/`AddHeading`
+default to `TextStyle.Default`/`TextStyle.ForHeading(level)`, which both carry
+the normal bottom margin. `PageSectionBuilder.AddText`/`AddPageNumber` and
+`RowColumnBuilder.AddText`/`AddHeading`/`AddPageNumber` instead default to
+`marginBottomPx: 0` - a header/footer line or a row column's stacked content
+usually shouldn't have an implicit gap after the last line the way body
+content does. Pass an explicit `TextStyle` (or chain `.MarginBottom(...)`) if
+you want different spacing in those contexts.
+
+## The heading scale
+
+`TextStyle.ForHeading(HeadingLevel)` is the default style scale used by
+`AddHeading` when you don't pass an explicit `TextStyle`:
+
+| Level | Font size | Weight | Bottom margin |
+|---|---|---|---|
+| H1 | 28px | Bold | 16px |
+| H2 | 24px | Bold | 14px |
+| H3 | 20px | Bold | 12px |
+| H4 | 18px | Bold | 10px |
+| H5 | 16px | Bold | 8px |
+| H6 | 14px | Bold | 8px |
+
+Pass a `TextStyle` explicitly to `AddHeading(text, level, style)` to override
+any of these while keeping the semantic `<h1>`-`<h6>` tag the level implies.
+
+## Images
+
+`AddImage`/`AddImageFromBase64` return an
+[`ImageElementBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/ImageElementBuilder.cs):
+
+```csharp
+c.AddImage("logo.png", widthPx: 96)
+    .AlignCenter()              // AlignLeft (default) / AlignCenter / AlignRight
+    .Margin(8)
+    .MarginBottom(16)
+    .Padding(4);
+```
+
+- **Alignment** only has a visible effect when the image's container
+  (content width, or a row column's width) is wider than the image itself -
+  it positions the image's box within the leftover space. `Justify` behaves
+  the same as `Left`.
+- **Margin** shrinks the available width from the container's edges (left/right)
+  and adds vertical space around the image (top/bottom), exactly like text
+  margins. The default is `MarginBottomPx: 8` (and `0` elsewhere) on
+  `ReportImage`.
+- **Padding** insets the image itself from its own box, which only matters in
+  combination with alignment (it shifts where centering/right-alignment
+  measures from) since an image with no visible border or background
+  otherwise has nothing to "pad away from".
+
+Model type: [`ReportImage`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/ReportImage.cs).
+
+## Rows and row columns
+
+`AddRow` returns a [`RowHandle`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/RowHandle.cs)
+with margin modifiers for the row as a whole:
+
+```csharp
+c.AddRow(row => { ... }).Margin(12).MarginTop(20);
+```
+
+`RowBuilder.AddColumn` returns a
+[`RowColumnHandle`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/RowColumnHandle.cs) with
+padding modifiers for that one column's inset from its own edges:
+
+```csharp
+row.AddColumn(col => col.AddText("Hi")).Padding(8);
+```
+
+See [Rows and Columns](/docs/html/rows-and-columns/) for the full picture, including
+how column width and vertical alignment interact with these.
+
+## Table styling
+
+`TableStyle` (header/cell text styles, striping, borders, cell padding, and
+`RowSplitBehavior`) is its own topic - see
+[Tables: `TableStyle`](/docs/html/tables/#tablestyle).
+
+## Colors and fonts: a caveat
+
+Every color in this library is a plain CSS color string passed straight
+through to inline styles - there's no validation, palette, or theme system.
+Likewise, `FontFamily` is an opaque CSS font-family list: the library doesn't
+ship or embed any fonts, so whatever you specify must be available in
+whichever browser/engine ultimately renders the HTML (or it falls back per
+normal CSS font-family rules).
+
+This also matters for *pagination accuracy*: the bundled `ApproximateTextMeasurer`
+estimates wrapping using a single generic sans-serif metrics table regardless
+of which `FontFamily` you set - changing fonts changes how the text looks but
+not how the engine predicts it wraps. See
+[Text Measurement](/docs/html/text-measurement/) for what this means in practice
+and how to get pixel-exact pagination if you need it.
+
+## Where to go next
+
+- [Tables](/docs/html/tables/) for `TableStyle` and per-cell overrides.
+- [Rows and Columns](/docs/html/rows-and-columns/) for `RowVerticalAlignment` and
+  column width resolution.
+- [Text Measurement](/docs/html/text-measurement/) for how font choice interacts
+  with pagination precision.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Tables
+URL: https://terrafluent.dev/docs/html/tables/
+====================================================================
+
+# Tables
+
+Tables are the most involved element in the library: they have their own
+column-width algorithm, two different strategies for handling a row that
+doesn't fit on a page, and a row-height cache that keeps pagination of a
+large table fast. This page covers all of it.
+
+## Building a table
+
+```csharp
+c.AddTable(table =>
+{
+    table.AddColumns("Product", "Qty", "Revenue");      // headers only, auto width
+    table.AddRow("Widget A", "120", "$2,400");
+    table.AddRow("Widget B", "85", "$1,275");
+});
+```
+
+[`TableBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/TableBuilder.cs) methods:
+
+- **`AddColumns(params string[] headers)`** - one auto-width column per
+  header string.
+- **`AddColumn(string header, double? widthPx = null)`** - a single column,
+  optionally with a fixed width.
+- **`AddRow(params string[] cells)`** - a row from plain strings, one per
+  column, implicitly converted to `TableCell`.
+- **`AddRow(IReadOnlyList<TableCell> cells)`** - a row with explicit cells,
+  letting you override style per cell.
+
+Every row must supply exactly one cell per column - mismatched counts throw
+`ArgumentException` from the `Table` constructor (e.g. `AddColumns("A", "B")`
+followed by `AddRow("only one")`).
+
+`AddTable(configure, style?)` returns the `ContentBuilder` itself - tables
+have no chainable post-add modifiers; pass a `TableStyle` directly as the
+second argument instead.
+
+## Column width resolution
+
+Each `TableColumn` either has an explicit `WidthPx` or is auto-width. Given
+the table's resolved content width:
+
+1. Sum the explicit widths of all fixed-width columns.
+2. Whatever's left over (content width minus that sum, floored at 0) is
+   divided **equally** among the auto-width columns.
+
+```csharp
+table.AddColumn("Code", widthPx: 70);   // fixed: 70px
+table.AddColumn("Description");          // auto: shares what's left
+table.AddColumn("Price", widthPx: 90);  // fixed: 90px
+```
+
+If the fixed widths alone exceed the content width, auto columns are pinned
+to `0` rather than going negative - there's no shrink-to-fit or overflow
+warning for this case today, so size fixed columns conservatively relative to
+the page width you're targeting.
+
+The table renders with `table-layout:fixed` and an explicit `<colgroup>`
+matching these resolved widths - see
+[Rendering: What the HTML looks like](/docs/html/rendering/#what-the-html-looks-like)
+for why the `<table>` itself is deliberately *not* pinned to `width:100%`.
+
+## `TableStyle`
+
+[`TableStyle`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Styling/TableStyle.cs) controls
+everything visual about a table:
+
+| Property | Default | Notes |
+|---|---|---|
+| `HeaderTextStyle` | Bold, white text, no bottom margin | Style for header-row cell text. |
+| `CellTextStyle` | `TextStyle.Default` with no bottom margin | Style for body-row cell text (per-cell overridable, see below). |
+| `HeaderBackgroundColor` | `"#2f4858"` | Header row background. |
+| `EvenRowBackgroundColor` / `OddRowBackgroundColor` | `"#ffffff"` / `"#f4f6f7"` | Body row backgrounds when `StripedRows` is on; 0-based, so row 0 is "even". |
+| `StripedRows` | `true` | Whether alternating backgrounds are applied. |
+| `CellPaddingPx` | `6` | Applied on all four sides of every cell. |
+| `BorderColor` | `"#d8dde0"` | Set empty for no visible border. |
+| `BorderWidthPx` | `1` | Border thickness; also factored into row-height measurement (see below). |
+| `RowSplitBehavior` | `AllowSplitWithContinuedHeader` | See [Row splitting](#row-splitting-rowsplitbehavior) below. |
+| `ContinuedHeaderSuffix` | `" (continued)"` | Appended to the header on a continuation page; empty string suppresses it. |
+
+```csharp
+c.AddTable(
+    table => { ... },
+    TableStyle.Default.With(stripedRows: false, headerBackgroundColor: "#1c2b33"));
+```
+
+`TableStyle.With(...)` follows the same override-only-what-you-pass pattern
+as `TextStyle.With(...)`.
+
+## Per-cell style overrides
+
+A `TableCell` carries an optional `Style` that overrides `CellTextStyle` for
+that one cell - useful for right-aligning numeric columns, for example:
+
+```csharp
+var rightAlign = TextStyle.Default.With(alignment: TextAlignment.Right, marginBottomPx: 0);
+
+table.AddRow(new TableCell[]
+{
+    "Website Redesign",
+    new TableCell("1", rightAlign),
+    new TableCell("$1,200.00", rightAlign),
+    new TableCell("$1,200.00", rightAlign),
+});
+```
+
+Plain strings implicitly convert to a `TableCell` with no override
+(`Style = null`), which is why `AddRow("a", "b", "c")` works without
+constructing `TableCell` instances yourself.
+
+## Column and row spans
+
+A `TableCell` can occupy more than one column or row via `ColSpan`/`RowSpan`
+(both default `1`), set through object-initializer syntax:
+
+```csharp
+table.AddRow(new TableCell[]
+{
+    new TableCell("Electronics") { RowSpan = 3 },   // spans this row and the next two
+    "Wireless Mouse", "2", "$39.98",
+});
+table.AddRow(new TableCell[] { "Mechanical Keyboard", "1", "$89.00" }); // omits the "Category" column - covered above
+table.AddRow(new TableCell[] { "USB-C Dock", "1", "$64.50" });
+
+table.AddRow(new TableCell[]
+{
+    new TableCell("Grand Total") { ColSpan = 3 },   // spans "Category", "Item", and "Qty"
+    "$193.48",
+});
+```
+
+A row's cells must account for **exactly** every column: a cell covered by an
+earlier row's `RowSpan` is skipped when counting, and a `ColSpan > 1` cell
+counts for that many columns. Supplying too few or too many cells for what's
+left over throws `ArgumentException` from the `Table` constructor, as does a
+`ColSpan`/`RowSpan` that would extend past the table's last column/row.
+
+**Pagination treats a `RowSpan` group as atomic.** Rows linked by an active
+`RowSpan` either fit together on a page or move to the next page as a whole -
+`AllowSplitWithContinuedHeader`'s mid-row line truncation (below) never
+applies inside such a group, only to a lone row with no active rowspan. If a
+group is taller than an entire empty page, it's reported the same way any
+other oversized, unsplittable content is - see
+[Pagination and Layout: `LayoutWarning`](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit).
+
+A `RowSpan` cell's own required height is satisfied by the *sum* of the rows
+it spans; if the rows' own content wouldn't naturally add up to enough, the
+shortfall is added to the last row of the span (an approximation, consistent
+with the library's approximate text measurement elsewhere).
+
+See [Cookbook: Grouping rows with `RowSpan`](/docs/html/cookbook/#grouping-rows-with-rowspan)
+for a runnable example.
+
+## Row splitting (`RowSplitBehavior`)
+
+When a table doesn't entirely fit in the space remaining on a page, the
+engine places as many whole rows as fit, then has to decide what to do with
+the row that's too tall for what's left. `TableStyle.RowSplitBehavior`
+controls this:
+
+- **`KeepRowIntact`** - the row that doesn't fit moves whole to the next
+  page (under a repeated header). Simple, but a single very tall row can
+  waste a lot of trailing whitespace on the page it didn't fit on.
+- **`AllowSplitWithContinuedHeader`** (the default) - every cell in the
+  offending row is truncated at a **shared line budget** (the narrowest
+  cell's line height determines how many lines fit across all cells in that
+  row, so the visual split lines up across columns), and the remainder
+  continues as the first row on the next page, under a freshly repeated
+  header annotated with `ContinuedHeaderSuffix`.
+
+```csharp
+c.AddTable(
+    table => { ... },
+    TableStyle.Default.With(rowSplitBehavior: RowSplitBehavior.KeepRowIntact));
+```
+
+If a table's header alone is taller than the entire available space (a
+degenerate case - an oversized header style on a very small page), the table
+is reported `Unsplittable` and the usual "doesn't fit anywhere" handling in
+[Pagination and Layout](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit)
+takes over instead.
+
+The continuation banner (the "(continued)" text above the repeated header) is
+rendered as its own full-width row above the header on continuation pages,
+and its height is included in measurement - omitting `ContinuedHeaderSuffix`
+entirely (empty string) removes both the banner and its height contribution.
+
+## How a row's height is measured
+
+A row's height is the tallest of its cells' wrapped-text heights (each cell
+measured independently at its column's resolved width, minus
+`2 * CellPaddingPx`), plus one `BorderWidthPx` for that row's own bottom
+border line. The table's total measured height adds one extra `BorderWidthPx`
+for the outermost top edge that no row otherwise accounts for. This border
+accounting exists specifically so the `overflow:hidden` container the table
+renders inside isn't sized a hair too short - see the inline remarks on
+[`Table.MeasureRowHeight`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/Elements/Table.cs)
+if you're curious about the exact reasoning (it was a real, since-fixed bug:
+omitting it silently clipped the last row's bottom border).
+
+## Performance: row heights are cached, not recomputed per page
+
+A large table split across many pages does **not** re-measure its entire
+remaining row list on every page transition. `Table` caches each row's
+measured height (keyed by content width) the first time it's needed, and
+`Split` slices that cached array into the head/tail fragments it produces
+rather than recomputing - so an N-row table is measured in O(N) total work
+across its entire pagination, however many pages it ends up spanning, not
+O(N^2). You don't need to do anything to get this - it's automatic - but it's
+worth knowing if you're profiling a very large table (tens of thousands of
+rows) and wondering where the cache lives.
+
+## Where to go next
+
+- [Content Elements: Table](/docs/html/content-elements/#table) for where
+  `AddTable` fits among the other element types.
+- [Pagination and Layout](/docs/html/pagination-and-layout/) for the general
+  measure/split contract every element (including `Table`) implements.
+- [Cookbook: Multi-page table](/docs/html/cookbook/#a-multi-page-report-with-header-footer-and-a-table-that-spans-pages)
+  and [Cookbook: Table styling comparison](/docs/html/cookbook/#comparing-table-row-split-behaviors)
+  for runnable examples.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Rows and Columns
+URL: https://terrafluent.dev/docs/html/rows-and-columns/
+====================================================================
+
+# Rows and Columns
+
+`AddRow` lays out columns side by side - e.g. a logo next to a company name,
+or a stat strip with three centered numbers - within the content width. It's
+available in `Content`, `Header`, and `Footer`, but columns themselves can't
+nest another row inside them.
+
+## Building a row
+
+```csharp
+c.AddRow(row =>
+{
+    row.AddColumn(48, col => col.AddImage("logo.png", widthPx: 40));
+    row.AddColumn(col =>
+    {
+        col.AddText("Acme Corporation").Bold().FontSize(20);
+        col.AddText("123 Market Street").FontSize(12);
+    });
+});
+```
+
+[`RowBuilder`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Fluent/RowBuilder.cs) has two
+`AddColumn` overloads:
+
+- **`AddColumn(Action<RowColumnBuilder> configure)`** - an auto-width column
+  that shares the leftover width equally with other auto-width columns.
+- **`AddColumn(double widthPx, Action<RowColumnBuilder> configure)`** - a
+  column with an explicit fixed width.
+
+`ContentBuilder.AddRow`/`PageSectionBuilder.AddRow` both take the same
+signature:
+
+```csharp
+AddRow(Action<RowBuilder> configure, double columnGapPx = 12, RowVerticalAlignment verticalAlignment = RowVerticalAlignment.Middle)
+```
+
+and return a `RowHandle` for chaining margin modifiers (see
+[Styling: Rows and row columns](/docs/html/styling/#rows-and-row-columns)).
+
+## Column width resolution
+
+Same algorithm as table columns (see
+[Tables: Column width resolution](/docs/html/tables/#column-width-resolution)):
+fixed-width columns get exactly what you specified; whatever's left after
+subtracting fixed widths *and* the gaps between columns
+(`columnGapPx * (columnCount - 1)`) is divided equally among the auto-width
+columns. If fixed widths and gaps alone exceed the available width, auto
+columns are pinned to `0` rather than going negative.
+
+## Vertical alignment
+
+When columns in the same row have different content heights, `RowVerticalAlignment`
+controls how the shorter ones line up against the row's tallest column:
+
+| Value | Behavior |
+|---|---|
+| `Top` | Aligned to the top of the row. |
+| `Middle` (default) | Centered within the row's height. |
+| `Bottom` | Aligned to the bottom of the row. |
+
+```csharp
+c.AddRow(row =>
+{
+    row.AddColumn(120, col => col.AddText("One line"));
+    row.AddColumn(col =>
+    {
+        col.AddText("Line 1");
+        col.AddText("Line 2");
+        col.AddText("Line 3");
+    });
+}, verticalAlignment: RowVerticalAlignment.Top);
+```
+
+The row's overall height is the **tallest column's** measured height (plus
+the row's own margins) - shorter columns don't stretch to fill it, they're
+just positioned within it per `VerticalAlignment`.
+
+## Column content defaults
+
+A `RowColumnBuilder`'s text elements (`AddText`/`AddHeading`/`AddPageNumber`)
+default to `marginBottomPx: 0`, unlike their `ContentBuilder` counterparts.
+This is deliberate: a column's *measured* height needs to match its
+*visible* content for `RowVerticalAlignment` to line columns up correctly -
+if the last line in a column carried an invisible trailing margin, the
+column would measure taller than it looks, and vertical centering would be
+visibly off. Chain `.MarginBottom(...)` explicitly if you want deliberate
+spacing between elements stacked within the same column.
+
+`RowColumnBuilder` supports `AddText`, `AddHeading`, `AddPageNumber`,
+`AddImage` (file or bytes), `AddRule`, and `AddSpacer` - see the comparison
+table in [Content Elements](/docs/html/content-elements/#three-different-builders-three-different-method-sets)
+for what's deliberately *not* available inside a column (tables, lists,
+nested rows, page breaks, raw HTML).
+
+## Column padding
+
+`RowBuilder.AddColumn` returns a `RowColumnHandle` with `Padding(...)` to
+inset that column's stacked content from its own box edges, independent of
+the column's width:
+
+```csharp
+row.AddColumn(col => col.AddText("Hi")).Padding(8);
+row.AddColumn(48, col => col.AddImage("logo.png", widthPx: 40))
+    .Padding(topPx: 15, 0, 0, 0);
+```
+
+Padding reduces the *inner* width available to the column's own elements
+(`column width - left padding - right padding`) without changing the
+column's resolved width in the row's layout - so padding never throws off
+the row's overall column-width math, it only affects how the column's
+content sits within its allotted space.
+
+## Rows never split
+
+Like an image, a row is always placed whole. If a row doesn't fit even on a
+completely empty page, it's force-placed and recorded as a `LayoutWarning` -
+the same fallback described in
+[Pagination and Layout: Warnings](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit).
+In practice this matters for rows with a lot of stacked content in one
+column (e.g. many lines of wrapped text) on a very short page - keep tall
+row content modest, or split it into separate non-row elements if it might
+not fit.
+
+## Margins
+
+A `Row` has the same four margin properties as a `TextStyle`
+(`MarginTopPx`/`MarginRightPx`/`MarginBottomPx`/`MarginLeftPx`, defaulting to
+`0`/`0`/`8`/`0`), set via the `RowHandle` returned by `AddRow`:
+
+```csharp
+c.AddRow(row => { ... }).Margin(12).MarginTop(20);
+```
+
+Left/right margin shrinks the width available to the row's columns from that
+edge (and shifts the row right, for left margin); top/bottom margin adds
+vertical space exactly like a text element's margin does.
+
+## Where to go next
+
+- [Content Elements](/docs/html/content-elements/) for how `Row` compares to the
+  library's other elements.
+- [Styling](/docs/html/styling/) for the full list of `RowHandle`/`RowColumnHandle`
+  modifiers.
+- [Cookbook: Row layouts](/docs/html/cookbook/#a-header-and-footer-with-a-logo-row)
+  for a complete invoice-style header/footer built from rows.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Pagination and Layout
+URL: https://terrafluent.dev/docs/html/pagination-and-layout/
+====================================================================
+
+# Pagination and Layout
+
+This page explains how [`LayoutEngine.Paginate`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/LayoutEngine.cs)
+turns a `ReportDocument`'s flat list of content elements into a sequence of
+pages - useful if you want to understand exactly why a page breaks where it
+does, what a `LayoutWarning` means, or you're implementing a custom
+`IReportElement` (see [Extending the Library](/docs/html/extending/)).
+
+## Calling the engine directly
+
+`ReportDocument.RenderHtml()` and friends call this for you, but you can call
+it yourself to inspect the result before rendering:
+
+```csharp
+using TerraFluent.Html.Reporting.Layout;
+
+LayoutResult layout = LayoutEngine.Paginate(document);
+Console.WriteLine($"{layout.Pages.Count} page(s)");
+foreach (var warning in layout.Warnings)
+{
+    Console.WriteLine(warning); // "Page 3: A ReportImage required ... "
+}
+```
+
+## The `IReportElement` contract
+
+Every content, header, and footer element implements
+[`IReportElement`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Model/IReportElement.cs):
+
+```csharp
+public interface IReportElement
+{
+    ElementMeasurement Measure(LayoutContext context);
+    SplitResult Split(double availableHeightPx, LayoutContext context);
+    string RenderHtml(ElementPlacement placement, RenderContext context);
+}
+```
+
+The engine drives every element through exactly this contract and never
+inspects an element's concrete type:
+
+1. Call **`Measure`**. If the result fits in the remaining content height on
+   the current page, place it whole and move on.
+2. Otherwise, if any space is left on the current page, call **`Split`** with
+   that remaining height.
+   - If it returns a non-null `Head`, place that fragment on the current
+     page.
+   - If `Tail` is also non-null, start a new page and process the tail next
+     (a tail may itself need further splitting - e.g. a table spanning three
+     or more pages repeats this step).
+   - If `Head` is null (`SplitResult.Unsplittable`), nothing fit even
+     partially - fall through to step 3.
+3. If nothing fit at all, start a new page and retry the *same* element at
+   the top of it.
+4. **Termination guarantee:** if an element still doesn't fit even on a
+   completely empty page, it's placed anyway (so it overflows visually
+   rather than disappearing or looping forever), and a `LayoutWarning` is
+   recorded.
+
+`Measure` must be a pure function of the element's own content/style and the
+given `LayoutContext` - the engine may call it more than once for the same
+element (e.g. once to decide whether to split, again on the resulting
+fragments), so it must not have side effects that would change behavior
+between calls. (`Table` and `Row` use an internal cache to avoid recomputing
+expensive measurements repeatedly - see
+[Tables: Performance](/docs/html/tables/#performance-row-heights-are-cached-not-recomputed-per-page) -
+but the cache is keyed by content width and is purely a performance detail
+invisible to callers.)
+
+## `LayoutContext`
+
+[`LayoutContext`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/LayoutContext.cs) is the
+ambient information threaded through every `Measure`/`Split` call: the
+`ITextMeasurer` to use, and the `ContentWidthPx` available to the element.
+Elements that nest children at a narrower width (a table cell, a row column)
+derive a child context via `context.WithContentWidth(narrowerWidth)` rather
+than mutating the original - instances are immutable, so the same context is
+safely reused across sibling elements.
+
+## `SplitResult`
+
+[`SplitResult`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/SplitResult.cs) is the return
+type of `Split`:
+
+- **`SplitResult.Partial(head, tail)`** - the element was divided: `head`
+  fits in the offered height and should be placed now; `tail` (nullable)
+  continues on the next page.
+- **`SplitResult.Unsplittable(original)`** - nothing fit, or the element
+  doesn't support partial placement at all. `Head` is `null`; `Tail` is the
+  original, unmodified element, to be retried elsewhere.
+
+Elements that can never be partially placed - `Heading`, `ReportImage`,
+`HorizontalRule`, `Spacer`, `PageBreak`, `RawHtml`, `Row`, `PageNumberText` -
+always return `Unsplittable`. Only `Paragraph`, `ReportList`, and `Table`
+support a true partial split.
+
+## Paragraph splitting (widow/orphan control)
+
+`Paragraph.Split` doesn't just cut at "however many lines fit" - it applies a
+minimum of two lines kept together on either side of a break:
+
+- If only **one line** would fit on the current page (an orphan), the whole
+  paragraph defers to the next page instead, rather than stranding a single
+  line.
+- If splitting would leave only **one line** alone at the top of the next
+  page (a widow), one additional line is pulled back onto the current page
+  so at least two move together.
+
+This only applies when the paragraph has more than two lines total - a
+two-line paragraph either fits whole or doesn't split at all.
+
+`Heading` never splits (a fragment of a heading would be a poor reading
+experience), so a heading that doesn't fit always moves whole to the next
+page, same as an image.
+
+`ReportList` splits at **item boundaries** - an individual item's own wrapped
+lines are never separated from each other, only entire items move to the
+next page. A continuation fragment carries `StartIndex` forward so a numbered
+list keeps counting correctly instead of restarting at 1.
+
+`Table` splits at **row boundaries**, with an optional mid-row split - see
+[Tables: Row splitting](/docs/html/tables/#row-splitting-rowsplitbehavior) for the
+full behavior, which is configurable per table via `TableStyle.RowSplitBehavior`.
+
+## `LayoutWarning`: when content doesn't fit
+
+A [`LayoutWarning`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/LayoutWarning.cs) is
+recorded only when an element couldn't be split (or split usefully) and
+didn't fit even on a completely empty page - the engine places it anyway
+(so it overflows visually) rather than silently dropping content or looping
+forever:
+
+```csharp
+public sealed class LayoutWarning
+{
+    public int PageIndex { get; }   // 0-based
+    public string Message { get; }  // human-readable
+}
+```
+
+`LayoutResult.Warnings` is empty in the common case where everything fit.
+Check it after pagination if you want to detect "my report clipped content"
+programmatically instead of only finding out by eyeballing the rendered
+output - e.g. log a warning, or reject a generated report before it reaches
+a user, when a page comes back with warnings attached. See
+[Cookbook: Detecting layout warnings](/docs/html/cookbook/#detecting-content-that-doesnt-fit-layoutwarning)
+for a runnable example (an oversized image that can't be split and is taller
+than the entire page).
+
+## Headers and footers
+
+A header/footer's height is **not configured directly** - it's the sum of
+its elements' measured heights, computed once (with the document's
+`ITextMeasurer`) before pagination of the main content begins, then held
+constant across every page. This is why the available content height per
+page is `PageSize.HeightPx - Margins.Top - Margins.Bottom - headerHeight - footerHeight`.
+
+Header/footer elements are **never split** across anything (there's only one
+"page" of them per page, by definition) - `IPageSection.MeasureHeight` is a
+plain sum, not a pagination pass. The engine does recompute header/footer
+*placement geometry* once per page (cheap, since they typically hold only a
+handful of elements) purely so each page's `ElementPlacement.PageIndex` is
+accurate; the rendered content is otherwise identical on every page except
+for page-number tokens, which are resolved later during rendering (see
+[Rendering](/docs/html/rendering/)) rather than during layout.
+
+## `PageBreak`
+
+A `PageBreak` is special-cased entirely outside the measure/split/place flow
+described above: encountering one closes the current page immediately,
+*unless* the current page is still empty (`usedHeightPx <= Epsilon`), in
+which case it's a no-op. This is what makes a leading or repeated page break
+never produce a blank page. See
+[Content Elements: Page break](/docs/html/content-elements/#page-break).
+
+## The output: `LayoutResult`
+
+[`LayoutResult`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/LayoutResult.cs) is plain
+data describing the paginated document - no HTML anywhere in it:
+
+- **`Pages`** - an ordered list of [`PageLayout`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/PageLayout.cs),
+  each holding its `HeaderElements`/`ContentElements`/`FooterElements` as
+  [`PlacedElement`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/PlacedElement.cs)s (an
+  element instance - possibly a `Split`-produced fragment, not the original -
+  paired with an [`ElementPlacement`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Layout/ElementPlacement.cs)
+  describing where).
+- **`PageSize`**/**`Margins`** - copied from the document, already
+  orientation-adjusted, so a renderer doesn't need the original document to
+  emit correct page CSS.
+- **`Warnings`** - see above.
+
+`ElementPlacement.XPx`/`YPx` are relative to the section (header, content, or
+footer) the element belongs to, not the page - `HtmlReportRenderer` calls
+`ElementPlacement.Translate(offsetX, offsetY)` to convert to page-absolute
+coordinates before rendering. `Pages.Count` is also the "totalPages" value
+used to resolve `{totalPages}` tokens in `PageNumberText`.
+
+## Thread safety
+
+`LayoutEngine.Paginate` holds no static or shared mutable state, so
+concurrent calls for different `ReportDocument` instances (or even the same
+instance, since it's immutable) are safe. The default `ApproximateTextMeasurer`
+is likewise stateless. `Table`/`Row` cache measurements internally as a
+performance optimization; concurrently paginating the very same `Table`/`Row`
+instance is safe but may redundantly recompute the cache once or twice (a
+benign race, not a correctness issue).
+
+## Where to go next
+
+- [Rendering](/docs/html/rendering/) for how a `LayoutResult` becomes HTML.
+- [Text Measurement](/docs/html/text-measurement/) for the `ITextMeasurer` seam
+  that drives every height calculation above.
+- [Extending the Library](/docs/html/extending/) for implementing your own
+  `IReportElement`.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Rendering
+URL: https://terrafluent.dev/docs/html/rendering/
+====================================================================
+
+# Rendering
+
+Rendering is the second pass: it turns an already-paginated `LayoutResult`
+(see [Pagination and Layout](/docs/html/pagination-and-layout/)) into HTML. By the
+time a renderer runs, every page's geometry - and therefore the total page
+count - is already known, which is what lets header/footer elements resolve
+`{page}`/`{totalPages}` tokens correctly.
+
+## The APIs on `ReportDocument`
+
+You usually don't call the layout/render stages separately - `ReportDocument`
+exposes five convenience methods that do both:
+
+| Method | Output | Use when... |
+|---|---|---|
+| `RenderHtml(renderer?, ct?)` | `string` (full document) | You want the complete HTML in memory, e.g. to return from a web endpoint. |
+| `RenderHtmlDocument(filePath, renderer?, ct?)` | writes to a file | You want to stream straight to disk without holding the full string in memory. |
+| `RenderHtmlDocumentAsync(filePath, renderer?, ct?)` | `Task`, writes to a file | Same as above, but doesn't block a thread-pool thread on the final flush/dispose - see below. |
+| `RenderFragment(renderer?, ct?)` | `string` (page `<div>`s only) | You're embedding the report inside an existing HTML page. |
+
+All five accept an optional `IHtmlReportRenderer` (defaulting to
+`HtmlReportRenderer.Default`) and a `CancellationToken`, checked periodically
+during both pagination and rendering so a very large document can be
+aborted - e.g. when the originating web request is canceled.
+
+```csharp
+string html = report.RenderHtml();
+await report.RenderHtmlDocumentAsync("report.html", cancellationToken: ct);
+string fragment = report.RenderFragment(); // for embedding
+```
+
+**Why is `RenderHtmlDocumentAsync` async at all if pagination/rendering are
+synchronous CPU work?** Because there's no I/O to `await` until the final
+flush to disk - the method exists so the flush, and the writer's disposal, do
+not block a thread-pool thread in an async call chain (e.g. inside an ASP.NET
+request handler), not because layout or HTML generation themselves are
+asynchronous.
+
+## `IHtmlReportRenderer`
+
+[`IHtmlReportRenderer`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Rendering/IHtmlReportRenderer.cs)
+is the renderer contract:
+
+```csharp
+public interface IHtmlReportRenderer
+{
+    string RenderDocument(LayoutResult layout);
+    string RenderFragment(LayoutResult layout);
+    void RenderDocumentTo(TextWriter writer, LayoutResult layout, CancellationToken cancellationToken = default);
+    void RenderFragmentTo(TextWriter writer, LayoutResult layout, CancellationToken cancellationToken = default);
+}
+```
+
+[`HtmlReportRenderer`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Rendering/HtmlReportRenderer.cs)
+(accessible as the shared, stateless `HtmlReportRenderer.Default`) is the
+only implementation shipped today. The `...To(TextWriter, ...)` overloads
+write one page at a time rather than building the whole document as a single
+in-memory string first - for a report with many thousands of pages, this
+bounds peak memory to roughly one page's HTML rather than the entire
+document's. The non-streaming `RenderDocument`/`RenderFragment` overloads are
+implemented as a thin wrapper: write to a `StringWriter`, then return its
+contents.
+
+See [Extending the Library: Custom renderer](/docs/html/extending/#a-custom-ihtmlreportrenderer)
+if you want to implement this interface yourself (e.g. to emit a different
+page-wrapper structure, or PDF-specific markup).
+
+## What the HTML looks like
+
+`RenderDocumentTo` produces a single self-contained document - inline
+`<style>`, no external CSS or JS, no external image references (every
+`ReportImage` is base64-encoded inline). The example below is for
+`PageSize.A4` (210mm x 297mm, converted to pixels at 96px/inch):
+
+```html
+<!DOCTYPE html><html><head><meta charset="utf-8" /><title>Report</title>
+<style>
+  @page { size: 793.701px 1122.52px; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #e8e8e8; font-family: Segoe UI, Arial, sans-serif; }
+  .fhr-page { position: relative; width: 793.7px; height: 1122.52px; background: #ffffff;
+    overflow: hidden; margin: 0 auto 16px auto; box-shadow: 0 0 6px rgba(0,0,0,0.25);
+    page-break-after: always; break-after: page; }
+  .fhr-page:last-child { page-break-after: auto; break-after: auto; margin-bottom: 0; }
+  @media print { body { background: none; } .fhr-page { margin: 0; box-shadow: none; } }
+</style>
+</head><body>
+  <div class="fhr-page"> ... one absolutely-positioned element per placed fragment ... </div>
+  <div class="fhr-page"> ... </div>
+</body></html>
+```
+
+Key points:
+
+- **`@page { size: ...; margin: 0; }`** sets the print page size to exactly
+  match the document's `PageSize`. Page margins are *not* expressed as
+  `@page margin` - they're baked into each element's absolute `left`/`top`
+  position instead, so what you see on screen (a white page with a drop
+  shadow) is pixel-identical to what prints.
+- **One `.fhr-page` `<div>` per page**, sized exactly to `PageSize`, with
+  `overflow:hidden` so any force-placed, overflowing content (see
+  [`LayoutWarning`](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit))
+  is clipped visually rather than spilling into the next page's div.
+- **`page-break-after: always`** (plus the modern `break-after: page`) on
+  every page except the last is a redundant signal for browsers that don't
+  fully honor `@page` sizing during print - belt-and-suspenders, since the
+  exact-pixel page divs are normally enough on their own.
+- **Every element renders as its own absolutely-positioned tag** (`<p>`,
+  `<h1>`-`<h6>`, `<img>`, `<table>`, `<ul>`/`<ol>`, or a styled `<div>`) at the
+  `left`/`top`/`width`/`height` the layout engine computed - the renderer has
+  no pagination logic of its own; it only translates each `ElementPlacement`
+  from section-relative to page-absolute coordinates (see
+  [Pagination and Layout: The output](/docs/html/pagination-and-layout/#the-output-layoutresult))
+  and calls `IReportElement.RenderHtml`.
+- **All CSS pixel values use the invariant culture** (`123.45px`, never
+  `123,45px`) - see [`CssFormat`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Rendering/CssFormat.cs) -
+  so generated reports are correct regardless of the server's locale.
+- **All user-supplied text is HTML-encoded** before being written (again via
+  `CssFormat.Encode`, i.e. `WebUtility.HtmlEncode`) - the one exception is
+  `RawHtml`, which is emitted verbatim by design (see
+  [Content Elements: Raw HTML](/docs/html/content-elements/#raw-html)).
+
+`RenderFragmentTo` emits the page styles and page `<div>`s without the
+`<html>`/`<head>`/`<body>` wrapper. Its stylesheet omits the document-level
+`html`/`body` reset and background rules, so embedding a report does not
+change the host page's margins, background, or font.
+
+## Printing to PDF
+
+Because the HTML is built around exact-pixel `@page` sizing and one `<div>`
+per page, a browser's native "Print to PDF" (or a headless-browser print API,
+e.g. Playwright/Puppeteer) reproduces the same page breaks you see when
+viewing the HTML directly - there's no separate PDF-specific code path in
+this library. If you need exact pixel-perfect text wrapping in that PDF, see
+[Text Measurement](/docs/html/text-measurement/) for why the bundled measurer alone
+may not guarantee that.
+
+## Where to go next
+
+- [Text Measurement](/docs/html/text-measurement/) for the seam that determines
+  how accurately layout matches real browser rendering.
+- [Extending the Library](/docs/html/extending/) for writing a custom
+  `IHtmlReportRenderer`.
+- [Cookbook: Streaming a large report](/docs/html/cookbook/#streaming-a-large-report-to-disk-asynchronously)
+  for a runnable example of the async file API.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Text Measurement
+URL: https://terrafluent.dev/docs/html/text-measurement/
+====================================================================
+
+# Text Measurement
+
+Pagination needs to know how tall a block of text will be *before* it's
+rendered - which means measuring how it wraps at a given width. This is the
+single seam, `ITextMeasurer`, that every height calculation in the layout
+engine ultimately depends on.
+
+## `ITextMeasurer`
+
+[`ITextMeasurer`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Measurement/ITextMeasurer.cs) is a
+one-method interface:
+
+```csharp
+public interface ITextMeasurer
+{
+    TextMeasurement Measure(string text, FontSpecification font, double maxWidthPx);
+}
+```
+
+- **`text`** may contain explicit newlines, which must be treated as hard
+  breaks (not wrapped through).
+- **`font`** is a [`FontSpecification`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Measurement/FontSpecification.cs) -
+  family, size, bold, italic, and line-height multiplier - deliberately
+  decoupled from `Model.Styling.TextStyle` so an `ITextMeasurer` implementation
+  (including one shipped in a separate package) doesn't need to depend on the
+  document model at all.
+- **`maxWidthPx`** is the width a single line may occupy.
+
+The return type, [`TextMeasurement`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Measurement/TextMeasurement.cs),
+holds the resulting `Lines` (each one guaranteed to fit within the measured
+width), the resolved `LineHeightPx`, and `WidestLineWidthPx`. `TotalHeightPx`
+(`Lines.Count * LineHeightPx`) is what the layout engine actually sums for
+pagination; elements that support splitting (`Paragraph`, table cells)
+slice `Lines` at a line boundary to build the head/tail fragments for
+`IReportElement.Split`.
+
+## The default: `ApproximateTextMeasurer`
+
+[`ApproximateTextMeasurer`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Measurement/ApproximateTextMeasurer.cs)
+(exposed as the stateless singleton `ApproximateTextMeasurer.Instance`, and
+used automatically unless you override it) estimates wrapping using
+per-character average-width tables for Helvetica
+([`HelveticaCharacterWidths`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Measurement/HelveticaCharacterWidths.cs)),
+scaled by font size, with a flat 1.08x multiplier approximating bold's extra
+width. It has **zero runtime dependencies** - no `System.Drawing`, no native
+text-shaping library - which is what keeps the whole core package usable on
+`netstandard2.0` and trimmable/AOT-compatible on modern .NET.
+
+What this buys you, and what it doesn't:
+
+- It **will not** match a browser's actual layout engine pixel-for-pixel -
+  particularly for proportional fonts other than a generic sans-serif, text
+  with heavy kerning/ligatures, or any font where Helvetica's metrics are a
+  poor stand-in.
+- It **does not hyphenate**: a single word wider than the available width is
+  placed alone on its own (overflowing) line rather than broken mid-word.
+- `FontFamily`/`Bold`/`Italic` on a `TextStyle` still affect the *rendered*
+  output normally (the CSS faithfully sets `font-family`, `font-weight`,
+  `font-style`) - they just don't change which width table `ApproximateTextMeasurer`
+  consults, since it only ever measures against the one Helvetica table.
+
+In practice this means: page breaks chosen with the default measurer are
+*close* to where a real browser would wrap the same text, but not
+guaranteed exact - acceptable for most reports, but worth knowing about if
+your report's pagination needs to be pixel-exact (e.g. a legally significant
+multi-page contract where a line must never silently shift to the next page
+in print).
+
+## Supplying a precise measurer
+
+```csharp
+ReportDocument.Create(PageSize.A4)
+    .UseTextMeasurer(myPreciseMeasurer)
+    .Content(c => { ... })
+    .Build();
+```
+
+`ReportDocumentBuilder.UseTextMeasurer(ITextMeasurer measurer)` overrides the
+default for the whole document; it throws `ArgumentNullException` if you
+pass `null`. There's no per-element override - one document, one measurer,
+used consistently for every element so pagination is internally coherent.
+
+Implement `ITextMeasurer` against a real rendering engine - a headless
+browser (e.g. Playwright/Puppeteer measuring actual DOM layout),
+`System.Drawing`/GDI+ on Windows, or any text-shaping library that can report
+glyph advances for your target font - to get pagination that matches actual
+rendering. **No ready-made precise measurer ships with the core package
+today** - this is a documented extension point, not a plug-in registry. The
+intended pattern is a separate companion package (e.g. a hypothetical
+`TerraFluent.Html.Reporting.Measurement.Playwright`) that depends on the core package
+and supplies one, keeping the core package itself free of native/runtime
+dependencies. See [Extending the Library](/docs/html/extending/#a-custom-itextmeasurer)
+for a sketch of what implementing one looks like.
+
+## Where to go next
+
+- [Pagination and Layout](/docs/html/pagination-and-layout/) for how `Measure`
+  results feed into page-break decisions.
+- [Extending the Library](/docs/html/extending/) for a concrete starting point if
+  you're writing a custom measurer.
+- [FAQ: Why didn't my page break where I expected?](/docs/html/faq-troubleshooting/#why-didnt-my-page-break-exactly-where-i-expected)
+
+
+====================================================================
+TerraFluent.Html.Reporting — Cookbook
+URL: https://terrafluent.dev/docs/html/cookbook/
+====================================================================
+
+# Cookbook
+
+Working recipes you can copy and adapt. Most are trimmed versions of the
+scenarios in [samples/TerraFluent.Html.Reporting.Sample/Scenarios](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios) -
+run `dotnet run --project samples/TerraFluent.Html.Reporting.Sample` to generate the
+full versions as HTML and open them in a browser.
+
+## A Multi-Page Report with Header, Footer, and a Table That Spans Pages
+
+The "kitchen sink" example: a repeating header/footer with page numbers, a
+heading, a paragraph, an image, a 45-row table that spans several pages
+(header repeated, rows split correctly), and a numbered list.
+
+```csharp
+using TerraFluent.Html.Reporting.Model;
+using TerraFluent.Html.Reporting.Model.Elements;
+
+var products = new[] { "Widget A", "Widget B", "Gadget C", "Gizmo D" };
+var random = new Random(42);
+
+var report = ReportDocument.Create(PageSize.A4, PageOrientation.Portrait)
+    .SetMargins(40, 40, 60, 60)
+    .Header(h => h.AddText("Monthly Sales Report").AlignCenter().Bold().FontSize(16))
+    .Footer(f => f.AddPageNumber("Page {page} of {totalPages}").AlignCenter())
+    .Content(c =>
+    {
+        c.AddHeading("Sales Summary", HeadingLevel.H1);
+        c.AddParagraph(
+            "This report summarizes sales activity across all regions for the current " +
+            "period. The table below spans multiple pages: the header row repeats on " +
+            "every continuation page, and a row too tall to fit is split mid-row.");
+        c.AddImage("logo.png", widthPx: 72);
+        c.AddRule();
+
+        c.AddHeading("Detailed Line Items", HeadingLevel.H2);
+        c.AddTable(table =>
+        {
+            table.AddColumns("Product", "Qty", "Revenue");
+            for (var i = 0; i < 45; i++)
+            {
+                var product = products[i % products.Length];
+                var qty = random.Next(10, 500);
+                var revenue = qty * (decimal)(5 + random.NextDouble() * 45);
+                table.AddRow(product, qty.ToString(), revenue.ToString("C2"));
+            }
+        });
+
+        c.AddSpacer(12);
+        c.AddHeading("Notes", HeadingLevel.H2);
+        c.AddList(ListStyle.Numbered, new[]
+        {
+            "Revenue figures are pre-tax.",
+            "Contact the finance team for a region-level breakdown.",
+        });
+    })
+    .Build();
+
+string html = report.RenderHtml();
+```
+
+See [Tables](/docs/html/tables/) for the column-width and row-split rules at play,
+and [Pagination and Layout](/docs/html/pagination-and-layout/) for why the header
+row repeats automatically. Full source:
+[`GettingStartedScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/GettingStartedScenario.cs).
+
+## Comparing Table Row-Split Behaviors
+
+Put the same long row through both `TableStyle.RowSplitBehavior` options
+side by side, on a deliberately small custom page size so the row is forced
+to overflow:
+
+```csharp
+using TerraFluent.Html.Reporting.Model.Styling;
+
+const string longNote =
+    "This note is deliberately long, and the column it sits in deliberately " +
+    "narrow, so it cannot fit in the remaining space and must be handled by " +
+    "the table's row-split behavior.";
+
+var report = ReportDocument.Create(PageSize.FromPixels(650, 480))
+    .SetMargins(20)
+    .Content(c =>
+    {
+        c.AddHeading("AllowSplitWithContinuedHeader (the default)", HeadingLevel.H2);
+        c.AddTable(
+            table =>
+            {
+                table.AddColumn("Item", widthPx: 80);
+                table.AddColumn("Notes", widthPx: 220);
+                table.AddRow("Item 1", "Short note.");
+                table.AddRow("Item 2", longNote);
+                table.AddRow("Item 3", "Another short note.");
+            },
+            TableStyle.Default.With(rowSplitBehavior: RowSplitBehavior.AllowSplitWithContinuedHeader));
+
+        c.AddPageBreak();
+        c.AddHeading("KeepRowIntact", HeadingLevel.H2);
+        c.AddTable(
+            table =>
+            {
+                table.AddColumn("Item", widthPx: 80);
+                table.AddColumn("Notes", widthPx: 220);
+                table.AddRow("Item 1", "Short note.");
+                table.AddRow("Item 2", longNote);
+                table.AddRow("Item 3", "Another short note.");
+            },
+            TableStyle.Default.With(rowSplitBehavior: RowSplitBehavior.KeepRowIntact));
+    })
+    .Build();
+```
+
+With `AllowSplitWithContinuedHeader`, "Item 2"'s note is truncated mid-sentence
+and continues on the next page under a header marked "(continued)". With
+`KeepRowIntact`, the whole row moves to the next page instead, leaving
+trailing whitespace on the first page. See
+[Tables: Row splitting](/docs/html/tables/#row-splitting-rowsplitbehavior). Full
+source: [`TableStylingScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/TableStylingScenario.cs).
+
+## Grouping Rows with `RowSpan`
+
+A category cell spanning every line item beneath it, plus a `ColSpan`-based
+label on the closing totals row:
+
+```csharp
+c.AddTable(table =>
+{
+    table.AddColumn("Category", widthPx: 110);
+    table.AddColumn("Item");
+    table.AddColumn("Qty", widthPx: 50);
+    table.AddColumn("Price", widthPx: 90);
+
+    table.AddRow(new TableCell[]
+    {
+        new TableCell("Electronics") { RowSpan = 3 },   // spans this row and the next two
+        "Wireless Mouse", "2", "$39.98",
+    });
+    table.AddRow(new TableCell[] { "Mechanical Keyboard", "1", "$89.00" }); // omits "Category" - covered above
+    table.AddRow(new TableCell[] { "USB-C Dock", "1", "$64.50" });
+
+    table.AddRow(new TableCell[]
+    {
+        new TableCell("Grand Total") { ColSpan = 3 },   // spans "Category", "Item", and "Qty"
+        "$193.48",
+    });
+});
+```
+
+A row underneath a `RowSpan` cell must omit a cell for the column(s) it
+covers - the `Table` constructor throws if a row supplies the wrong number of
+cells once spans are accounted for. The rows linked by the `RowSpan` are
+treated as one atomic unit during pagination: they move to the next page
+together if they don't all fit, even under `AllowSplitWithContinuedHeader`.
+See [Tables: Column and row spans](/docs/html/tables/#column-and-row-spans) for the
+full rules. Full source:
+[`TableSpansScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/TableSpansScenario.cs).
+
+## A Header and Footer with a Logo Row
+
+A realistic invoice-style header (logo + company name side by side) and
+footer (small logo + a line of fine print + page number), using `AddRow` in
+both:
+
+```csharp
+var report = ReportDocument.Create(PageSize.A4)
+    .SetMargins(40)
+    .Header(h =>
+    {
+        h.AddRow(row =>
+        {
+            row.AddColumn(48, col => col.AddImage("logo.png", widthPx: 40))
+                .Padding(topPx: 15, 0, 0, 0);
+            row.AddColumn(col =>
+            {
+                col.AddText("Acme Corporation").Bold().FontSize(20);
+                col.AddText("123 Market Street, Springfield, USA").FontSize(12);
+            });
+        });
+        h.AddRule();
+    })
+    .Footer(f =>
+    {
+        f.AddRule();
+        f.AddRow(row =>
+        {
+            row.AddColumn(32, col => col.AddImage("logo.png", widthPx: 24));
+            row.AddColumn(col => col.AddText("Payment is due within 30 days.").FontSize(10));
+        });
+        f.AddPageNumber().AlignCenter().FontSize(9);
+    })
+    .Content(c => { /* ... */ })
+    .Build();
+```
+
+The fixed-width logo column (`48px`/`32px`) leaves the company-name column to
+auto-share the rest of the content width; `RowVerticalAlignment.Middle` (the
+default) keeps the logo centered against the two-line text block next to it.
+See [Rows and Columns](/docs/html/rows-and-columns/). Full source:
+[`SalesInvoiceScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/SalesInvoiceScenario.cs)
+(also see [section A Complete Sales Invoice](#a-complete-sales-invoice) below for
+the rest of this report).
+
+## A Barcode in the Header (Invoice Number)
+
+A Code 128 barcode of the invoice number, pinned to the top-right corner of
+the header next to the company info, using a fixed-width right-aligned
+column:
+
+```csharp
+const string invoiceNumber = "20264471";
+
+var report = ReportDocument.Create(PageSize.A4)
+    .SetMargins(40)
+    .Header(h =>
+    {
+        h.AddRow(row =>
+        {
+            row.AddColumn(col =>
+            {
+                col.AddText("Acme Corporation").Bold().FontSize(20);
+                col.AddText("123 Market Street, Springfield, USA").FontSize(12);
+            });
+            row.AddColumn(300, col =>
+            {
+                col.AddBarcode(invoiceNumber, moduleWidthPx: 2, heightPx: 40).AlignRight();
+                col.AddText(invoiceNumber, TextStyle.Default.With(alignment: TextAlignment.Right, marginBottomPx: 0)).FontSize(10);
+            });
+        }, verticalAlignment: RowVerticalAlignment.Top);
+        h.AddRule();
+    })
+    .Content(c => { /* ... */ })
+    .Build();
+```
+
+The barcode column has a fixed `300px` width so it doesn't grow or shrink
+with the company-info column, and `.AlignRight()` pins the barcode (and the
+human-readable number printed underneath it) flush against the page's right
+margin. **The column must be at least as wide as the barcode's rendered
+width** (`quietZoneModules * 2 + sum of per-character module widths`, times
+`moduleWidthPx` - see [Content Elements: Barcode](/docs/html/content-elements/#barcode))
+or the barcode overflows past the column - and past the page's right margin -
+instead of stopping at it; an 8-digit Code 128 value at the defaults shown
+here renders to 286px wide, so 300px leaves a small safety margin.
+`RowVerticalAlignment.Top` keeps both columns aligned to the top of the
+header instead of centering the shorter one. See
+[Content Elements: Barcode](/docs/html/content-elements/#barcode) for the encoding
+rules and parameters. Full source:
+[`InvoiceBarcodeScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/InvoiceBarcodeScenario.cs).
+
+## Detecting Content That Doesn't Fit (`LayoutWarning`)
+
+An image taller than the entire page's content area, and unsplittable by
+definition, triggers a `LayoutWarning` instead of silently clipping or
+throwing:
+
+```csharp
+using TerraFluent.Html.Reporting.Layout;
+
+var report = ReportDocument.Create(PageSize.FromPixels(400, 150))
+    .SetMargins(10)
+    .Content(c =>
+    {
+        c.AddHeading("Warnings", HeadingLevel.H2);
+        c.AddParagraph("The image below is taller than this page's entire content area.");
+        c.AddImage(oversizedImageBytes, "image/png", widthPx: 300, heightPx: 300);
+    })
+    .Build();
+
+var layout = LayoutEngine.Paginate(report);
+foreach (var warning in layout.Warnings)
+{
+    Console.WriteLine(warning); // "Page 1: A ReportImage required 300px but only ... was available ..."
+}
+```
+
+Check `LayoutResult.Warnings` after pagination - e.g. to log a warning or
+reject the report before it reaches a user - rather than only discovering
+clipped content by eyeballing the rendered HTML. See
+[Pagination and Layout: Warnings](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit).
+Full source: [`WarningsAndAsyncScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/WarningsAndAsyncScenario.cs).
+
+## Streaming a Large Report to Disk Asynchronously
+
+For a report large enough that holding the full HTML string in memory is
+undesirable, render straight to a file with the async, streaming API instead
+of `RenderHtml()`:
+
+```csharp
+await report.RenderHtmlDocumentAsync(
+    Path.Combine(outputDir, "report.html"),
+    cancellationToken: cancellationToken);
+```
+
+This writes one page's HTML at a time rather than building the entire
+document as a single in-memory string, and the `async` signature exists so
+the final flush/dispose doesn't block a thread-pool thread in an async call
+chain (e.g. inside an ASP.NET request handler) - pagination and HTML
+generation themselves are still synchronous, CPU-bound work. See
+[Rendering: The APIs on `ReportDocument`](/docs/html/rendering/#the-apis-on-reportdocument).
+The sample project's [`Program.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Program.cs)
+uses this API for every scenario it writes out.
+
+## A Landscape Certificate
+
+A single-page, landscape-oriented certificate, built entirely from centered
+content with no header/footer:
+
+```csharp
+var report = ReportDocument.Create(PageSize.Letter, PageOrientation.Landscape)
+    .SetMargins(50)
+    .Content(c =>
+    {
+        c.AddImage("logo.png", widthPx: 48);
+        c.AddSpacer(30);
+        c.AddHeading("Certificate of Completion", HeadingLevel.H1).AlignCenter();
+        c.AddSpacer(20);
+        c.AddParagraph("This certifies that").AlignCenter();
+        c.AddHeading("Jane Doe", HeadingLevel.H2).AlignCenter();
+        c.AddParagraph("has successfully completed the TerraFluent.Html.Reporting advanced training course.").AlignCenter();
+        c.AddSpacer(40);
+        c.AddRule();
+        c.AddParagraph("Issued June 23, 2026").AlignCenter();
+    })
+    .Build();
+```
+
+`PageOrientation.Landscape` swaps `PageSize.Letter`'s width/height (see
+[Core Concepts: Page geometry](/docs/html/core-concepts/#page-geometry-pagesize-margins-orientation)).
+Full source: [`LandscapeCertificateScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/LandscapeCertificateScenario.cs).
+
+## Images: File, Bytes, and Base64, with Aspect-Ratio Sizing
+
+```csharp
+// From a file path, explicit width and height (stretched to exactly 240x80):
+c.AddImage("photo.png", widthPx: 240, heightPx: 80);
+
+// From bytes, only width given - height derived from the source's aspect ratio:
+c.AddImage(imageBytes, "image/png", widthPx: 360);
+
+// From bytes, only height given - width derived from the source's aspect ratio:
+c.AddImage(tallImageBytes, "image/png", heightPx: 200);
+
+// From a data: URI or bare base64 payload (Content only):
+c.AddImageFromBase64($"data:image/png;base64,{base64Source}", widthPx: 150, heightPx: 150);
+```
+
+See [Content Elements: Image](/docs/html/content-elements/#image) for how the
+missing dimension is derived (sniffed from the image's own header bytes) and
+what happens if the format can't be recognized. Full source:
+[`ImagesScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/ImagesScenario.cs).
+
+## A Numbered List Spanning Multiple Pages
+
+```csharp
+c.AddParagraph(
+    "This list has enough items to split across a page boundary; numbering " +
+    "resumes correctly on the next page instead of restarting at 1.");
+c.AddList(ListStyle.Numbered, Enumerable.Range(1, 60).Select(i => $"Numbered list entry #{i}"));
+```
+
+The list splits at item boundaries only (an item's own wrapped lines are
+never separated), and the continuation fragment's `StartIndex` keeps the
+`<ol start="...">` numbering correct. See
+[Pagination and Layout: Paragraph splitting](/docs/html/pagination-and-layout/#paragraph-splitting-widoworphan-control)
+for the related text-splitting rules. Full source:
+[`ListsScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/ListsScenario.cs).
+
+## Forcing Chapter Breaks with `AddPageBreak`
+
+```csharp
+c.AddHeading("Chapter 1: Introduction", HeadingLevel.H1);
+c.AddParagraph("...");
+c.AddPageBreak();
+
+c.AddHeading("Chapter 2: Methodology", HeadingLevel.H1);
+c.AddParagraph("...");
+c.AddPageBreak();
+```
+
+Each chapter starts on a fresh page regardless of how much room was left on
+the previous one. A page break with nothing yet placed on the page is a
+no-op, so this never produces a blank page between chapters even if a
+chapter happens to end exactly at a page boundary already. See
+[Content Elements: Page break](/docs/html/content-elements/#page-break). Full
+source: [`PageBreaksScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/PageBreaksScenario.cs).
+
+## Injecting Raw HTML for Custom Markup
+
+```csharp
+c.AddRawHtml(
+    "<div style=\"border:2px dashed #2f4858;border-radius:8px;padding:16px;background:#eef3f6;\">" +
+    "<strong>Custom callout box</strong><br/>This entire block is raw HTML supplied by the " +
+    "caller, including its own inline styles.</div>",
+    heightPx: 110);
+```
+
+You supply the height because the layout engine cannot measure markup it
+doesn't understand; it treats the block as opaque and unsplittable, exactly
+like an oversized image (see
+[section Detecting Content That Doesn't Fit](#detecting-content-that-doesnt-fit-layoutwarning)
+above if it doesn't fit). The HTML is emitted **verbatim** with no encoding -
+don't pass unsanitized end-user input here. See
+[Content Elements: Raw HTML](/docs/html/content-elements/#raw-html). Full source:
+[`RawHtmlScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/RawHtmlScenario.cs).
+
+## A Complete Sales Invoice
+
+Putting headers/footers, rows, right-aligned table columns via per-cell
+style overrides, and running totals together:
+
+```csharp
+using TerraFluent.Html.Reporting.Model.Styling;
+
+var rightAlign = TextStyle.Default.With(alignment: TextAlignment.Right, marginBottomPx: 0);
+
+var report = ReportDocument.Create(PageSize.A4)
+    .SetMargins(40)
+    .Header(h => { /* logo + company name row, see above */ })
+    .Footer(f => { /* logo + fine print row + page number, see above */ })
+    .Content(c =>
+    {
+        c.AddHeading("INVOICE", HeadingLevel.H1).AlignCenter();
+        c.AddParagraph("Invoice #: INV-1042\nInvoice Date: June 23, 2026\nDue Date: July 23, 2026")
+            .AlignRight().FontSize(11);
+        c.AddSpacer(8);
+
+        c.AddHeading("Bill To", HeadingLevel.H3);
+        c.AddParagraph("Jane Doe\n456 Oak Avenue\nSpringfield, USA");
+        c.AddSpacer(20);
+
+        c.AddTable(table =>
+        {
+            table.AddColumn("Item");
+            table.AddColumn("Qty", widthPx: 50);
+            table.AddColumn("Unit Price", widthPx: 100);
+            table.AddColumn("Amount", widthPx: 100);
+            table.AddRow(new TableCell[]
+            {
+                "Website Redesign",
+                new TableCell("1", rightAlign),
+                new TableCell("$1,200.00", rightAlign),
+                new TableCell("$1,200.00", rightAlign),
+            });
+            // ... more rows ...
+        });
+        c.AddSpacer(12);
+
+        c.AddParagraph("Subtotal: $2,300.00").AlignRight();
+        c.AddParagraph("Tax (8%): $184.00").AlignRight();
+        c.AddRule();
+        c.AddParagraph("Total: $2,484.00").AlignRight().Bold().FontSize(16);
+    })
+    .Build();
+```
+
+Note the `\n` inside `AddParagraph`'s text - `ITextMeasurer.Measure` treats
+explicit newlines as hard breaks, so a single `Paragraph` can hold multiple
+visually distinct lines (an address block, here) without needing several
+separate elements. See [Tables: Per-cell style overrides](/docs/html/tables/#per-cell-style-overrides)
+for the `rightAlign` pattern used on numeric columns. Full source:
+[`SalesInvoiceScenario.cs`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample/Scenarios/SalesInvoiceScenario.cs).
+
+## Where to go next
+
+- [FAQ / Troubleshooting](/docs/html/faq-troubleshooting/) if something in your
+  own report isn't behaving like these recipes.
+- [Extending the Library](/docs/html/extending/) if you need a capability none of
+  these cover.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Extending the Library
+URL: https://terrafluent.dev/docs/html/extending/
+====================================================================
+
+# Extending the Library
+
+TerraFluent.Html.Reporting has three deliberate extension seams: the text measurer
+used for pagination, the renderer used to turn a layout into HTML, and the
+element contract itself. None of them require forking the library - each is
+a small interface the engine talks to abstractly.
+
+## A custom `ITextMeasurer`
+
+Implement this when the bundled `ApproximateTextMeasurer` isn't precise
+enough for your needs - see [Text Measurement](/docs/html/text-measurement/) for
+why it's only approximate in the first place.
+
+```csharp
+using TerraFluent.Html.Reporting.Measurement;
+
+public sealed class MyPreciseTextMeasurer : ITextMeasurer
+{
+    public TextMeasurement Measure(string text, FontSpecification font, double maxWidthPx)
+    {
+        // 1. Resolve a real font/glyph source matching font.FontFamily,
+        //    font.FontSizePx, font.Bold, font.Italic - e.g. a headless
+        //    browser's measureText(), System.Drawing.Graphics.MeasureString
+        //    on Windows, or a text-shaping library.
+        // 2. Word-wrap `text` (splitting on '\n' first - each segment is a
+        //    hard break, never wrapped through) so each resulting line's
+        //    measured width is <= maxWidthPx.
+        // 3. Compute lineHeightPx = font.FontSizePx * font.LineHeightMultiplier
+        //    (or your engine's own metric, if more accurate) and the widest
+        //    line's width.
+        var lines = WrapPreciselyWithYourEngine(text, font, maxWidthPx);
+        var lineHeightPx = font.FontSizePx * font.LineHeightMultiplier;
+        var widestLineWidthPx = lines.Count == 0 ? 0 : lines.Max(l => MeasureLineWidth(l, font));
+        return new TextMeasurement(lines, lineHeightPx, widestLineWidthPx);
+    }
+}
+```
+
+Plug it in via `UseTextMeasurer`:
+
+```csharp
+ReportDocument.Create(PageSize.A4)
+    .UseTextMeasurer(new MyPreciseTextMeasurer())
+    .Content(c => { ... })
+    .Build();
+```
+
+A few things to get right, since the layout engine trusts this contract
+completely:
+
+- **Determinism.** `Measure` may be called more than once for the same
+  `(text, font, maxWidthPx)` triple - it must return the same result every
+  time (no randomness, no mutable shared state that changes the outcome).
+- **Hard breaks.** Explicit `\n`/`\r\n` in `text` must never be wrapped
+  through - each line they delimit is wrapped independently.
+- **`LineHeightPx` must be > 0** - `TextMeasurement`'s constructor throws
+  `ArgumentOutOfRangeException` otherwise.
+- **Match what actually renders.** The whole point of a custom measurer is
+  that its measurements agree with however the HTML is eventually displayed
+  or printed - if you measure against one font but the rendered HTML's
+  `font-family` resolves to a different one in the consumer's browser,
+  you've just moved the mismatch rather than removed it.
+- **Package it separately if it has native/runtime dependencies.** The
+  intended pattern (see [Text Measurement: Supplying a precise measurer](/docs/html/text-measurement/#supplying-a-precise-measurer))
+  is a companion NuGet package depending on the core library, keeping the
+  core package's own dependency footprint at zero.
+
+## A custom `IHtmlReportRenderer`
+
+Implement this when you need different output shape than the bundled
+`HtmlReportRenderer` produces - a different page-wrapper structure, extra
+metadata embedded in the markup, or PDF-engine-specific tweaks.
+
+```csharp
+using TerraFluent.Html.Reporting.Layout;
+using TerraFluent.Html.Reporting.Rendering;
+
+public sealed class MyCustomRenderer : IHtmlReportRenderer
+{
+    public string RenderDocument(LayoutResult layout)
+    {
+        var writer = new StringWriter();
+        RenderDocumentTo(writer, layout);
+        return writer.ToString();
+    }
+
+    public string RenderFragment(LayoutResult layout)
+    {
+        var writer = new StringWriter();
+        RenderFragmentTo(writer, layout);
+        return writer.ToString();
+    }
+
+    public void RenderDocumentTo(TextWriter writer, LayoutResult layout, CancellationToken cancellationToken = default)
+    {
+        // Emit your own <html>/<head>/<style>, then delegate per-page
+        // rendering to RenderFragmentTo (or reimplement it) so both
+        // entry points share one page-rendering code path.
+    }
+
+    public void RenderFragmentTo(TextWriter writer, LayoutResult layout, CancellationToken cancellationToken = default)
+    {
+        var totalPages = layout.Pages.Count;
+        foreach (var page in layout.Pages)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var renderContext = new RenderContext(page.PageIndex + 1, totalPages);
+
+            // For each of page.HeaderElements / page.ContentElements / page.FooterElements:
+            //   var absolute = placed.Placement.Translate(offsetX, offsetY);
+            //   writer.Write(placed.Element.RenderHtml(absolute, renderContext));
+            // matching how HtmlReportRenderer.RenderElements does it - the
+            // offsets you choose determine where each section sits on the page.
+        }
+    }
+}
+```
+
+Pass an instance to any of the five render methods on `ReportDocument`:
+
+```csharp
+string html = report.RenderHtml(new MyCustomRenderer());
+```
+
+The key insight a custom renderer needs to internalize: by the time it runs,
+**all positioning decisions are already made** - `LayoutResult` is a plain
+description of pages and placements (see
+[Pagination and Layout: The output](/docs/html/pagination-and-layout/#the-output-layoutresult)).
+A renderer's job is purely translation - section-relative coordinates to
+whatever coordinate system your output format wants - not pagination logic.
+`RenderContext(pageNumber, totalPages)` is what lets `PageNumberText`
+resolve its `{page}`/`{totalPages}` tokens; construct one per page with the
+correct 1-based page number.
+
+## Implementing a new `IReportElement`
+
+Implement this when none of the built-in elements
+(see [Content Elements](/docs/html/content-elements/)) cover what you need, and
+`AddRawHtml`'s caller-supplied-height escape hatch isn't precise enough
+(e.g. you want the engine to measure and split your content automatically).
+
+```csharp
+using TerraFluent.Html.Reporting.Layout;
+using TerraFluent.Html.Reporting.Model;
+using TerraFluent.Html.Reporting.Rendering;
+
+public sealed class Watermark : IReportElement
+{
+    public string Text { get; }
+    public double HeightPx { get; }
+
+    public Watermark(string text, double heightPx)
+    {
+        Text = text;
+        HeightPx = heightPx;
+    }
+
+    public ElementMeasurement Measure(LayoutContext context) => new(HeightPx);
+
+    // Unsplittable, like ReportImage/HorizontalRule/Spacer - a watermark
+    // band doesn't make sense torn across two pages.
+    public SplitResult Split(double availableHeightPx, LayoutContext context) =>
+        SplitResult.Unsplittable(this);
+
+    public string RenderHtml(ElementPlacement placement, RenderContext context) =>
+        "<div style=\"position:absolute;left:" + placement.XPx + "px;top:" + placement.YPx + "px;" +
+        "width:" + placement.WidthPx + "px;height:" + placement.HeightPx + "px;" +
+        "opacity:0.15;font-size:48px;text-align:center;\">" + Text + "</div>";
+}
+```
+
+```csharp
+ReportDocument.Create(PageSize.A4)
+    .Content(c => c.AddElement(new Watermark("DRAFT", heightPx: 80)))
+    .Build();
+```
+
+Re-read [Pagination and Layout: The `IReportElement` contract](/docs/html/pagination-and-layout/#the-ireportelement-contract)
+before writing one of these - in particular: `Measure` must be pure and
+side-effect-free (the engine may call it repeatedly), `Split` is only ever
+called *after* `Measure` reported more height than is available, and if your
+element can be partially placed, the head/tail fragments your `Split`
+returns must themselves satisfy this same contract (they're just more
+`IReportElement` instances, often of the very same type with a trimmed-down
+payload - see how `Paragraph.Split` and `Table.Split` build their head/tail
+as new instances of themselves for the pattern to follow). If your content
+truly can't be partially placed, always return `SplitResult.Unsplittable(this)` -
+that's what makes the "force-place on an empty page + warn" fallback in the
+layout engine kick in correctly instead of looping.
+
+**HTML-encode any user-supplied text yourself** inside `RenderHtml` (mirror
+[`CssFormat.Encode`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/src/TerraFluent.Html.Reporting/Rendering/CssFormat.cs)'s use of
+`WebUtility.HtmlEncode`) unless you specifically intend to emit raw markup -
+nothing upstream of your element does this for you.
+
+## Where to go next
+
+- [Pagination and Layout](/docs/html/pagination-and-layout/) for the full
+  measure/split/place algorithm your element or renderer plugs into.
+- [Text Measurement](/docs/html/text-measurement/) for the measurer contract in
+  more detail.
+- [Rendering](/docs/html/rendering/) for exactly what the bundled renderer emits,
+  if you're building a variation on it rather than starting from scratch.
+
+
+====================================================================
+TerraFluent.Html.Reporting — FAQ / Troubleshooting
+URL: https://terrafluent.dev/docs/html/faq-troubleshooting/
+====================================================================
+
+# FAQ / Troubleshooting
+
+## Why didn't my page break exactly where I expected?
+
+The default `ApproximateTextMeasurer` estimates text wrapping using generic
+Helvetica character-width tables, not the actual font/engine that will
+eventually render the HTML - so its line-wrap decisions are *close* to a
+real browser's but not guaranteed identical, especially for proportional
+fonts other than a plain sans-serif, or text with heavy kerning/ligatures. If
+your pagination needs to be pixel-exact, supply a custom `ITextMeasurer`
+backed by a real rendering engine via `UseTextMeasurer(...)`. See
+[Text Measurement](/docs/html/text-measurement/) and
+[Extending the Library: A custom `ITextMeasurer`](/docs/html/extending/#a-custom-itextmeasurer).
+
+## My header/footer text has different spacing than my content text
+
+`PageSectionBuilder.AddText`/`AddPageNumber` (header/footer) and
+`RowColumnBuilder.AddText`/`AddHeading`/`AddPageNumber` (row columns) default
+to `marginBottomPx: 0`, while `ContentBuilder.AddParagraph`/`AddHeading`
+default to the normal `TextStyle.Default`/`TextStyle.ForHeading(level)`
+margins (`8px` bottom for body text, more for headings). This is
+intentional, not a bug - see
+[Styling: Margin vs. padding](/docs/html/styling/#margin-vs-padding). Chain
+`.MarginBottom(...)` explicitly if you want spacing that differs from the
+context's default.
+
+## My image/row is positioned differently than I expected
+
+- **Alignment only matters when the container is wider than the content.**
+  `AlignCenter()`/`AlignRight()` on an image position its box within
+  whatever width is left over after margin/padding - if the image already
+  fills the available width, alignment has no visible effect.
+- **Left/right margin shrinks the available width**, it doesn't just shift
+  the element - an image with `MarginLeftPx: 20` inside a 200px-wide
+  container effectively centers/right-aligns within 180px, not 200px.
+- **Row column padding doesn't change the column's resolved width** in the
+  row's layout math - it only insets that column's own content within
+  whatever width the column already got. See
+  [Rows and Columns: Column padding](/docs/html/rows-and-columns/#column-padding).
+
+## Why does my row/image/heading move to the next page instead of splitting?
+
+Only `Paragraph`, `ReportList`, and `Table` support partial splitting.
+`Heading`, `ReportImage`, `Row`, `HorizontalRule`, `Spacer`, `PageBreak`,
+`RawHtml`, and `PageNumberText` always move whole to the next page if they
+don't fit - see
+[Pagination and Layout: The `IReportElement` contract](/docs/html/pagination-and-layout/#the-ireportelement-contract).
+If one of these is also taller than an entire empty page's content area, it
+gets force-placed (overflowing visually) and recorded in
+`LayoutResult.Warnings` rather than dropped - see
+[Pagination and Layout: Warnings](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit).
+
+## `AddTable`/`Table` throws `ArgumentException` about cell counts
+
+Every row passed to a table must supply exactly one cell per column.
+`table.AddColumns("A", "B")` followed by `table.AddRow("only one value")`
+throws, naming the offending row index. Check that every `AddRow(...)` call
+matches the column count from `AddColumns`/`AddColumn`.
+
+## `LayoutEngine.Paginate` throws `InvalidOperationException`
+
+This means the page geometry leaves no room for content at all:
+
+- *"Left/right margins leave no horizontal room for content."* - `Margins.Left + Margins.Right >= PageSize.WidthPx`.
+- *"Margins and header/footer leave no vertical room for content."* - `Margins.Top + Margins.Bottom` plus the header's and footer's combined *measured* height (see
+  [Pagination and Layout: Headers and footers](/docs/html/pagination-and-layout/#headers-and-footers))
+  is `>= PageSize.HeightPx`.
+
+Reduce margins, shrink the header/footer content, or use a larger page size.
+
+## Does `PageOrientation.Landscape` work with a custom `PageSize.FromPixels(...)`?
+
+Yes - orientation is a plain width/height swap applied uniformly, regardless
+of how the `PageSize` was constructed. It is **not** a "force width > height"
+coercion: a custom size built via `FromPixels` rotates exactly the same way
+`A4`/`Letter`/`Legal` do. See
+[Core Concepts: Page geometry](/docs/html/core-concepts/#page-geometry-pagesize-margins-orientation).
+
+## Can I nest a row inside a row, or a table inside a row column?
+
+No. `RowColumnBuilder` (what configures one column's content) deliberately
+exposes a smaller method set than `ContentBuilder` - no `AddRow`, `AddTable`,
+`AddList`, `AddPageBreak`, or `AddRawHtml`. See the comparison table in
+[Content Elements](/docs/html/content-elements/#three-different-builders-three-different-method-sets).
+If you need a table or list inside what's visually a row-like layout,
+consider `AddRawHtml` with a manually computed height, or restructure the
+content to avoid the nesting.
+
+## Why does `RawHtml`/`Spacer` need an explicit height?
+
+The layout engine measures every element by calling `Measure`, which for
+ordinary elements computes height from the element's own content and style.
+`RawHtml` wraps markup the engine doesn't understand (it can't run a browser
+layout pass on it), and `Spacer` has no content to measure at all - both
+simply report back whatever height you constructed them with. If the
+content you put in `RawHtml` is actually taller than the height you supply,
+the engine still treats it as that height for pagination purposes - the
+`overflow:hidden` wrapper will clip anything taller for that block specifically,
+but pagination decisions for surrounding content won't see the real height.
+
+## Is this thread-safe?
+
+`LayoutEngine.Paginate` and `ApproximateTextMeasurer` are stateless and safe
+to call concurrently, including for the same `ReportDocument` (it's
+immutable). `Table`/`Row` use an internal measurement cache that may
+redundantly recompute under concurrent pagination of the very same instance -
+a benign race, not a correctness issue. See
+[Pagination and Layout: Thread safety](/docs/html/pagination-and-layout/#thread-safety).
+
+## Known limitations
+
+As of 1.1.1:
+
+- **Text measurement is approximate by default.** Exact, pixel-perfect
+  pagination requires supplying a custom `ITextMeasurer` (see
+  [Text Measurement](/docs/html/text-measurement/)) - none ships in the core
+  package today.
+- **No custom font embedding.** Fonts are referenced by CSS `font-family`
+  only; the library never embeds font files into the generated HTML.
+- **No multi-column page layout** (newspaper-style columns within a single
+  page) - content flows in a single column per page.
+- **A table `RowSpan` group can't split across a page break** - it either
+  fits together on a page or moves to the next page as a whole; see
+  [Tables: Column and row spans](/docs/html/tables/#column-and-row-spans).
+- **No right-to-left (RTL) text support.**
+- **Rows don't nest, and row columns can't contain a table, list, nested
+  row, page break, or raw HTML** - see
+  [section Can I nest a row inside a row?](#can-i-nest-a-row-inside-a-row-or-a-table-inside-a-row-column)
+  above.
+- **No shrink-to-fit for table/row columns** when fixed-width columns
+  already exceed the available width - auto columns are pinned to `0`
+  rather than the table/row overflowing or warning about it.
+
+Check [CHANGELOG.md](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/CHANGELOG.md) for what's changed most recently.
+
+## Where to go next
+
+- [Pagination and Layout](/docs/html/pagination-and-layout/) for the full
+  algorithm behind most of the answers above.
+- [Extending the Library](/docs/html/extending/) if the built-in elements/measurer/renderer
+  genuinely don't cover your case.
+
+
+====================================================================
+TerraFluent.Docx.Reporting — Getting Started
+URL: https://terrafluent.dev/docs/docx/getting-started/
+====================================================================
+
+# Getting Started
+
+
+This guide gets you from an empty project to a generated `.docx` report.
+
+## Requirements
+
+- .NET Framework 4.6.1+, .NET Core 2.0+, or any modern .NET (5-10) runtime — the package targets `netstandard2.0` with a dedicated `net10.0` build.
+- A project that can reference NuGet packages.
+- Microsoft Word, LibreOffice, or another DOCX reader for visual validation.
+
+TerraFluent.Docx.Reporting does not require Microsoft Word to be installed on the machine that generates documents.
+
+## Install
+
+```powershell
+dotnet add package TerraFluent.Docx.Reporting
+```
+
+Use the namespace:
+
+```csharp
+using TerraFluent.Docx.Reporting;
+```
+
+Use `TerraFluent.Docx.Reporting.Infra` when you implement reusable components:
+
+```csharp
+using TerraFluent.Docx.Reporting.Infra;
+```
+
+## Create Your First Document
+
+```csharp
+using TerraFluent.Docx.Reporting;
+
+Document.Create(doc =>
+{
+    doc.MetadataTitle("Quarterly Report")
+       .MetadataAuthor("Northwind Consulting")
+       .MetadataSubject("Q4 performance summary")
+       .MetadataKeywords("quarterly report, finance, operations")
+       .MetadataCreator("TerraFluent.Docx.Reporting");
+
+    doc.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Margin(Unit.Centimetre(2));
+
+        page.Header().Text("Quarterly Report", text => text
+            .Bold()
+            .FontColor(Colors.Blue.L800)
+            .AlignCenter());
+
+        page.Footer().Text(text =>
+        {
+            text.Span("Page ");
+            text.CurrentPageNumber();
+            text.Span(" of ");
+            text.TotalPages();
+            text.AlignCenter().FontSize(9).FontColor(Colors.Grey.L600);
+        });
+
+        page.Content().H1("Executive Summary");
+        page.Content().Text("Revenue improved across every practice.");
+        page.Content().Text("The report was generated without automating Microsoft Word.");
+    });
+}).PublishDocx("quarterly-report.docx");
+```
+
+## Write To A File, Byte Array, Or Stream
+
+```csharp
+var document = Document.Create(doc =>
+{
+    doc.Page(page => page.Content().Text("Portable output options."));
+});
+
+document.PublishDocx("output.docx");
+
+byte[] bytes = document.PublishDocx();
+
+using var stream = File.Create("stream-output.docx");
+document.PublishDocx(stream);
+```
+
+## Add A Second Section
+
+Each `doc.Page(...)` call adds a new section. Use separate sections when page size, orientation, headers, footers, columns, or page numbering should change.
+
+```csharp
+Document.Create(doc =>
+{
+    doc.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Content().H1("Portrait Summary");
+    });
+
+    doc.Page(page =>
+    {
+        page.Size(PageSize.A4).Landscape();
+        page.Content().H1("Landscape Appendix");
+    });
+}).PublishDocx("multi-section.docx");
+```
+
+## Next Steps
+
+- Learn the mental model in [Core Concepts](/docs/docx/core-concepts/).
+- Copy larger examples from the [Feature Guide](/docs/docx/features/).
+- Browse runnable sample files in [Samples](/docs/docx/samples/).
+
+
+====================================================================
+TerraFluent.Docx.Reporting — Core Concepts
+URL: https://terrafluent.dev/docs/docx/core-concepts/
+====================================================================
+
+# Core Concepts
+
+
+TerraFluent.Docx.Reporting uses a fluent builder model. You compose a document by configuring descriptors: document, page, container, table, row, cell, image, barcode, chart, and text descriptors.
+
+## Document Flow
+
+```csharp
+Document.Create(doc =>
+{
+    doc.Theme(theme => { });
+    doc.ParagraphStyle("Name", text => { });
+    doc.TableStyle("Name", table => { });
+
+    doc.Page(page =>
+    {
+        page.Header().Text("Header");
+        page.Content().H1("Title");
+        page.Footer().Text("Footer");
+    });
+});
+```
+
+The document owns metadata, themes, reusable styles, and one or more pages. Pages own layout settings and containers. Containers own content.
+
+## Units
+
+The layout unit is points. One inch is 72 points.
+
+```csharp
+page.Margin(Unit.Centimetre(2));
+page.Margin(Unit.Inch(0.75f));
+page.Content().Image("logo.png", img => img.Width(Unit.Millimetre(35)));
+```
+
+Use `Unit.Point(value)` when you already have point values.
+
+## Colors
+
+Colors are six-character hex RGB strings without `#`.
+
+```csharp
+text.FontColor("1F4E79");
+table.Border(0.75f, Colors.Grey.L300);
+page.Watermark("DRAFT", Colors.Grey.L300, 72);
+```
+
+Built-in palettes include `Black`, `White`, `Grey`, `Blue`, `Red`, `Green`, and `Orange`.
+
+## Themes
+
+Themes configure defaults for a document.
+
+```csharp
+doc.Theme(theme => theme
+    .DefaultFont("Aptos", 10.5f)
+    .DefaultTextColor(Colors.Grey.L900)
+    .HeadingColor(Colors.Blue.L800)
+    .AccentColor(Colors.Green.L700)
+    .HyperlinkColor(Colors.Blue.L700)
+    .TableHeaderBackground(Colors.Blue.L800)
+    .TableAlternateRowBackground(Colors.Grey.L100)
+    .TableBorder(0.5f, Colors.Grey.L300)
+    .TableCellPadding(4, 6));
+```
+
+## Custom Styles
+
+Register named styles once and apply them later.
+
+```csharp
+doc.ParagraphStyle("Callout", text => text
+    .Shading(Colors.Blue.L100)
+    .BorderLeft(4, Colors.Blue.L700)
+    .LeftIndent(12)
+    .RightIndent(12)
+    .SpacingBefore(6)
+    .SpacingAfter(6));
+
+doc.TableStyle("FinancialTable", table => table
+    .WidthPercent(100)
+    .HeaderBackground(Colors.Blue.L800)
+    .AlternateRowBackground(Colors.Grey.L100)
+    .CellPadding(4, 6)
+    .Border(0.5f, Colors.Grey.L300));
+
+doc.Page(page =>
+{
+    page.Content().Text("Important board note.", t => t.Style("Callout"));
+    page.Content().Table(table => table.Style("FinancialTable"));
+});
+```
+
+## Containers
+
+Containers are reusable content surfaces. You will see them in:
+
+- `page.Header()`, `page.Content()`, and `page.Footer()`.
+- Row items created with `row.RelativeItem()`, `row.AutoItem()`, and `row.ConstantItem(...)`.
+- Column items created with `column.Item()`.
+- Table cells created with `row.Cell()`.
+
+Because table cells are containers, you can nest headings, text, lists, images, barcodes, and tables inside cells.
+
+## Sections And Page Settings
+
+Every `doc.Page(...)` call creates a section. Use sections to change orientation, margins, headers, footers, columns, watermarks, and page numbering.
+
+```csharp
+doc.Page(page =>
+{
+    page.Size(PageSize.A4).Portrait();
+    page.Content().Text("Normal section.");
+});
+
+doc.Page(page =>
+{
+    page.Size(PageSize.A4).Landscape();
+    page.Columns(2, spacingPoints: 24, separatorLine: true);
+    page.Content().Text("Landscape two-column appendix.");
+});
+```
+
+## Reusable Components
+
+Implement `IComponent` for reusable blocks.
+
+```csharp
+using TerraFluent.Docx.Reporting.Infra;
+
+public sealed class StatusBanner : IComponent
+{
+    private readonly string _message;
+
+    public StatusBanner(string message)
+    {
+        _message = message;
+    }
+
+    public void Compose(IContainer container)
+    {
+        container.Text(_message, text => text
+            .Bold()
+            .Shading(Colors.Green.L100)
+            .BorderLeft(4, Colors.Green.L700)
+            .LeftIndent(12)
+            .SpacingAfter(8));
+    }
+}
+
+page.Content().Component(new StatusBanner("All systems operational."));
+```
+
+## Validation Mindset
+
+TerraFluent.Docx.Reporting writes Open XML directly. The test suite validates generated packages with the Open XML SDK, but final report layouts should still be visually checked in Word or LibreOffice before a public release.
+
+
+====================================================================
+TerraFluent.Docx.Reporting — Feature Guide
+URL: https://terrafluent.dev/docs/docx/features/
+====================================================================
+
+# Feature Guide
+
+
+This guide shows practical examples for the main document features.
+
+## Document Metadata
+
+```csharp
+Document.Create(doc =>
+{
+    doc.MetadataTitle("Annual Report")
+       .MetadataAuthor("Contoso Finance")
+       .MetadataSubject("FY2026 performance")
+       .MetadataKeywords("annual report, finance, operations")
+       .MetadataCreator("TerraFluent.Docx.Reporting");
+});
+```
+
+## Headers, Footers, And Page Numbers
+
+```csharp
+doc.Page(page =>
+{
+    page.FirstPageHeader().Text("Annual Report", t => t.Bold().AlignCenter());
+    page.EvenPageHeader().Text("Contoso", t => t.AlignLeft().FontSize(9));
+    page.OddPageHeader().Text("FY2026", t => t.AlignRight().FontSize(9));
+
+    page.Footer().Text(t =>
+    {
+        t.Span("Page ");
+        t.CurrentPageNumber();
+        t.Span(" of ");
+        t.TotalPages();
+        t.AlignCenter().FontSize(9);
+    });
+});
+```
+
+## Page Layout
+
+```csharp
+doc.Page(page =>
+{
+    page.Size(PageSize.A4)
+        .Margin(Unit.Centimetre(2))
+        .Background("FAFAFA")
+        .Watermark("DRAFT", Colors.Grey.L300, 72);
+
+    page.Content().Text("The page background is document-wide in Word.");
+});
+
+doc.Page(page =>
+{
+    page.Size(PageSize.A4).Landscape();
+    page.Columns(2, spacingPoints: 24, separatorLine: true);
+    page.Content().H1("Two Column Appendix");
+    page.Content().Text("Content flows from the first column to the second.");
+});
+```
+
+## Text And Rich Runs
+
+```csharp
+page.Content().Text(text =>
+{
+    text.Span("Revenue ").Bold();
+    text.Span("increased 12%").FontColor(Colors.Green.L700).Bold();
+    text.Span(" year over year.");
+    text.SpacingAfter(8).KeepLinesTogether();
+});
+
+page.Content().Text("Important policy note.", text => text
+    .Shading(Colors.Orange.L100)
+    .BorderLeft(4, Colors.Orange.L700)
+    .LeftIndent(14)
+    .RightIndent(14)
+    .SpacingBefore(6)
+    .SpacingAfter(6));
+```
+
+## Links, Bookmarks, Cross References, And Notes
+
+```csharp
+page.Content().Bookmark("revenue-section", "Revenue", text => text.Bold());
+
+page.Content().Text(text =>
+{
+    text.Span("See ");
+    text.CrossReference("revenue-section", "the revenue section");
+    text.Span(" for details.");
+});
+```
+
+`H1` through `H6` don't accept a bookmark name directly. To bookmark a heading, use `Bookmark` with `Style` instead of `H1`-`H6`:
+
+```csharp
+page.Content().Bookmark("operations-section", "Operations", text => text.Style("Heading1"));
+
+page.Content().Text(text =>
+{
+    text.Span("External reference: ");
+    text.Hyperlink("company site", "https://example.com", link => link.FontColor(Colors.Blue.L700));
+});
+
+page.Content().Text(text =>
+{
+    text.Span("Net revenue excludes discontinued products.");
+    text.Footnote("A discontinued product is excluded after the final shipment date.");
+});
+```
+
+## Lists
+
+```csharp
+page.Content().BulletList(list =>
+{
+    list.Marker(">");
+    list.Marker("-", level: 1);
+    list.Item("Prepare source data");
+    list.Item("Validate totals", level: 1, text => text.FontColor(Colors.Green.L700));
+    list.Item("Generate final report");
+});
+
+page.Content().NumberedList(list =>
+{
+    list.Item("Open the generated document in Word.");
+    list.Item("Confirm there are no repair prompts.");
+    list.Item("Export to PDF if needed.");
+});
+```
+
+## Tables
+
+```csharp
+page.Content().Table(table =>
+{
+    table.WidthPercent(100)
+         .CellPadding(4, 6)
+         .HeaderBackground(Colors.Blue.L800)
+         .AlternateRowBackground(Colors.Grey.L100)
+         .Border(0.5f, Colors.Grey.L300);
+
+    table.ColumnsDefinition(cols =>
+    {
+        cols.RelativeColumn(3);
+        cols.ConstantColumn(90);
+        cols.ConstantColumn(90);
+    });
+
+    table.HeaderRow(row =>
+    {
+        row.KeepTogether();
+        row.Cell().Text("Metric", t => t.Bold().FontColor(Colors.White.Default));
+        row.Cell().Text("Q3", t => t.Bold().FontColor(Colors.White.Default).AlignRight());
+        row.Cell().Text("Q4", t => t.Bold().FontColor(Colors.White.Default).AlignRight());
+    });
+
+    table.Row(row =>
+    {
+        row.Cell().Text("Revenue");
+        row.Cell().Text("$4.1M", t => t.AlignRight());
+        row.Cell().Text("$4.8M", t => t.AlignRight().Bold());
+    });
+});
+```
+
+### Spans And Vertical Merges
+
+```csharp
+page.Content().Table(table =>
+{
+    table.ColumnsDefinition(cols =>
+    {
+        cols.RelativeColumn();
+        cols.RelativeColumn();
+        cols.RelativeColumn();
+    });
+
+    table.Row(row =>
+    {
+        row.Cell(3).Background(Colors.Blue.L100).Text("Regional Summary", t => t.Bold().AlignCenter());
+    });
+
+    table.Row(row =>
+    {
+        row.Cell().VerticalMergeStart().Text("North");
+        row.Cell().Text("Revenue");
+        row.Cell().Text("$2.3M");
+    });
+
+    table.Row(row =>
+    {
+        row.Cell().VerticalMergeContinue();
+        row.Cell().Text("Margin");
+        row.Cell().Text("31%");
+    });
+});
+```
+
+## Images
+
+```csharp
+page.Content().Image("logo.png", image => image
+    .Width(120)
+    .AltText("Company logo")
+    .AlignCenter()
+    .Caption("Figure 1. Company logo"));
+
+page.Content().Image(File.ReadAllBytes("photo.png"), "photo.png", image => image
+    .Width(160)
+    .WrapSquare(8)
+    .FloatRight(8)
+    .Border(1, Colors.Grey.L400)
+    .Rounded()
+    .Crop(4, 4, 4, 4));
+```
+
+## Barcodes
+
+```csharp
+page.Content().Barcode("SKU-00100011");
+
+page.Content().Barcode("ACME-99887766", bc => bc
+    .Width(220)
+    .Height(50)
+    .BarColor(Colors.Blue.L700)
+    .AlignCenter()
+    .Caption("Figure 1. Product tracking code"));
+
+page.Content().Barcode("Internal-Only", bc => bc.ShowText(false));
+```
+
+Barcodes encode text as Code 128 and render as vector bars (not raster images), so they stay crisp at any size. Only ASCII 32-126 (space through `~`) can be encoded; anything else throws `ArgumentException` immediately.
+
+## Charts
+
+```csharp
+page.Content().Chart(chart => chart
+    .Title("Quarterly Revenue")
+    .Series("Revenue", series => series
+        .Bar("Q1", 4.1)
+        .Bar("Q2", 4.3)
+        .Bar("Q3", 4.8)
+        .Bar("Q4", 5.2)
+        .Color(Colors.Green.L700)));
+```
+
+Line chart:
+
+```csharp
+page.Content().Chart(chart => chart
+    .Title("Customer Growth")
+    .Series("Customers", series => series
+        .Line("Jan", 120)
+        .Line("Feb", 132)
+        .Line("Mar", 150)
+        .Color(Colors.Blue.L700)));
+```
+
+Pie chart:
+
+```csharp
+page.Content().Chart(chart => chart
+    .Title("Revenue Mix")
+    .Series(series => series
+        .Pie("Consulting", 45)
+        .Pie("Support", 30)
+        .Pie("Licensing", 25)
+        .Color(Colors.Orange.L700)));
+```
+
+Legend placement, axis titles, data labels, and stacked bars:
+
+```csharp
+page.Content().Chart(chart => chart
+    .Title("Stacked Revenue by Quarter")
+    .Width(430)                           // points; default is 432 x 252 (6 x 3.5 in)
+    .Height(250)
+    .AlignCenter()
+    .Legend(ChartLegendPosition.Bottom)   // or .HideLegend()
+    .CategoryAxisTitle("Quarter")
+    .ValueAxisTitle("Revenue ($M)")
+    .DataLabels()
+    .Stacked()                            // or .PercentStacked(); bar charts only
+    .Series("Product", s => s.Bar("Q1", 4.1).Bar("Q2", 4.3).Color(Colors.Blue.L700))
+    .Series("Services", s => s.Bar("Q1", 2.2).Bar("Q2", 2.6).Color(Colors.Orange.L700)));
+```
+
+## Rows And Columns
+
+```csharp
+page.Content().Row(row =>
+{
+    row.Spacing(12);
+    row.RelativeItem(2).Text("Main narrative column.");
+    row.RelativeItem(1).Text("Sidebar", text => text
+        .Shading(Colors.Grey.L100)
+        .Border(0.5f, Colors.Grey.L300)
+        .LeftIndent(8)
+        .RightIndent(8));
+});
+
+page.Content().Column(column =>
+{
+    column.Spacing(6);
+    column.Item().H2("Stacked Content");
+    column.Item().Text("First block.");
+    column.Item().Text("Second block.");
+});
+```
+
+## Table Of Contents
+
+```csharp
+page.Content().TableOfContents("Contents", minLevel: 1, maxLevel: 3);
+page.Content().PageBreak();
+page.Content().H1("Executive Summary");
+page.Content().H2("Revenue");
+page.Content().H2("Operations");
+```
+
+Word updates TOC fields when the document is opened or when fields are refreshed.
+
+## Auto-Numbered Captions And Table Of Figures
+
+`FigureCaption` (images) and `Caption` (tables) insert Word `SEQ` fields, so Word renumbers captions automatically and can collect them into a table of figures:
+
+```csharp
+page.Content().TableOfFigures();                       // lists Figure captions
+page.Content().TableOfFigures("List of Tables", "Table");  // lists Table captions
+
+page.Content().Image("chart.png", img => img
+    .Width(200)
+    .FigureCaption("Revenue growth chart"));           // "Figure 1. Revenue growth chart"
+
+page.Content().Table(t =>
+{
+    t.Caption("Quarterly results by region");          // "Table 1. Quarterly results by region", above the table
+    t.ColumnsDefinition(d => { d.RelativeColumn(1); d.RelativeColumn(1); });
+    t.Row(r => { r.Cell().Text("North"); r.Cell().Text("$4.1M"); });
+});
+```
+
+Figure captions render below the image; table captions render above the table. The static `Caption(...)` image overload remains available for unnumbered captions.
+
+## Restrict Editing
+
+`RestrictEditing` applies Word's "Restrict Editing" protection, optionally guarded by a password:
+
+```csharp
+Document.Create(doc =>
+{
+    doc.RestrictEditing(DocumentProtection.ReadOnly, "secret123");
+    doc.Page(page => page.Content().Text("Read-only content."));
+});
+```
+
+Modes: `ReadOnly`, `CommentsOnly`, `TrackedChangesOnly`, and `FormsOnly`. The password (first 15 characters) is stored as a salted, spun SHA-512 verifier per ISO/IEC 29500. This is a guard rail, not security: the file is not encrypted, and a malicious tool can strip the setting.
+
+## Templates
+
+Use templates when a `.docx` already exists and you only need to replace placeholders or content controls.
+
+```csharp
+DocxTemplate.Open("invoice-template.docx")
+    .Replace("{{CustomerName}}", "Ada Lovelace")
+    .Replace("{{InvoiceTotal}}", "$1,250.00")
+    .ReplaceContentControl("PaymentTerms", "Net 30")
+    .SaveAs("invoice-output.docx");
+```
+
+To return bytes:
+
+```csharp
+byte[] output = DocxTemplate.Open("template.docx")
+    .Replace("{{Name}}", "Grace Hopper")
+    .Save();
+```
+
+
+====================================================================
+TerraFluent.Docx.Reporting — API Reference
+URL: https://terrafluent.dev/docs/docx/api/
+====================================================================
+
+# API Reference
+
+
+This page lists the public fluent API exposed by `TerraFluent.Docx.Reporting`.
+
+## Public API Contract
+
+TerraFluent.Docx.Reporting validates public inputs before writing packages. Null callbacks, empty paths or names, negative sizes or margins, unreadable streams, missing image files, empty image byte arrays, and barcode values outside ASCII 32-126 throw standard .NET exceptions such as `ArgumentException`, `ArgumentOutOfRangeException`, `ArgumentNullException`, or `FileNotFoundException`.
+
+The fluent API clamps only where the Open XML concept is naturally bounded and documented by the API. Otherwise invalid input fails fast so production callers can catch configuration mistakes before distributing a damaged document.
+
+## Namespace
+
+```csharp
+using TerraFluent.Docx.Reporting;
+using TerraFluent.Docx.Reporting.Infra;
+```
+
+Most users only need `TerraFluent.Docx.Reporting`. Add `TerraFluent.Docx.Reporting.Infra` when implementing reusable components or receiving descriptor interfaces in your own helper methods.
+
+## Document
+
+| API | Purpose |
+| --- | --- |
+| `Document.Create(Action<IDocumentContainer> configure)` | Builds a document with the fluent descriptor API. |
+| `PublishDocx(string filePath)` | Writes a `.docx` file to disk. |
+| `PublishDocx()` | Returns the generated `.docx` package as a byte array. |
+| `PublishDocx(Stream stream)` | Writes the generated `.docx` package to a stream. |
+
+```csharp
+var document = Document.Create(doc =>
+{
+    doc.MetadataTitle("Quarterly Report");
+    doc.Page(page => page.Content().Text("Hello from TerraFluent.Docx.Reporting."));
+});
+
+document.PublishDocx("report.docx");
+byte[] bytes = document.PublishDocx();
+```
+
+## Document Container
+
+`IDocumentContainer` is the root builder received by `Document.Create`.
+
+| API | Purpose |
+| --- | --- |
+| `Theme(DocumentTheme theme)` | Applies an existing theme object. |
+| `Theme(Action<IDocumentThemeDescriptor> configure)` | Configures the document theme inline. |
+| `ParagraphStyle(string name, Action<ITextDescriptor> configure)` | Registers a reusable paragraph style. |
+| `TableStyle(string name, Action<ITableDescriptor> configure)` | Registers a reusable table style. |
+| `Page(Action<IPageDescriptor> configure)` | Adds a document section/page definition. |
+| `MetadataTitle`, `MetadataAuthor`, `MetadataSubject`, `MetadataKeywords`, `MetadataCreator` | Sets package metadata. |
+| `RestrictEditing(DocumentProtection protection, string? password = null)` | Restricts editing in Word (read-only, comments-only, tracked-changes-only, or forms-only), optionally requiring a password to stop the protection. Not encryption - the file content remains readable. |
+| `Compose(IDocument document)` | Composes a reusable document module. |
+
+```csharp
+Document.Create(doc =>
+{
+    doc.MetadataTitle("Board Pack")
+       .MetadataAuthor("Finance Team")
+       .MetadataCreator("TerraFluent.Docx.Reporting")
+       .Theme(theme => theme
+           .DefaultFont("Aptos", 10.5f)
+           .HeadingColor(Colors.Blue.L800)
+           .AccentColor(Colors.Green.L700));
+
+    doc.ParagraphStyle("FinePrint", text => text.FontSize(8).FontColor(Colors.Grey.L600));
+});
+```
+
+## Theme
+
+| API | Purpose |
+| --- | --- |
+| `DefaultFont(string family, float size = 11)` | Sets default family and size. |
+| `DefaultFontFamily(string family)` | Sets only the default family. |
+| `DefaultFontSize(float size)` | Sets only the default size. |
+| `DefaultTextColor(string hexColor)` | Sets default body text color. |
+| `HeadingColor(string hexColor)` | Sets heading color. |
+| `AccentColor(string hexColor)` | Sets accent color. |
+| `HyperlinkColor(string hexColor)` | Sets hyperlink color. |
+| `TableHeaderBackground(string hexColor)` | Sets default table header fill. |
+| `TableAlternateRowBackground(string hexColor)` | Sets default alternating row fill. |
+| `TableBorder(float width, string hexColor)` | Sets default table border style. |
+| `TableCellPadding(float points)` | Sets uniform table cell padding. |
+| `TableCellPadding(float verticalPoints, float horizontalPoints)` | Sets vertical and horizontal cell padding. |
+| `TableRowMinHeight(float points)` | Sets default body row minimum height. |
+| `TableHeaderRowMinHeight(float points)` | Sets default header row minimum height. |
+
+## Page
+
+| API | Purpose |
+| --- | --- |
+| `Size(PageSize size)` / `Size(float widthPoints, float heightPoints)` | Sets page size in points. |
+| `Landscape()` / `Portrait()` | Changes orientation. |
+| `Margin(...)`, `MarginTop`, `MarginRight`, `MarginBottom`, `MarginLeft` | Sets margins in points. |
+| `DefaultTextStyle(Action<ITextDescriptor> configure)` | Sets section default text style. |
+| `PageNumberStart(int value)` | Starts page numbering for the section. |
+| `PageNumberFormat(string format)` | Writes an OOXML number format such as `decimal`, `lowerRoman`, or `upperLetter`. |
+| `Background(string hexColor)` | Sets document page background color. Word stores one document-wide background. |
+| `Watermark(string text, string hexColor = "D9D9D9", float fontSize = 54)` | Adds a section watermark. |
+| `Columns(int count, float spacingPoints = 36, bool separatorLine = false)` | Enables newspaper-style columns. |
+| `SingleColumn()` | Returns the section to one column. |
+| `Header`, `OddPageHeader`, `FirstPageHeader`, `EvenPageHeader` | Returns header containers. |
+| `Content()` | Returns the body content container. |
+| `Footer`, `OddPageFooter`, `FirstPageFooter`, `EvenPageFooter` | Returns footer containers. |
+
+```csharp
+doc.Page(page =>
+{
+    page.Size(PageSize.A4)
+        .Margin(Unit.Centimetre(2))
+        .PageNumberStart(1)
+        .PageNumberFormat("decimal")
+        .Watermark("DRAFT", Colors.Grey.L300, 72);
+
+    page.Header().Text("Confidential", t => t.AlignCenter().FontSize(9));
+    page.Footer().Text(t =>
+    {
+        t.Span("Page ");
+        t.CurrentPageNumber();
+        t.Span(" of ");
+        t.TotalPages();
+        t.AlignCenter();
+    });
+});
+```
+
+## Container
+
+`IContainer` is used for page body content, headers, footers, columns, row items, and table cells.
+
+| API | Purpose |
+| --- | --- |
+| `H1` through `H6` | Adds Word heading paragraphs. |
+| `Column(Action<IColumnDescriptor>)` | Adds a vertical stack of content. |
+| `Row(Action<IRowDescriptor>)` | Adds a horizontal layout row. |
+| `Text(string, Action<ITextDescriptor>? configure = null)` | Adds a paragraph. |
+| `Text(Action<ITextDescriptor> configure)` | Adds a rich paragraph with multiple runs. |
+| `Hyperlink(string text, string url, Action<ITextDescriptor>? configure = null)` | Adds a hyperlink paragraph. |
+| `Bookmark(string name)` | Adds an invisible bookmark anchor. |
+| `Bookmark(string name, string text, Action<ITextDescriptor>? configure = null)` | Adds a visible bookmarked paragraph. |
+| `TableOfContents(string title = "Contents", int minLevel = 1, int maxLevel = 3)` | Adds a Word TOC field. |
+| `TableOfFigures(string title = "Table of Figures", string captionLabel = "Figure")` | Adds a Word table-of-figures field listing auto-numbered captions (use label "Table" for table captions). |
+| `BulletList` / `NumberedList` | Adds list content. |
+| `Table` | Adds a table. |
+| `Chart` | Adds a chart. |
+| `Image` overloads | Adds an image from path, bytes, or stream. |
+| `Barcode(string value, ...)` | Adds a Code 128 barcode. |
+| `Line()` | Adds a horizontal rule. |
+| `PageBreak()` | Adds a page break. |
+| `Component(IComponent component)` | Composes reusable content. |
+
+## Text
+
+| API | Purpose |
+| --- | --- |
+| `Bold`, `Italic`, `Underline`, `Strikethrough` | Run formatting. |
+| `Superscript`, `Subscript` | Vertical text positioning. |
+| `FontSize`, `FontColor`, `FontFamily`, `Highlight` | Font styling. |
+| `Style(string name)` | Applies a registered paragraph style. |
+| `AlignLeft`, `AlignCenter`, `AlignRight`, `Justify` | Paragraph alignment. |
+| `LineHeight`, `SpacingBefore`, `SpacingAfter` | Paragraph spacing. |
+| `LeftIndent`, `RightIndent`, `FirstLineIndent`, `HangingIndent` | Indentation. |
+| `KeepWithNext`, `KeepLinesTogether`, `PageBreakBefore` | Pagination controls. |
+| `Shading`, `Border`, `BorderTop`, `BorderRight`, `BorderBottom`, `BorderLeft` | Paragraph background and borders. |
+| `TabStop`, `Tab` | Tab layout. |
+| `Span` | Adds formatted text runs. |
+| `Hyperlink` | Adds inline hyperlink runs. |
+| `CrossReference` | Adds an internal reference to a bookmark. |
+| `Footnote`, `Endnote` | Adds notes. |
+| `CurrentPageNumber`, `TotalPages` | Adds page number fields. |
+
+```csharp
+page.Content().Text(t =>
+{
+    t.Span("Revenue ").Bold();
+    t.Span("increased 12%").FontColor(Colors.Green.L700);
+    t.Span(" year over year.");
+    t.SpacingAfter(8).KeepLinesTogether();
+});
+```
+
+## Lists
+
+| API | Purpose |
+| --- | --- |
+| `Marker(string marker, int level = 0, string? fontFamily = null)` | Sets a marker for a list level. |
+| `Item(string text, Action<ITextDescriptor>? configure = null)` | Adds a level-0 item. |
+| `Item(string text, int level, Action<ITextDescriptor>? configure = null)` | Adds an item at a specific level. |
+| `Item(Action<ITextDescriptor> configure)` | Adds a rich level-0 item. |
+| `Item(int level, Action<ITextDescriptor> configure)` | Adds a rich item at a specific level. |
+
+## Tables
+
+| API | Purpose |
+| --- | --- |
+| `Style(string name)` | Applies a registered table style. |
+| `Width(float points)` / `WidthPercent(float percent)` | Sets table width. |
+| `AlignLeft`, `AlignCenter`, `AlignRight` | Sets table alignment. |
+| `ColumnsDefinition(Action<ITableColumnsDefinition>)` | Sets relative or fixed columns. |
+| `HeaderRow(Action<ITableRowDescriptor>)` | Adds a repeating-style header row. |
+| `Row(Action<ITableRowDescriptor>)` | Adds a body row. |
+| `Border`, `CellPadding`, `HeaderBackground`, `AlternateRowBackground` | Sets table formatting. |
+| `RowMinHeight`, `HeaderRowMinHeight` | Sets row heights. |
+| `Caption(string description, ...)` | Adds an auto-numbered "Table N." caption above the table (Word `SEQ Table` field). |
+
+Column APIs:
+
+| API | Purpose |
+| --- | --- |
+| `RelativeColumn(float size = 1)` | Adds proportional width column. |
+| `ConstantColumn(float widthPoints)` | Adds fixed width column. |
+
+Row APIs:
+
+| API | Purpose |
+| --- | --- |
+| `KeepTogether(bool value = true)` | Keeps a row together. |
+| `Cell(int columnSpan = 1)` | Adds a cell; table cells are containers. |
+
+Cell APIs:
+
+| API | Purpose |
+| --- | --- |
+| `ColumnSpan(int columns)` | Spans multiple columns. |
+| `VerticalMergeStart` / `VerticalMergeContinue` | Creates merged vertical cells. |
+| `Background`, `Border`, `BorderTop`, `BorderRight`, `BorderBottom`, `BorderLeft` | Cell styling. |
+| `Padding(...)` | Cell padding. |
+| `VerticalAlignTop`, `VerticalAlignMiddle`, `VerticalAlignBottom` | Vertical alignment. |
+| `TextDirectionLeftToRight`, `TextDirectionTopToBottom`, `TextDirectionBottomToTop` | Text direction. |
+
+## Images
+
+Image paths are resolved when the document is published. A missing image path or empty image byte array throws instead of emitting placeholder text into the document.
+
+| API | Purpose |
+| --- | --- |
+| `Width`, `Height`, `MaxWidth` | Controls size in points. |
+| `AltText` | Adds accessibility text. |
+| `Caption` | Adds a caption paragraph. |
+| `FigureCaption(string description, ...)` | Adds an auto-numbered "Figure N." caption below the image (Word `SEQ Figure` field). |
+| `AlignLeft`, `AlignCenter`, `AlignRight` | Aligns inline image paragraphs. |
+| `WrapInline`, `WrapSquare`, `WrapTight`, `WrapTopBottom` | Text wrapping. |
+| `BehindText`, `InFrontOfText` | Floating layer. |
+| `FloatLeft`, `FloatRight`, `FloatCenter` | Floating alignment. |
+| `Position`, `PositionFromPage` | Absolute positioning. |
+| `Margin(...)` | Wrap margin. |
+| `Border`, `Rounded`, `Crop` | Visual styling. |
+
+## Barcodes
+
+Barcodes are rendered as vector shapes (grouped rectangles), not raster images, so they stay crisp at any zoom or print size. The value is validated eagerly: a null, empty, or non-ASCII-32-126 value throws `ArgumentException` at the fluent-call site, not at publish time.
+
+| API | Purpose |
+| --- | --- |
+| `Width`, `Height`, `MaxWidth` | Controls size in points. `Width` is the total rendered width of the bars; `Height` is the bar height. |
+| `AltText` | Adds accessibility text. |
+| `ShowText(bool show = true)` | Shows or hides the human-readable value below the bars (shown by default). |
+| `BarColor(string hexColor)` | Sets the bar color. |
+| `AlignLeft`, `AlignCenter`, `AlignRight` | Aligns the barcode's paragraph. |
+| `Caption` | Adds a caption paragraph below the barcode. |
+
+## Charts
+
+| API | Purpose |
+| --- | --- |
+| `Title(string title)` | Sets chart title. |
+| `Series(Action<ISeriesDescriptor> configure)` | Adds an unnamed series. |
+| `Series(string name, Action<ISeriesDescriptor> configure)` | Adds a named series for legend output. |
+| `Width(float points)` / `Height(float points)` | Sets the chart frame size (default 432 x 252 points, i.e. 6 x 3.5 inches). Size charts to fit their container - a chart inside a row column or table cell does not shrink automatically. |
+| `AlignLeft`, `AlignCenter`, `AlignRight` | Aligns the chart's paragraph. |
+| `Legend(ChartLegendPosition position)` | Places the legend right, left, top, or bottom (default right). |
+| `HideLegend()` | Hides the legend. |
+| `CategoryAxisTitle(string title)` / `ValueAxisTitle(string title)` | Adds axis titles (ignored by pie/doughnut charts). |
+| `DataLabels(bool show = true)` | Shows each data point's value on the chart. |
+| `Stacked()` / `PercentStacked()` | Stacks multi-series bar charts (absolute or normalized to 100%). Bar charts only. |
+
+Series APIs:
+
+| API | Purpose |
+| --- | --- |
+| `Bar`, `Line`, `Pie`, `Doughnut` | Adds a data point of that chart kind. |
+| `Color(string hexColor)` | Sets the series color. |
+
+All series in a chart must use the same chart kind. Pie and doughnut charts support one series.
+
+## Layout Helpers
+
+Row APIs:
+
+| API | Purpose |
+| --- | --- |
+| `Spacing(float points)` | Sets spacing between row items. |
+| `RelativeItem(float size = 1)` | Adds a proportional width item container. |
+| `AutoItem()` | Adds an auto-sized item container. |
+| `ConstantItem(float widthPoints)` | Adds a fixed-width item container. |
+
+Column APIs:
+
+| API | Purpose |
+| --- | --- |
+| `Spacing(float points)` | Sets spacing between column items. |
+| `Item()` | Adds an item container. |
+
+## Templates
+
+Template placeholder replacement is scoped to Word text nodes and supports placeholders split across multiple runs, as Word often stores formatted text. `Replace("Name", value)` targets `{{Name}}`; bare occurrences of `Name` are not replaced. Use content controls when you need strongly scoped replacements in authored Word templates.
+
+| API | Purpose |
+| --- | --- |
+| `DocxTemplate.Open(string templatePath)` | Opens a `.docx` template. |
+| `Replace(string placeholder, string value)` | Replaces plain text placeholders. |
+| `ReplaceContentControl(string tagOrAlias, string value)` | Replaces matching content controls. |
+| `SaveAs(string outputPath)` | Writes the result to disk. |
+| `Save()` | Returns the result as a byte array. |
+
+## Utilities
+
+### Unit
+
+| API | Purpose |
+| --- | --- |
+| `Unit.Centimetre(float value)` | Converts centimetres to points. |
+| `Unit.Millimetre(float value)` | Converts millimetres to points. |
+| `Unit.Inch(float value)` | Converts inches to points. |
+| `Unit.Point(float value)` | Returns points unchanged. |
+
+### PageSize
+
+Built-in sizes: `A0`, `A1`, `A2`, `A3`, `A4`, `A5`, `A6`, `Letter`, `Legal`, `Ledger`, `Tabloid`.
+
+Use `new PageSize(widthPoints, heightPoints)` for custom sizes and `PageSize.A4.Landscape()` for a landscape value.
+
+### Colors
+
+`Colors` provides common hex values under `Black`, `White`, `Grey`, `Blue`, `Red`, `Green`, and `Orange`. You can also pass any six-character hex color string, such as `"1F4E79"`.
+
+### Enums
+
+| Enum | Values |
+| --- | --- |
+| `HighlightColor` | `Yellow`, `Green`, `Cyan`, `Magenta`, `Blue`, `Red`, `DarkBlue`, `DarkCyan`, `DarkGreen`, `DarkMagenta`, `DarkRed`, `DarkYellow`, `DarkGray`, `LightGray`, `Black`, `White`, `None` |
+| `TabStopAlignment` | `Left`, `Center`, `Right`, `Decimal` |
+
+
+====================================================================
+TerraFluent.Docx.Reporting — Samples
+URL: https://terrafluent.dev/docs/docx/samples/
+====================================================================
+
+# Samples
+
+
+The sample project creates several realistic `.docx` files and writes them to `Desktop\SampleDocs`.
+
+## Run All Samples
+
+```powershell
+dotnet run --project samples\TerraFluent.Docx.Reporting.Sample\TerraFluent.Docx.Reporting.Sample.csproj
+```
+
+## Sample Files
+
+| Sample | Source | Demonstrates |
+| --- | --- | --- |
+| Feature showcase | [FeatureShowcaseSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/FeatureShowcaseSample.cs) | Headings, text, headers, footers, images, barcodes, hyperlinks, and general document structure. |
+| Barcode showcase | [BarcodeShowcaseSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/BarcodeShowcaseSample.cs) | Shipping manifest with barcodes in a header, a table column, and standalone printable labels. |
+| Market analysis | [MarketAnalysisSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/MarketAnalysisSample.cs) | Auto-numbered figure/table captions, table of figures and list of tables, sized/stacked/labeled charts, and comments-only document protection. |
+| Invoice | [InvoiceSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/InvoiceSample.cs) | Invoice layout, branding, totals, and tables. |
+| Long invoice | [LongInvoiceSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/LongInvoiceSample.cs) | Multi-page invoice behavior and repeated tabular content. |
+| Annual report | [AnnualReportSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/AnnualReportSample.cs) | Realistic business report with sections, images, tables, and rich formatting. |
+| Layout features | [LayoutFeaturesSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/LayoutFeaturesSample.cs) | Page size, orientation, margins, columns, watermarks, and layout behavior. |
+| Template replacement | [TemplateReplacementSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/TemplateReplacementSample.cs) | Placeholder and content-control replacement. |
+| API reference document | [ApiReferenceSample.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/ApiReferenceSample.cs) | Broad tour of the public descriptor API in generated document form. |
+
+Support files:
+
+- [InvoiceBranding.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/InvoiceBranding.cs)
+- [SampleImage.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/SampleImage.cs)
+- [SampleOutput.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/SampleOutput.cs)
+- [Program.cs](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/samples/TerraFluent.Docx.Reporting.Sample/Program.cs)
+
+## Copy A Sample Pattern
+
+For a new report, start with this structure:
+
+```csharp
+using TerraFluent.Docx.Reporting;
+
+public static class ReportSample
+{
+    public static string Generate(string outputDirectory)
+    {
+        var path = Path.Combine(outputDirectory, "report.docx");
+
+        Document.Create(doc =>
+        {
+            doc.MetadataTitle("Report")
+               .MetadataAuthor("Reporting Team")
+               .Theme(theme => theme.DefaultFont("Aptos", 10.5f));
+
+            doc.Page(page =>
+            {
+                page.Size(PageSize.A4);
+                page.Margin(Unit.Centimetre(2));
+                page.Content().H1("Report");
+                page.Content().Text("Add report content here.");
+            });
+        }).PublishDocx(path);
+
+        return path;
+    }
+}
+```
+
+## Visual QA Checklist
+
+After running samples:
+
+- Open each generated `.docx` in Microsoft Word.
+- Confirm there are no repair prompts.
+- Refresh fields if you use a table of contents.
+- Open or convert the same files in LibreOffice when cross-application compatibility matters.
+- Check images, charts, page numbers, watermarks, and table layout.
+
+
+====================================================================
+TerraFluent.Docx.Reporting — Troubleshooting
+URL: https://terrafluent.dev/docs/docx/troubleshooting/
+====================================================================
+
+# Troubleshooting
+
+
+## Building A Document Throws An Exception
+
+TerraFluent.Docx.Reporting validates fluent API inputs eagerly, before any Open XML is written, so configuration mistakes fail fast at the call site instead of producing a damaged or unreadable `.docx`:
+
+- `ArgumentNullException` - a required callback, object, or stream argument was `null` (e.g. `Document.Create(null)`, `Component(null)`).
+- `ArgumentException` - a required string was `null`, empty, or whitespace (e.g. an image file path or page number format), a stream was unreadable/unwritable, or a barcode value contained a character outside ASCII 32-126.
+- `ArgumentOutOfRangeException` - a numeric value was outside its valid range, such as a negative margin, a non-positive width/height, or a column count outside 1-45.
+
+See [Public API Contract](/docs/docx/api/#public-api-contract) for the full validation contract.
+
+## Word Shows A Repair Prompt
+
+Run the automated tests and inspect the generated document with Word.
+
+```powershell
+dotnet test TerraFluent.Docx.Reporting.sln
+```
+
+Common causes:
+
+- Invalid color values. Use six-character hex strings such as `1F4E79`, not `#1F4E79`.
+- Invalid page number formats. `PageNumberFormat` writes the OOXML value as-is. Use values like `decimal`, `lowerRoman`, `upperRoman`, `lowerLetter`, or `upperLetter`.
+- Mixed chart types in one chart. All chart series must use the same kind.
+- Multiple series in a pie or doughnut chart. These chart types support one series.
+
+## Images Do Not Appear
+
+Check the path or byte data supplied to the image API.
+
+```csharp
+page.Content().Image("logo.png", image => image
+    .Width(120)
+    .AltText("Company logo"));
+```
+
+Tips:
+
+- Use an absolute path when the current working directory is unclear.
+- Ensure file names have supported extensions such as `.png`, `.jpg`, or `.jpeg`.
+- Missing file paths and empty image byte arrays throw during document creation or publishing.
+- Use `AltText` for accessibility and easier inspection.
+- Use `MaxWidth` when documents may receive images of unknown size.
+
+## Template Values Are Not Replaced
+
+`DocxTemplate.Replace("Name", value)` replaces `{{Name}}`, including placeholders split across Word runs. It intentionally does not replace every bare occurrence of `Name`, which avoids accidental edits to ordinary document text.
+
+For authored Word templates, prefer tagged content controls for business fields:
+
+```csharp
+DocxTemplate.Open("template.docx")
+    .ReplaceContentControl("CustomerName", "Ada Lovelace")
+    .SaveAs("output.docx");
+```
+
+Content controls are matched by tag or alias.
+
+## Page Background Does Not Change Per Section
+
+Word stores page background as a document-wide setting. If multiple sections call `Background`, the first non-empty value wins.
+
+Use section-specific watermarks or shaded containers when you need visual differences per section.
+
+## Table Of Contents Does Not Show Page Numbers Immediately
+
+The TOC is emitted as a Word field. Word normally updates fields when you open the document or explicitly refresh fields.
+
+In Word, select the table of contents and choose update field.
+
+## Layout Differs Between Word And LibreOffice
+
+Open XML rendering can differ between applications. Before publishing templates or report layouts:
+
+- Test in Microsoft Word.
+- Test in LibreOffice if your users rely on it.
+- Avoid overly tight fixed-width tables.
+- Prefer relative columns for responsive report tables.
+- Keep images within page margins with `MaxWidth`.
+
+## NuGet Package Missing Docs Or License
+
+Pack the project and inspect the package:
+
+```powershell
+dotnet pack src\TerraFluent.Docx.Reporting\TerraFluent.Docx.Reporting.csproj -c Release -o artifacts\nuget
+tar -tf artifacts\nuget\TerraFluent.Docx.Reporting.*.nupkg
+```
+
+The package should include:
+
+- `README.md`
+- `CHANGELOG.md`
+- `LICENSE.txt`
+- `lib/netstandard2.0/TerraFluent.Docx.Reporting.dll`
+- `lib/netstandard2.0/TerraFluent.Docx.Reporting.xml`
+- `lib/net10.0/TerraFluent.Docx.Reporting.dll`
+- `lib/net10.0/TerraFluent.Docx.Reporting.xml`
+
+See [Release And Publishing](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/docs/RELEASE.md) for the full checklist.

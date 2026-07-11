@@ -1,10 +1,12 @@
 ---
 layout: default
-title: DOCX Reporting
+title: C# Word Document Library — Create DOCX Without Office Interop
+nav_title: DOCX Reporting
 description: >-
-  TerraFluent.Docx.Reporting — a fluent .NET library that writes real Word documents
-  as Open XML. Styled tables, charts, images, vector barcodes, templates, and
-  document protection with no Word automation.
+  Create Word documents in C# without Office interop. TerraFluent.Docx.Reporting is a
+  fluent .NET library that writes real .docx files as Open XML — styled tables, native
+  charts, images, vector barcodes, templates, and document protection with no Word
+  installation or COM automation. Runs on Windows, Linux, macOS, and Docker.
 software:
   name: TerraFluent.Docx.Reporting
   version: 1.3.0
@@ -23,7 +25,7 @@ software:
     <div class="hero-ctas" style="margin-top: 28px">
       <a class="btn btn-primary" style="background: var(--accent-docx)" href="{{ site.repos.docx }}" target="_blank" rel="noopener">View on GitHub</a>
       <a class="btn btn-ghost" href="{{ site.nuget.docx }}" target="_blank" rel="noopener">NuGet</a>
-      <a class="btn btn-ghost" href="{{ site.repos.docx }}/blob/master/docs/FEATURES.md" target="_blank" rel="noopener">Feature guide</a>
+      <a class="btn btn-ghost" href="{{ '/docs/docx/features/' | relative_url }}">Feature guide</a>
     </div>
     <div class="badge-row">
       <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/v/TerraFluent.Docx.Reporting?label=nuget&color=c2571b" alt="NuGet version" width="106" height="20"></a>
@@ -288,12 +290,12 @@ Document.Create(doc =>
       <p>Generated packages are validated with the Open XML SDK test suite and smoke-checked in Microsoft Word and LibreOffice.</p>
     </div>
     <div class="docs-grid">
-      <a href="{{ site.repos.docx }}/blob/master/docs/GETTING_STARTED.md" target="_blank" rel="noopener">Getting Started<span>Your first document</span></a>
-      <a href="{{ site.repos.docx }}/blob/master/docs/CORE_CONCEPTS.md" target="_blank" rel="noopener">Core Concepts<span>Documents, pages, builders</span></a>
-      <a href="{{ site.repos.docx }}/blob/master/docs/FEATURES.md" target="_blank" rel="noopener">Feature Guide<span>Every feature, with examples</span></a>
-      <a href="{{ site.repos.docx }}/blob/master/docs/API.md" target="_blank" rel="noopener">API Reference<span>The full fluent surface</span></a>
-      <a href="{{ site.repos.docx }}/blob/master/docs/SAMPLES.md" target="_blank" rel="noopener">Samples<span>Invoices, annual report, showcase</span></a>
-      <a href="{{ site.repos.docx }}/blob/master/docs/TROUBLESHOOTING.md" target="_blank" rel="noopener">Troubleshooting<span>Common issues, resolved</span></a>
+      <a href="{{ '/docs/docx/getting-started/' | relative_url }}">Getting Started<span>Your first document</span></a>
+      <a href="{{ '/docs/docx/core-concepts/' | relative_url }}">Core Concepts<span>Documents, pages, builders</span></a>
+      <a href="{{ '/docs/docx/features/' | relative_url }}">Feature Guide<span>Every feature, with examples</span></a>
+      <a href="{{ '/docs/docx/api/' | relative_url }}">API Reference<span>The full fluent surface</span></a>
+      <a href="{{ '/docs/docx/samples/' | relative_url }}">Samples<span>Invoices, annual report, showcase</span></a>
+      <a href="{{ '/docs/docx/troubleshooting/' | relative_url }}">Troubleshooting<span>Common issues, resolved</span></a>
     </div>
   </section>
 
@@ -306,7 +308,7 @@ Document.Create(doc =>
     </p>
     <div class="hero-ctas">
       <a class="btn btn-primary" style="background: var(--accent-docx)" href="{{ '/getting-started/' | relative_url }}">Get started</a>
-      <a class="btn btn-ghost" href="{{ site.repos.docx }}/blob/master/docs/SAMPLES.md" target="_blank" rel="noopener">Browse samples</a>
+      <a class="btn btn-ghost" href="{{ '/docs/docx/samples/' | relative_url }}">Browse samples</a>
     </div>
   </section>
 </div>

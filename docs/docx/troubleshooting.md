@@ -1,0 +1,113 @@
+---
+layout: doc
+title: "Troubleshooting — C# Word Document Library Docs"
+description: "TerraFluent.Docx.Reporting validates fluent API inputs eagerly, before any Open XML is written, so configuration mistakes fail fast at the call site instead of producing a damaged or unreadable .docx:"
+permalink: /docs/docx/troubleshooting/
+doc_section: DOCX Reporting docs
+doc_section_url: /docs/
+doc_nav: docx
+source_url: https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/docs/TROUBLESHOOTING.md
+---
+
+# Troubleshooting
+
+
+## Building A Document Throws An Exception
+
+TerraFluent.Docx.Reporting validates fluent API inputs eagerly, before any Open XML is written, so configuration mistakes fail fast at the call site instead of producing a damaged or unreadable `.docx`:
+
+- `ArgumentNullException` - a required callback, object, or stream argument was `null` (e.g. `Document.Create(null)`, `Component(null)`).
+- `ArgumentException` - a required string was `null`, empty, or whitespace (e.g. an image file path or page number format), a stream was unreadable/unwritable, or a barcode value contained a character outside ASCII 32-126.
+- `ArgumentOutOfRangeException` - a numeric value was outside its valid range, such as a negative margin, a non-positive width/height, or a column count outside 1-45.
+
+See [Public API Contract](/docs/docx/api/#public-api-contract) for the full validation contract.
+
+## Word Shows A Repair Prompt
+
+Run the automated tests and inspect the generated document with Word.
+
+```powershell
+dotnet test TerraFluent.Docx.Reporting.sln
+```
+
+Common causes:
+
+- Invalid color values. Use six-character hex strings such as `1F4E79`, not `#1F4E79`.
+- Invalid page number formats. `PageNumberFormat` writes the OOXML value as-is. Use values like `decimal`, `lowerRoman`, `upperRoman`, `lowerLetter`, or `upperLetter`.
+- Mixed chart types in one chart. All chart series must use the same kind.
+- Multiple series in a pie or doughnut chart. These chart types support one series.
+
+## Images Do Not Appear
+
+Check the path or byte data supplied to the image API.
+
+```csharp
+page.Content().Image("logo.png", image => image
+    .Width(120)
+    .AltText("Company logo"));
+```
+
+Tips:
+
+- Use an absolute path when the current working directory is unclear.
+- Ensure file names have supported extensions such as `.png`, `.jpg`, or `.jpeg`.
+- Missing file paths and empty image byte arrays throw during document creation or publishing.
+- Use `AltText` for accessibility and easier inspection.
+- Use `MaxWidth` when documents may receive images of unknown size.
+
+## Template Values Are Not Replaced
+
+`DocxTemplate.Replace("Name", value)` replaces `{{Name}}`, including placeholders split across Word runs. It intentionally does not replace every bare occurrence of `Name`, which avoids accidental edits to ordinary document text.
+
+For authored Word templates, prefer tagged content controls for business fields:
+
+```csharp
+DocxTemplate.Open("template.docx")
+    .ReplaceContentControl("CustomerName", "Ada Lovelace")
+    .SaveAs("output.docx");
+```
+
+Content controls are matched by tag or alias.
+
+## Page Background Does Not Change Per Section
+
+Word stores page background as a document-wide setting. If multiple sections call `Background`, the first non-empty value wins.
+
+Use section-specific watermarks or shaded containers when you need visual differences per section.
+
+## Table Of Contents Does Not Show Page Numbers Immediately
+
+The TOC is emitted as a Word field. Word normally updates fields when you open the document or explicitly refresh fields.
+
+In Word, select the table of contents and choose update field.
+
+## Layout Differs Between Word And LibreOffice
+
+Open XML rendering can differ between applications. Before publishing templates or report layouts:
+
+- Test in Microsoft Word.
+- Test in LibreOffice if your users rely on it.
+- Avoid overly tight fixed-width tables.
+- Prefer relative columns for responsive report tables.
+- Keep images within page margins with `MaxWidth`.
+
+## NuGet Package Missing Docs Or License
+
+Pack the project and inspect the package:
+
+```powershell
+dotnet pack src\TerraFluent.Docx.Reporting\TerraFluent.Docx.Reporting.csproj -c Release -o artifacts\nuget
+tar -tf artifacts\nuget\TerraFluent.Docx.Reporting.*.nupkg
+```
+
+The package should include:
+
+- `README.md`
+- `CHANGELOG.md`
+- `LICENSE.txt`
+- `lib/netstandard2.0/TerraFluent.Docx.Reporting.dll`
+- `lib/netstandard2.0/TerraFluent.Docx.Reporting.xml`
+- `lib/net10.0/TerraFluent.Docx.Reporting.dll`
+- `lib/net10.0/TerraFluent.Docx.Reporting.xml`
+
+See [Release And Publishing](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/docs/RELEASE.md) for the full checklist.

@@ -1,0 +1,39 @@
+# Docs navigation — generated from the library repos' docs folders.
+html:
+  - title: "Getting Started"
+    url: /docs/html/getting-started/
+  - title: "Core Concepts"
+    url: /docs/html/core-concepts/
+  - title: "Content Elements"
+    url: /docs/html/content-elements/
+  - title: "Styling"
+    url: /docs/html/styling/
+  - title: "Tables"
+    url: /docs/html/tables/
+  - title: "Rows and Columns"
+    url: /docs/html/rows-and-columns/
+  - title: "Pagination and Layout"
+    url: /docs/html/pagination-and-layout/
+  - title: "Rendering"
+    url: /docs/html/rendering/
+  - title: "Text Measurement"
+    url: /docs/html/text-measurement/
+  - title: "Cookbook"
+    url: /docs/html/cookbook/
+  - title: "Extending the Library"
+    url: /docs/html/extending/
+  - title: "FAQ / Troubleshooting"
+    url: /docs/html/faq-troubleshooting/
+docx:
+  - title: "Getting Started"
+    url: /docs/docx/getting-started/
+  - title: "Core Concepts"
+    url: /docs/docx/core-concepts/
+  - title: "Feature Guide"
+    url: /docs/docx/features/
+  - title: "API Reference"
+    url: /docs/docx/api/
+  - title: "Samples"
+    url: /docs/docx/samples/
+  - title: "Troubleshooting"
+    url: /docs/docx/troubleshooting/

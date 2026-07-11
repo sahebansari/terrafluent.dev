@@ -1,0 +1,45 @@
+# TerraFluent
+
+> Open-source fluent .NET report generation libraries, MIT licensed. TerraFluent.Html.Reporting creates paginated, print-ready HTML reports in C# without a PDF engine or headless browser. TerraFluent.Docx.Reporting creates native Word (.docx) documents without Microsoft Office or COM interop. Both target netstandard2.0 and net10.0 and run on Windows, Linux, macOS, Docker, and serverless.
+
+Key facts:
+- Install: `dotnet add package TerraFluent.Html.Reporting` or `dotnet add package TerraFluent.Docx.Reporting`
+- Free for commercial use (MIT). No page limits, watermarks, or paid tiers.
+- HTML output: fixed page geometry (A4/Letter/Legal/custom), repeating headers/footers with {page}/{totalPages}, line-level pagination, ColSpan/RowSpan tables, native Code 128 barcodes, async streaming.
+- DOCX output: real Open XML .docx (no Word required), styled tables, native editable charts, images, vector barcodes, template placeholder replacement, document protection.
+- Neither package emits PDF bytes directly; the HTML output prints/saves to PDF from any browser or HTML-to-PDF converter.
+
+## Docs
+
+- [Documentation index](https://terrafluent.dev/docs/): all guides for both libraries
+- [Getting started](https://terrafluent.dev/getting-started/): first report in five minutes
+- [HTML Reporting — Getting Started](https://terrafluent.dev/docs/html/getting-started/)
+- [HTML Reporting — Core Concepts](https://terrafluent.dev/docs/html/core-concepts/)
+- [HTML Reporting — Content Elements](https://terrafluent.dev/docs/html/content-elements/)
+- [HTML Reporting — Tables](https://terrafluent.dev/docs/html/tables/)
+- [HTML Reporting — Pagination and Layout](https://terrafluent.dev/docs/html/pagination-and-layout/)
+- [HTML Reporting — Cookbook](https://terrafluent.dev/docs/html/cookbook/): invoices, certificates, barcode labels
+- [HTML Reporting — FAQ / Troubleshooting](https://terrafluent.dev/docs/html/faq-troubleshooting/)
+- [DOCX Reporting — Getting Started](https://terrafluent.dev/docs/docx/getting-started/)
+- [DOCX Reporting — Feature Guide](https://terrafluent.dev/docs/docx/features/)
+- [DOCX Reporting — API Reference](https://terrafluent.dev/docs/docx/api/)
+- [DOCX Reporting — Troubleshooting](https://terrafluent.dev/docs/docx/troubleshooting/)
+
+## Product pages
+
+- [TerraFluent.Html.Reporting](https://terrafluent.dev/html/): C# HTML report generator, no PDF engine
+- [TerraFluent.Docx.Reporting](https://terrafluent.dev/docx/): C# Word document library, no Office interop
+- [Which package do I need?](https://terrafluent.dev/compare/): HTML vs DOCX decision guide
+- [Sample output](https://terrafluent.dev/samples/): live rendered reports and Word documents
+
+## Source and packages
+
+- [TerraFluent.Html.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Html.Reporting)
+- [TerraFluent.Docx.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Docx.Reporting)
+- [TerraFluent.Html.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Html.Reporting)
+- [TerraFluent.Docx.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Docx.Reporting)
+
+## Optional
+
+- [Full documentation as plain text](https://terrafluent.dev/llms-full.txt)
+- [Live HTML sample reports](https://sahebansari.github.io/TerraFluent.Html.Reporting/SampleReports/index.html)

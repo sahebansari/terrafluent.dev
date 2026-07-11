@@ -1,0 +1,16 @@
+<section class="faq" aria-labelledby="faq-title">
+  <div class="container" style="max-width: 900px">
+    <div class="section-head">
+      <span class="eyebrow">FAQ</span>
+      <h2 id="faq-title">{{ include.title | default: "Frequently asked questions" }}</h2>
+    </div>
+    <div class="prose" style="padding-top: 0">
+      {% for item in page.faq %}
+      <details class="faq-item"{% if forloop.first %} open{% endif %}>
+        <summary><h3 style="display: inline; font-size: 1.05rem">{{ item.q }}</h3></summary>
+        <p>{{ item.a }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>

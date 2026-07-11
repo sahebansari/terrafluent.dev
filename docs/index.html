@@ -1,0 +1,62 @@
+---
+layout: default
+title: Documentation — .NET Report Generation Guides
+nav_title: Docs
+description: >-
+  TerraFluent documentation — complete guides to generating paginated HTML reports
+  and native Word (.docx) documents in C#: getting started, tables, styling,
+  pagination, charts, barcodes, templates, cookbook recipes, and troubleshooting.
+permalink: /docs/
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Documentation</span>
+    <h1>Guides for both libraries, <span class="grad">first report to custom renderers</span></h1>
+    <p class="hero-lede">
+      Everything here is versioned with the code — each page links back to its
+      source in the repository.
+    </p>
+  </div>
+</section>
+
+<section aria-labelledby="docs-html-title" style="padding-top: 32px">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">TerraFluent.Html.Reporting</span>
+      <h2 id="docs-html-title">Paginated HTML reports in C#</h2>
+      <p>Print-ready pages without a PDF engine — from your first report to custom text measurement.</p>
+    </div>
+    <div class="docs-grid">
+      {% for item in site.data.docs.html %}
+      <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="docs-docx-title">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--accent-docx)">TerraFluent.Docx.Reporting</span>
+      <h2 id="docs-docx-title">Native Word documents in C#</h2>
+      <p>Real .docx files without Office interop — features, API reference, samples, and troubleshooting.</p>
+    </div>
+    <div class="docs-grid">
+      {% for item in site.data.docs.docx %}
+      <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="cta-band" aria-labelledby="docs-cta">
+  <div class="container">
+    <h2 id="docs-cta">Prefer reading code?</h2>
+    <p>Both repositories ship runnable sample projects covering every feature on this site.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="{{ '/samples/' | relative_url }}">Browse rendered samples</a>
+      <a class="btn btn-ghost" href="{{ '/getting-started/' | relative_url }}">Getting started</a>
+    </div>
+  </div>
+</section>

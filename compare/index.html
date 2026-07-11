@@ -1,10 +1,28 @@
 ---
 layout: default
-title: Which package?
+title: HTML vs Word Reports in .NET — Which TerraFluent Package?
+nav_title: Compare
 description: >-
-  TerraFluent.Html.Reporting vs TerraFluent.Docx.Reporting — a practical decision
-  guide. Printable PDF-style pages or editable Word documents: pick the right
-  output for your .NET reports.
+  HTML vs DOCX report generation in .NET — a practical decision guide to
+  TerraFluent.Html.Reporting vs TerraFluent.Docx.Reporting. Printable PDF-style
+  pages or editable Word documents: pick the right output for your C# reports.
+faq:
+  - q: Should I generate HTML or DOCX reports in .NET?
+    a: >-
+      Pick by what your users open. If they view in a browser or print to PDF, use
+      TerraFluent.Html.Reporting for fixed, paginated pages. If they revise, comment,
+      or track changes in Microsoft Word, use TerraFluent.Docx.Reporting for real
+      editable .docx files. Both share the same fluent mental model.
+  - q: Can I convert the HTML report output to a PDF file server-side?
+    a: >-
+      TerraFluent.Html.Reporting produces print-perfect, self-contained HTML pages,
+      so any HTML-to-PDF step you already trust (a browser print dialog or a
+      server-side converter) turns them into PDF. Neither package emits PDF bytes directly.
+  - q: Can I use both TerraFluent packages in one project?
+    a: >-
+      Yes. They are independent NuGet packages with no shared dependency — adding
+      both costs nothing but the two package references, and the fluent API skills
+      transfer between them.
 ---
 
 <section class="hero page-hero">
@@ -142,6 +160,8 @@ Document.Create(doc =>
     <li><strong>Using both?</strong> They're independent packages with no shared dependency — adding both costs nothing but the two package references.</li>
   </ul>
 </div>
+
+{% include faq.html title="Common questions" %}
 
 <section class="cta-band" aria-labelledby="compare-cta">
   <div class="container">

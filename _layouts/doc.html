@@ -1,0 +1,29 @@
+---
+layout: default
+---
+<div class="container doc-shell">
+  <aside class="doc-sidebar" aria-label="Documentation navigation">
+    <a class="doc-back" href="{{ '/docs/' | relative_url }}">← All docs</a>
+
+    <h2>HTML Reporting</h2>
+    <ul>
+      {% for item in site.data.docs.html %}
+      <li><a href="{{ item.url | relative_url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.title }}</a></li>
+      {% endfor %}
+    </ul>
+
+    <h2>DOCX Reporting</h2>
+    <ul>
+      {% for item in site.data.docs.docx %}
+      <li><a href="{{ item.url | relative_url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.title }}</a></li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <article class="prose doc-content">
+    {{ content }}
+    <p class="doc-source">
+      <a href="{{ page.source_url }}" target="_blank" rel="noopener">View this page's source on GitHub →</a>
+    </p>
+  </article>
+</div>

@@ -1083,6 +1083,101 @@ div.highlighter-rouge {
   margin-top: 3px;
 }
 
+/* ---------- Docs ---------- */
+.doc-shell {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 48px;
+  padding-block: 40px 72px;
+}
+@media (max-width: 900px) { .doc-shell { grid-template-columns: 1fr; gap: 24px; } }
+
+.doc-sidebar {
+  position: sticky;
+  top: 90px;
+  align-self: start;
+  font-size: 0.9rem;
+}
+@media (max-width: 900px) { .doc-sidebar { position: static; } }
+.doc-sidebar h2 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin: 18px 0 8px;
+}
+.doc-sidebar ul { list-style: none; margin: 0; padding: 0; }
+.doc-sidebar li a {
+  display: block;
+  padding: 4px 10px;
+  border-left: 2px solid var(--border);
+  color: var(--text-muted);
+}
+.doc-sidebar li a:hover { color: var(--text); text-decoration: none; }
+.doc-sidebar li a[aria-current="page"] {
+  color: var(--accent-html);
+  border-left-color: var(--accent-html);
+  font-weight: 600;
+}
+.doc-back { font-size: 0.85rem; color: var(--text-faint); }
+
+.doc-content { padding-block: 0; }
+.doc-content h1 { font-size: 1.9rem; margin-bottom: 0.6em; }
+.doc-source {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+/* Markdown tables in prose content */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 0 0 1.2em;
+  display: block;
+  overflow-x: auto;
+}
+.prose table th,
+.prose table td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.prose table th { background: var(--bg-raised); font-weight: 600; }
+
+/* ---------- FAQ ---------- */
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+}
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1.2em;
+  color: var(--text-faint);
+  font-weight: 700;
+}
+.faq-item[open] summary::before { content: "–"; }
+.faq-item p {
+  margin: 10px 0 4px;
+  padding-left: 1.2em;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .btn:hover { transform: none; }

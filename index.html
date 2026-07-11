@@ -1,9 +1,41 @@
 ---
 layout: default
+title: Open-Source .NET Report Generation — HTML & Word (DOCX) in C#
 description: >-
-  TerraFluent is a pair of open-source fluent .NET libraries for report generation:
-  print-ready paginated HTML without a PDF engine, and native Word documents without
-  Word automation. MIT licensed, netstandard2.0 to .NET 10.
+  Open-source C# report generation libraries for .NET: create paginated, print-ready
+  HTML reports without a PDF engine, and native Word (.docx) documents without Office
+  interop. Fluent API, MIT licensed, netstandard2.0 to .NET 10, runs on Linux and Docker.
+faq:
+  - q: Is TerraFluent free for commercial use?
+    a: >-
+      Yes. Both TerraFluent.Html.Reporting and TerraFluent.Docx.Reporting are MIT
+      licensed — free for personal, commercial, and open-source projects with no
+      page limits, watermarks, or paid tiers.
+  - q: Do I need Microsoft Word installed to generate .docx files in C#?
+    a: >-
+      No. TerraFluent.Docx.Reporting writes Open XML packages directly, so it creates
+      real Word documents without Microsoft Office, Word automation, or COM interop —
+      on Windows, Linux, and macOS, including Docker containers and serverless.
+  - q: Can TerraFluent generate PDF files?
+    a: >-
+      Not directly. TerraFluent.Html.Reporting produces paginated, print-ready HTML
+      with fixed page geometry that prints or saves to PDF from any browser, and works
+      with any HTML-to-PDF converter you already trust. No PDF engine ships in the library.
+  - q: Which .NET versions does TerraFluent support?
+    a: >-
+      Both packages target netstandard2.0 and net10.0, so they run on .NET Framework
+      4.6.1+, .NET Core 2.0+, and every modern .NET release.
+  - q: Does TerraFluent run on Linux and in Docker?
+    a: >-
+      Yes. Both libraries are pure managed code with no native binaries, no headless
+      browser, and no Office dependency, so they deploy cleanly to Linux, macOS,
+      containers, and locked-down servers.
+  - q: How is TerraFluent different from the Open XML SDK?
+    a: >-
+      The Open XML SDK exposes the raw WordprocessingML document model. TerraFluent
+      provides a high-level fluent builder API on top of the same file format — you
+      describe pages, tables, charts, and barcodes in a few chained calls, and the
+      library emits valid Open XML for you.
 ---
 
 <!-- ============ Hero ============ -->
@@ -222,6 +254,9 @@ report.RenderHtmlDocument("monthly-sales.html");
     </div>
   </div>
 </section>
+
+<!-- ============ FAQ ============ -->
+{% include faq.html %}
 
 <!-- ============ CTA ============ -->
 <section class="cta-band" aria-labelledby="cta-title">
