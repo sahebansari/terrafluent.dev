@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Cookbook — C# HTML Report Generator Docs"
-description: "Working recipes you can copy and adapt. Most are trimmed versions of the scenarios in samples/TerraFluent.Html.Reporting.Sample/Scenarios - run dotnet run --project samples/TerraFluent.Html.Reporting.Sample to generate the full ve"
+title: "Cookbook — HTML Report Docs"
+description: "Working recipes you can copy and adapt. Most are trimmed versions of the scenarios in samples/TerraFluent.Html.Reporting.Sample/Scenarios - run dotnet run"
 permalink: /docs/html/cookbook/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

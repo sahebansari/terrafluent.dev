@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Pagination and Layout — C# HTML Report Generator Docs"
-description: "This page explains how LayoutEngine.Paginate turns a ReportDocument's flat list of content elements into a sequence of pages - useful if you want to understand exactly why a page breaks where it does, what a LayoutWarning means, o"
+title: "Pagination and Layout — HTML Report Docs"
+description: "This page explains how LayoutEngine.Paginate turns a ReportDocument's flat list of content elements into a sequence of pages - useful if you want to"
 permalink: /docs/html/pagination-and-layout/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: "Getting Started — C# Word Document Library Docs"
+title: "Getting Started — C# Word DOCX Docs"
 description: "This guide gets you from an empty project to a generated .docx report."
 permalink: /docs/docx/getting-started/
 doc_section: DOCX Reporting docs

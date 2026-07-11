@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: "Getting Started — C# HTML Report Generator Docs"
+title: "Getting Started — HTML Report Docs"
 description: "TerraFluent.Html.Reporting targets both netstandard2.0 and net10.0 and has zero third-party dependencies. Add the package to your project:"
 permalink: /docs/html/getting-started/
 doc_section: HTML Reporting docs

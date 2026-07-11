@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Extending the Library — C# HTML Report Generator Docs"
-description: "TerraFluent.Html.Reporting has three deliberate extension seams: the text measurer used for pagination, the renderer used to turn a layout into HTML, and the element contract itself. None of them require forking the library - each"
+title: "Extending the Library — HTML Report Docs"
+description: "TerraFluent.Html.Reporting has three deliberate extension seams: the text measurer used for pagination, the renderer used to turn a layout into HTML, and"
 permalink: /docs/html/extending/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

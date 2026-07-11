@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Styling — C# HTML Report Generator Docs"
-description: "TextStyle is the immutable style record behind every text-bearing element (Paragraph, Heading, PageNumberText, list items, table cells). TextStyle.Default is used when an element doesn't specify one:"
+title: "Styling — HTML Report Docs"
+description: "TextStyle is the immutable style record behind every text-bearing element (Paragraph, Heading, PageNumberText, list items, table cells). TextStyle.Default"
 permalink: /docs/html/styling/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

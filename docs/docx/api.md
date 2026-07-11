@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: "API Reference — C# Word Document Library Docs"
+title: "API Reference — C# Word DOCX Docs"
 description: "This page lists the public fluent API exposed by TerraFluent.Docx.Reporting."
 permalink: /docs/docx/api/
 doc_section: DOCX Reporting docs

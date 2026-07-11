@@ -3,7 +3,7 @@
 # generate _data/docs.yml and llms-full.txt.
 set -euo pipefail
 
-SCRATCH="${TMPDIR:-/tmp}/terrafluent-docs"  # downloaded repo docs go here (see download step below)
+SCRATCH="${TMPDIR:-/tmp}/terrafluent-docs"  # downloaded repo docs go here (see README)
 SITE="$(cd "$(dirname "$0")/.." && pwd)"
 HTML_REPO="https://github.com/sahebansari/TerraFluent.Html.Reporting"
 DOCX_REPO="https://github.com/sahebansari/TerraFluent.Docx.Reporting"
@@ -42,7 +42,7 @@ extract_desc () { # first prose paragraph, joined to one line
     /^>/         { if (inpara) exit; next }
     /^[-*] /     { if (inpara) exit; next }
     { inpara=1; printf "%s ", $0 }
-  ' "$1" | sed 's/\\/\\\\/g; s/`//g; s/\[\([^]]*\)\]([^)]*)/\1/g; s/"/\\"/g; s/ *$//' | cut -c1-230
+  ' "$1" | sed 's/\\/\\\\/g; s/`//g; s/\[\([^]]*\)\]([^)]*)/\1/g; s/"/\\"/g; s/ *$//' | awk '{ if (length($0) <= 155) print; else { s = substr($0, 1, 155); sub(/ [^ ]*$/, "", s); print s } }'
 }
 
 # ---------- HTML Reporting docs ----------
@@ -77,7 +77,7 @@ for f in "${HTML_ORDER[@]}"; do
   {
     printf -- '---\n'
     printf 'layout: doc\n'
-    printf 'title: "%s — C# HTML Report Generator Docs"\n' "$title"
+    printf 'title: "%s — HTML Report Docs"\n' "$title"
     printf 'description: "%s"\n' "$desc"
     printf 'permalink: /docs/html/%s/\n' "$slug"
     printf 'doc_section: HTML Reporting docs\n'
@@ -137,7 +137,7 @@ for f in "${DOCX_ORDER[@]}"; do
   {
     printf -- '---\n'
     printf 'layout: doc\n'
-    printf 'title: "%s — C# Word Document Library Docs"\n' "$title"
+    printf 'title: "%s — C# Word DOCX Docs"\n' "$title"
     printf 'description: "%s"\n' "$desc"
     printf 'permalink: /docs/docx/%s/\n' "$slug"
     printf 'doc_section: DOCX Reporting docs\n'

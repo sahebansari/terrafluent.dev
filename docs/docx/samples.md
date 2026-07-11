@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: "Samples — C# Word Document Library Docs"
+title: "Samples — C# Word DOCX Docs"
 description: "The sample project creates several realistic .docx files and writes them to Desktop\\SampleDocs."
 permalink: /docs/docx/samples/
 doc_section: DOCX Reporting docs

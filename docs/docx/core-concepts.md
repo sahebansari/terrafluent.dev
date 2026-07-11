@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Core Concepts — C# Word Document Library Docs"
-description: "TerraFluent.Docx.Reporting uses a fluent builder model. You compose a document by configuring descriptors: document, page, container, table, row, cell, image, barcode, chart, and text descriptors."
+title: "Core Concepts — C# Word DOCX Docs"
+description: "TerraFluent.Docx.Reporting uses a fluent builder model. You compose a document by configuring descriptors: document, page, container, table, row, cell,"
 permalink: /docs/docx/core-concepts/
 doc_section: DOCX Reporting docs
 doc_section_url: /docs/

@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "FAQ / Troubleshooting — C# HTML Report Generator Docs"
-description: "The default ApproximateTextMeasurer estimates text wrapping using generic Helvetica character-width tables, not the actual font/engine that will eventually render the HTML - so its line-wrap decisions are *close* to a real browser"
+title: "FAQ / Troubleshooting — HTML Report Docs"
+description: "The default ApproximateTextMeasurer estimates text wrapping using generic Helvetica character-width tables, not the actual font/engine that will"
 permalink: /docs/html/faq-troubleshooting/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

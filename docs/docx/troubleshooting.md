@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Troubleshooting — C# Word Document Library Docs"
-description: "TerraFluent.Docx.Reporting validates fluent API inputs eagerly, before any Open XML is written, so configuration mistakes fail fast at the call site instead of producing a damaged or unreadable .docx:"
+title: "Troubleshooting — C# Word DOCX Docs"
+description: "TerraFluent.Docx.Reporting validates fluent API inputs eagerly, before any Open XML is written, so configuration mistakes fail fast at the call site"
 permalink: /docs/docx/troubleshooting/
 doc_section: DOCX Reporting docs
 doc_section_url: /docs/

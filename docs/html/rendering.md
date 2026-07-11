@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Rendering — C# HTML Report Generator Docs"
-description: "Rendering is the second pass: it turns an already-paginated LayoutResult (see Pagination and Layout) into HTML. By the time a renderer runs, every page's geometry - and therefore the total page count - is already known, which is w"
+title: "Rendering — HTML Report Docs"
+description: "Rendering is the second pass: it turns an already-paginated LayoutResult (see Pagination and Layout) into HTML. By the time a renderer runs, every page's"
 permalink: /docs/html/rendering/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

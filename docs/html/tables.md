@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Tables — C# HTML Report Generator Docs"
-description: "Tables are the most involved element in the library: they have their own column-width algorithm, two different strategies for handling a row that doesn't fit on a page, and a row-height cache that keeps pagination of a large table"
+title: "Tables — HTML Report Docs"
+description: "Tables are the most involved element in the library: they have their own column-width algorithm, two different strategies for handling a row that doesn't"
 permalink: /docs/html/tables/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

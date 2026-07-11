@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Content Elements — C# HTML Report Generator Docs"
-description: "This page is the reference for every element you can add to a document, and exactly which Add* method produces it. \"Content\" below means the callback passed to ReportDocumentBuilder.Content(...); \"Header\"/\"Footer\" means the "
+title: "Content Elements — HTML Report Docs"
+description: "This page is the reference for every element you can add to a document, and exactly which Add* method produces it. \"Content\" below means the callback"
 permalink: /docs/html/content-elements/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

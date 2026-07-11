@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: "Feature Guide — C# Word Document Library Docs"
+title: "Feature Guide — C# Word DOCX Docs"
 description: "This guide shows practical examples for the main document features."
 permalink: /docs/docx/features/
 doc_section: DOCX Reporting docs

@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Text Measurement — C# HTML Report Generator Docs"
-description: "Pagination needs to know how tall a block of text will be *before* it's rendered - which means measuring how it wraps at a given width. This is the single seam, ITextMeasurer, that every height calculation in the layout engine ult"
+title: "Text Measurement — HTML Report Docs"
+description: "Pagination needs to know how tall a block of text will be *before* it's rendered - which means measuring how it wraps at a given width. This is the single"
 permalink: /docs/html/text-measurement/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

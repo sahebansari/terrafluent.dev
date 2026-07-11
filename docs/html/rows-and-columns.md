@@ -1,7 +1,7 @@
 ---
 layout: doc
-title: "Rows and Columns — C# HTML Report Generator Docs"
-description: "AddRow lays out columns side by side - e.g. a logo next to a company name, or a stat strip with three centered numbers - within the content width. It's available in Content, Header, and Footer, but columns themselves can't nest an"
+title: "Rows and Columns — HTML Report Docs"
+description: "AddRow lays out columns side by side - e.g. a logo next to a company name, or a stat strip with three centered numbers - within the content width. It's"
 permalink: /docs/html/rows-and-columns/
 doc_section: HTML Reporting docs
 doc_section_url: /docs/

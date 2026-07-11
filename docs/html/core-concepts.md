@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: "Core Concepts — C# HTML Report Generator Docs"
+title: "Core Concepts — HTML Report Docs"
 description: "TerraFluent.Html.Reporting is built as three distinct stages, each in its own namespace, connected only by simple data:"
 permalink: /docs/html/core-concepts/
 doc_section: HTML Reporting docs
