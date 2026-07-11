@@ -26,15 +26,15 @@
   --bg-inset: #f1efeb;
   --text: #1c2733;
   --text-muted: #5b6b7a;
-  --text-faint: #8695a4;
+  --text-faint: #61707f;
   --border: #e4e1da;
   --border-strong: #d2cec5;
 
-  --accent-html: #0e7c7b;
+  --accent-html: #0c6b6a;
   --accent-html-soft: #e3f2f1;
-  --accent-docx: #c2571b;
+  --accent-docx: #9f4a13;
   --accent-docx-soft: #faeadf;
-  --link: #0e7c7b;
+  --link: #0c6b6a;
 
   --code-bg: #f3f1ea;
   --code-titlebar-bg: #e7e3d7;
@@ -43,7 +43,7 @@
   --code-string: #a4581e;
   --code-number: #7439a8;
   --code-type: #1a67ad;
-  --code-comment: #6b7885;
+  --code-comment: #55626e;
   --code-punct: #55636f;
 }
 
@@ -577,7 +577,7 @@ div.highlighter-rouge {
   padding-top: 7px;
   border-top: 1px solid #cfd6dc;
   text-align: center;
-  color: #7a8794;
+  color: #5f6c79;
   font-size: 7.5px;
 }
 
