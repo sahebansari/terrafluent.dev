@@ -1,0 +1,155 @@
+---
+layout: default
+title: Which package?
+description: >-
+  TerraFluent.Html.Reporting vs TerraFluent.Docx.Reporting — a practical decision
+  guide. Printable PDF-style pages or editable Word documents: pick the right
+  output for your .NET reports.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Decision guide</span>
+    <h1>Which package <span class="grad">do you need?</span></h1>
+    <p class="hero-lede">
+      Short answer: pick by what your users open. A browser or a printer — HTML Reporting.
+      Microsoft Word — DOCX Reporting. Both share the same fluent mental model, and many
+      teams ship both.
+    </p>
+  </div>
+</section>
+
+<div class="container prose" style="max-width: 900px">
+  <h2>By requirement</h2>
+  <div class="table-scroll">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>You need…</th>
+          <th class="col-html">Html.Reporting</th>
+          <th class="col-docx">Docx.Reporting</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A printable, PDF-style page</td>
+          <td><span class="yes">✓ Best fit</span><small>Fixed pages; print/save to PDF from any browser</small></td>
+          <td>—<small>Word can print, but layout lives in Word's engine</small></td>
+        </tr>
+        <tr>
+          <td>An editable deliverable</td>
+          <td>—<small>Output is final-form HTML</small></td>
+          <td><span class="yes-docx">✓ Best fit</span><small>Real .docx users can revise and track changes in</small></td>
+        </tr>
+        <tr>
+          <td>Charts</td>
+          <td>—<small>Bring your own SVG via raw HTML</small></td>
+          <td><span class="yes-docx">✓ Native</span><small>Editable Word charts: bar, line, pie, stacked</small></td>
+        </tr>
+        <tr>
+          <td>Barcodes (Code 128)</td>
+          <td><span class="yes">✓ Native PNG</span><small>Generated in-library</small></td>
+          <td><span class="yes-docx">✓ Native vector</span><small>Crisp at any zoom and print resolution</small></td>
+        </tr>
+        <tr>
+          <td>Filling an existing branded template</td>
+          <td>—</td>
+          <td><span class="yes-docx">✓</span><small>Placeholder &amp; content-control replacement</small></td>
+        </tr>
+        <tr>
+          <td>Precise pagination control</td>
+          <td><span class="yes">✓</span><small>Line-level splits, atomic row groups, layout warnings</small></td>
+          <td>—<small>Word paginates when the document opens</small></td>
+        </tr>
+        <tr>
+          <td>Document protection</td>
+          <td>—</td>
+          <td><span class="yes-docx">✓</span><small>Restrict Editing with password verifier</small></td>
+        </tr>
+        <tr>
+          <td>Very large reports</td>
+          <td><span class="yes">✓</span><small>Streaming, page-at-a-time async rendering</small></td>
+          <td><span class="yes-docx">✓</span><small>Open XML packages are compact</small></td>
+        </tr>
+        <tr>
+          <td>Zero dependencies</td>
+          <td><span class="yes">✓</span><small>Dependency-free core</small></td>
+          <td><span class="yes-docx">✓</span><small>No Word, no COM — writes Open XML directly</small></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>The same mental model</h2>
+  <p>
+    Whichever you choose, the skills transfer: create a document, describe pages and
+    content with fluent builders, publish. Here is the same header-content-footer
+    shape in both:
+  </p>
+</div>
+
+<div class="container" style="max-width: 1100px">
+  <div class="compare-pair">
+    <div>
+      <h3>TerraFluent.Html.Reporting</h3>
+      <div class="code-panel">
+{% highlight csharp %}
+var report = ReportDocument.Create(PageSize.A4)
+    .Header(h => h.AddText("Quarterly Report").Bold())
+    .Footer(f => f.AddPageNumber("Page {page} of {totalPages}"))
+    .Content(c =>
+    {
+        c.AddHeading("Executive Summary", HeadingLevel.H1);
+        c.AddParagraph("Revenue improved across every practice.");
+    })
+    .Build();
+
+report.RenderHtmlDocument("report.html");
+{% endhighlight %}
+      </div>
+    </div>
+    <div>
+      <h3>TerraFluent.Docx.Reporting</h3>
+      <div class="code-panel">
+{% highlight csharp %}
+Document.Create(doc =>
+{
+    doc.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Header().Text("Quarterly Report", t => t.Bold());
+        page.Footer().Text(t =>
+        {
+            t.Span("Page "); t.CurrentPageNumber();
+            t.Span(" of "); t.TotalPages();
+        });
+        page.Content().H1("Executive Summary");
+        page.Content().Text("Revenue improved across every practice.");
+    });
+}).PublishDocx("report.docx");
+{% endhighlight %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container prose" style="max-width: 900px; padding-top: 8px">
+  <h2>Honest counter-signals</h2>
+  <ul>
+    <li><strong>Pick Docx.Reporting even for print</strong> if your organization's workflow reviews and signs documents in Word — fidelity to Word's own pagination matters more than pixel control.</li>
+    <li><strong>Pick Html.Reporting even for "editable" asks</strong> if edits are really data changes — regenerate the report instead of letting people hand-edit output.</li>
+    <li><strong>Need a true PDF file server-side</strong> (no browser in the loop)? Neither package produces PDF bytes directly; Html.Reporting gets you print-perfect pages you can convert with any HTML-to-PDF step you already trust.</li>
+    <li><strong>Using both?</strong> They're independent packages with no shared dependency — adding both costs nothing but the two package references.</li>
+  </ul>
+</div>
+
+<section class="cta-band" aria-labelledby="compare-cta">
+  <div class="container">
+    <h2 id="compare-cta">Still unsure? Look at the output.</h2>
+    <p>The samples gallery shows real rendered documents from both libraries — five minutes there usually settles it.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="{{ '/samples/' | relative_url }}">Browse samples</a>
+      <a class="btn btn-ghost" href="{{ '/getting-started/' | relative_url }}">Getting started</a>
+    </div>
+  </div>
+</section>

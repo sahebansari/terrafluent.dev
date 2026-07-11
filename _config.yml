@@ -15,6 +15,9 @@ nuget:
   html: https://www.nuget.org/packages/TerraFluent.Html.Reporting
   docx: https://www.nuget.org/packages/TerraFluent.Docx.Reporting
 
+plugins:
+  - jekyll-sitemap
+
 markdown: kramdown
 highlighter: rouge
 kramdown:

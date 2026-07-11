@@ -1,0 +1,56 @@
+# HTML sample reports hosted by the TerraFluent.Html.Reporting repo's GitHub Pages.
+# base is joined with `file` in the gallery page.
+base: https://sahebansari.github.io/TerraFluent.Html.Reporting/SampleReports/
+reports:
+  - file: 10-sales-invoice.html
+    title: Sales Invoice
+    group: Documents
+    description: Multi-page invoice with repeating header, totals, and page numbers.
+  - file: 12-invoice-with-barcode.html
+    title: Invoice with Barcode
+    group: Documents
+    description: Native Code 128 invoice number rendered in the page header.
+  - file: 07-landscape-certificate.html
+    title: Landscape Certificate
+    group: Documents
+    description: Single-page Letter landscape certificate, fully centered content.
+  - file: 01-getting-started.html
+    title: Getting Started
+    group: Fundamentals
+    description: The quick-start report — header, footer, heading, and a table.
+  - file: 02-text-styling.html
+    title: Text Styling
+    group: Fundamentals
+    description: Fonts, sizes, alignment, margins, and text emphasis.
+  - file: 03-images.html
+    title: Images
+    group: Fundamentals
+    description: Image sizing, alignment, and flow across pages.
+  - file: 05-lists.html
+    title: Lists
+    group: Fundamentals
+    description: Bulleted and numbered lists with cross-page continuation.
+  - file: 04-table-styling.html
+    title: Table Styling
+    group: Tables & Layout
+    description: Styled headers, borders, and alternating row backgrounds.
+  - file: 13-table-spans.html
+    title: Table Spans
+    group: Tables & Layout
+    description: ColSpan and RowSpan — merged summary cells and grouped rows.
+  - file: 11-row-layout.html
+    title: Row Layout
+    group: Tables & Layout
+    description: Side-by-side column layouts within the content flow.
+  - file: 06-page-breaks.html
+    title: Page Breaks
+    group: Pagination & Control
+    description: Explicit page breaks and how content flows around them.
+  - file: 08-raw-html.html
+    title: Raw HTML
+    group: Pagination & Control
+    description: Escaping the model with raw HTML blocks where needed.
+  - file: 09-warnings-and-async.html
+    title: Warnings & Async
+    group: Pagination & Control
+    description: LayoutWarning for oversized content, async streaming render.

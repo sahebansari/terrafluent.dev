@@ -1,0 +1,30 @@
+{% if page.url == "/" %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "TerraFluent",
+  "url": "{{ site.url }}/",
+  "description": {{ site.description | strip_newlines | strip | jsonify }}
+}
+</script>
+{% endif %}
+{% if page.software %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "{{ page.software.name }}",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Windows, Linux, macOS",
+  "softwareVersion": "{{ page.software.version }}",
+  "programmingLanguage": "C#",
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "{{ page.url | absolute_url }}",
+  "downloadUrl": "{{ page.software.nuget }}",
+  "codeRepository": "{{ page.software.repo }}",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "description": {{ page.description | strip_newlines | strip | jsonify }}
+}
+</script>
+{% endif %}
