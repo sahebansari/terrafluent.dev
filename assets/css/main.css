@@ -30,6 +30,7 @@
   --border: #e4e1da;
   --border-strong: #d2cec5;
 
+  --brand: #6e1566;
   --accent-html: #0c6b6a;
   --accent-html-soft: #e3f2f1;
   --accent-docx: #9f4a13;
@@ -58,6 +59,7 @@
   --border: #253141;
   --border-strong: #33445a;
 
+  --brand: #d98fd0;
   --accent-html: #3fc6bd;
   --accent-html-soft: #12332f;
   --accent-docx: #e8834a;
@@ -224,7 +226,7 @@ section { padding-block: 72px; }
   letter-spacing: -0.02em;
 }
 .brand:hover { text-decoration: none; }
-.brand-accent { color: var(--accent-html); }
+.brand-accent { color: var(--brand); }
 
 .site-nav { margin-left: 8px; }
 .site-nav ul {
