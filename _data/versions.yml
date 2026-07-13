@@ -1,0 +1,6 @@
+# Current released version of each package — the single source of truth for
+# every version number rendered on the site (hero badges, JSON-LD, /releases/).
+# Update this file when a new package version ships; nothing else needs editing.
+pdf: 2.0.2
+html: 1.1.1
+docx: 1.3.0

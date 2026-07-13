@@ -1,0 +1,71 @@
+---
+layout: default
+title: Support — Getting Help with TerraFluent
+nav_title: Support
+description: >-
+  How to get help with TerraFluent.Pdf.Reporting, TerraFluent.Html.Reporting, and
+  TerraFluent.Docx.Reporting — documentation, GitHub issues, and what to expect.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Support</span>
+    <h1>Stuck? Here's how to <span class="grad">get unstuck</span></h1>
+    <p class="hero-lede">
+      All support is public and free, and happens on GitHub — searchable answers help
+      the next person with the same question.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  <h2>1. Check the documentation first</h2>
+  <p>Most questions are answered in the guides, which are versioned with the code:</p>
+  <ul>
+    <li><a href="{{ '/docs/pdf/getting-started/' | relative_url }}">PDF Reporting docs</a> — layout, text, encryption, barcodes, vector graphics.</li>
+    <li><a href="{{ '/docs/html/getting-started/' | relative_url }}">HTML Reporting docs</a> — including a <a href="{{ '/docs/html/faq-troubleshooting/' | relative_url }}">FAQ &amp; troubleshooting</a> page and a <a href="{{ '/docs/html/cookbook/' | relative_url }}">cookbook of recipes</a>.</li>
+    <li><a href="{{ '/docs/docx/getting-started/' | relative_url }}">DOCX Reporting docs</a> — including a dedicated <a href="{{ '/docs/docx/troubleshooting/' | relative_url }}">troubleshooting</a> page.</li>
+    <li><a href="{{ '/samples/' | relative_url }}">Samples</a> — rendered output with a link to the C# source of every document.</li>
+  </ul>
+
+  <h2>2. Search existing issues</h2>
+  <p>
+    Someone may have already hit your problem. Each library has its own issue tracker —
+    search closed issues too:
+  </p>
+  <ul>
+    <li><a href="{{ site.repos.pdf }}/issues?q=" target="_blank" rel="noopener">TerraFluent.Pdf.Reporting issues</a></li>
+    <li><a href="{{ site.repos.html }}/issues?q=" target="_blank" rel="noopener">TerraFluent.Html.Reporting issues</a></li>
+    <li><a href="{{ site.repos.docx }}/issues?q=" target="_blank" rel="noopener">TerraFluent.Docx.Reporting issues</a></li>
+  </ul>
+
+  <h2>3. Open an issue</h2>
+  <p>
+    Found a bug, or need a feature? Open an issue on the repository of the package you're
+    using. The most useful reports include:
+  </p>
+  <ul>
+    <li>The package name and version (e.g. <code>TerraFluent.Pdf.Reporting {{ site.data.versions.pdf }}</code>).</li>
+    <li>Your target framework and OS (e.g. .NET 8 on Linux/Docker).</li>
+    <li>A minimal, runnable code snippet that reproduces the problem.</li>
+    <li>What you expected, and what actually happened — attach the generated file if the problem is in the output.</li>
+  </ul>
+  <div class="hero-ctas" style="margin: 20px 0 8px">
+    <a class="btn btn-ghost" href="{{ site.repos.pdf }}/issues/new" target="_blank" rel="noopener">New PDF issue</a>
+    <a class="btn btn-ghost" href="{{ site.repos.html }}/issues/new" target="_blank" rel="noopener">New HTML issue</a>
+    <a class="btn btn-ghost" href="{{ site.repos.docx }}/issues/new" target="_blank" rel="noopener">New DOCX issue</a>
+  </div>
+
+  <h2>What to expect</h2>
+  <p>
+    TerraFluent is free, MIT-licensed open source, maintained on a best-effort basis —
+    there is no paid tier and no SLA. Well-written bug reports with a minimal repro are
+    typically the fastest to get fixed. Security issues follow a separate, private
+    process — see the <a href="{{ '/security/' | relative_url }}">security policy</a>.
+  </p>
+  <p>
+    Evaluating TerraFluent for your organisation? The
+    <a href="{{ '/enterprise/' | relative_url }}">enterprise page</a> collects the answers
+    reviewers usually need: licensing, dependencies, release policy, and security posture.
+  </p>
+</div>

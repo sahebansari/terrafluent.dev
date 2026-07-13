@@ -27,7 +27,7 @@ dotnet add package TerraFluent.Pdf.Reporting
 
 ---
 
-TerraFluent.Pdf.Reporting 1.4.0 brings a few notable upgrades for document authorship: AES-256 encryption is now the default, images can be supplied from bytes or streams, anchor-based bookmarks track rendered content automatically, and the multi-span text API uses immutable `TextStyle` callbacks.
+TerraFluent.Pdf.Reporting includes everything document authorship needs out of the box: AES-256 encryption by default, images supplied from bytes or streams, anchor-based bookmarks that track rendered content automatically, and a multi-span text API with immutable `TextStyle` callbacks.
 
 ## Minimal Example
 

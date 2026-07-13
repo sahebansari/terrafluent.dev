@@ -34,6 +34,7 @@ exclude:
   - Gemfile.lock
   - README.md
   - SEO-CHECKLIST.md
+  - ENTERPRISE-CHECKLIST.md
   - scripts
   - vendor
   - .jekyll-cache

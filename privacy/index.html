@@ -1,0 +1,42 @@
+---
+layout: default
+title: Privacy — No Analytics, No Cookies
+nav_title: Privacy
+description: >-
+  terrafluent.dev collects no analytics, sets no cookies, and serves fonts from its
+  own domain. The one localStorage key stores your light/dark theme choice.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Privacy</span>
+    <h1>This site <span class="grad">doesn't track you</span></h1>
+    <p class="hero-lede">
+      No analytics, no cookies, no third-party trackers — and the libraries themselves
+      make no network calls either.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  <h2>What this site does</h2>
+  <ul>
+    <li><strong>No analytics or tracking scripts.</strong> We don't know you visited, and that's fine.</li>
+    <li><strong>No cookies.</strong> The site sets a single <code>localStorage</code> key (<code>tf-theme</code>) on your device to remember your light/dark theme choice. It never leaves your browser.</li>
+    <li><strong>Self-hosted fonts and assets.</strong> Fonts, styles, and scripts are served from this domain — visiting the site makes no requests to font or CDN providers.</li>
+    <li><strong>One exception:</strong> version badges on the product and releases pages are loaded from <a href="https://shields.io/" target="_blank" rel="noopener">img.shields.io</a>, which sees a standard image request (your IP address and user agent) when those pages load.</li>
+  </ul>
+
+  <h2>What the libraries do</h2>
+  <p>
+    TerraFluent.Pdf.Reporting, TerraFluent.Html.Reporting, and TerraFluent.Docx.Reporting
+    collect no telemetry and make no network calls. Your report data stays in your
+    process — documents are generated entirely locally.
+  </p>
+
+  <h2>External services this site links to</h2>
+  <p>
+    Links to GitHub and NuGet take you to those services, which have their own privacy
+    policies. Nothing on this site sends them data on your behalf before you click.
+  </p>
+</div>

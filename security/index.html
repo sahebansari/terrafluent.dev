@@ -1,0 +1,77 @@
+---
+layout: default
+title: Security Policy — Reporting Vulnerabilities
+nav_title: Security
+description: >-
+  How to report a security vulnerability in TerraFluent.Pdf.Reporting,
+  TerraFluent.Html.Reporting, or TerraFluent.Docx.Reporting, and which versions
+  receive security fixes.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Security policy</span>
+    <h1>Found a vulnerability? <span class="grad">Report it privately</span></h1>
+    <p class="hero-lede">
+      Please don't open a public issue for security problems. Every TerraFluent
+      repository accepts private reports through GitHub Security Advisories.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  <h2>How to report</h2>
+  <p>
+    Use GitHub's private vulnerability reporting on the repository of the affected
+    package — <em>Security → Report a vulnerability</em>, or go there directly:
+  </p>
+  <ul>
+    <li><a href="{{ site.repos.pdf }}/security/advisories/new" target="_blank" rel="noopener">Report a vulnerability in TerraFluent.Pdf.Reporting</a></li>
+    <li><a href="{{ site.repos.html }}/security/advisories/new" target="_blank" rel="noopener">Report a vulnerability in TerraFluent.Html.Reporting</a></li>
+    <li><a href="{{ site.repos.docx }}/security/advisories/new" target="_blank" rel="noopener">Report a vulnerability in TerraFluent.Docx.Reporting</a></li>
+  </ul>
+  <p>
+    A useful report describes the affected package and version, the impact, and ideally a
+    proof-of-concept. You'll get an acknowledgement in the advisory thread, and credit in
+    the fix release unless you prefer otherwise.
+  </p>
+
+  <h2>Supported versions</h2>
+  <p>
+    Security fixes target the <strong>latest released version</strong> of each package —
+    currently TerraFluent.Pdf.Reporting {{ site.data.versions.pdf }},
+    TerraFluent.Html.Reporting {{ site.data.versions.html }}, and
+    TerraFluent.Docx.Reporting {{ site.data.versions.docx }}. Older versions do not
+    receive backported fixes; upgrading is free and, within a major version, source
+    compatible.
+  </p>
+
+  <h2>Scope worth knowing about</h2>
+  <ul>
+    <li>
+      <strong>Zero runtime dependencies.</strong> All three packages ship with no
+      dependencies beyond the .NET base class library (verifiable in each package's
+      nuspec on NuGet), so there is no transitive dependency tree to audit or patch.
+    </li>
+    <li>
+      <strong>No network or process access.</strong> The libraries are pure document
+      writers: they take your data in, write bytes out, and make no network calls, spawn
+      no processes, and load no native binaries.
+    </li>
+    <li>
+      <strong>PDF encryption.</strong> TerraFluent.Pdf.Reporting encrypts documents with
+      AES-256 by default (AES-128 available for legacy viewers) with user/owner passwords
+      and permission flags — see the
+      <a href="{{ '/docs/pdf/encryption/' | relative_url }}">encryption documentation</a>
+      for what PDF permissions do and don't protect against.
+    </li>
+  </ul>
+
+  <h2>Repository security policies</h2>
+  <p>Per-repository <code>SECURITY.md</code> files:</p>
+  <ul>
+    <li><a href="{{ site.repos.pdf }}/blob/main/SECURITY.md" target="_blank" rel="noopener">TerraFluent.Pdf.Reporting SECURITY.md</a></li>
+    <li><a href="{{ site.repos.docx }}/blob/master/SECURITY.md" target="_blank" rel="noopener">TerraFluent.Docx.Reporting SECURITY.md</a></li>
+    <li>TerraFluent.Html.Reporting — use the <a href="{{ site.repos.html }}/security/advisories/new" target="_blank" rel="noopener">private reporting form</a>.</li>
+  </ul>
+</div>

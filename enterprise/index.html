@@ -1,0 +1,127 @@
+---
+layout: default
+title: Enterprise Evaluation Guide — Licensing, Security, Support
+nav_title: Enterprise
+description: >-
+  Everything an enterprise review of TerraFluent needs: MIT licensing with no tiers,
+  zero-dependency packages, CI-tested releases, security disclosure policy, semantic
+  versioning, and an honest list of what is not supported.
+faq:
+  - q: Is TerraFluent safe to approve as a dependency in a commercial product?
+    a: >-
+      All three packages are plain MIT — no dual licensing, no revenue caps, no
+      commercial tier. They declare zero runtime dependencies in their NuGet metadata,
+      so approving them adds no transitive packages to your dependency audit.
+  - q: Does TerraFluent make network calls or collect telemetry?
+    a: >-
+      No. The libraries are pure document writers — they take your data and write
+      PDF, HTML, or DOCX bytes. They make no network calls, collect no telemetry,
+      spawn no processes, and load no native binaries.
+  - q: What happens if the maintainer disappears?
+    a: >-
+      The MIT license means you can fork, patch, and redistribute all three libraries
+      with no legal exposure. The code, tests, CI workflows, changelogs, and
+      documentation are all public on GitHub, so a fork keeps the full engineering
+      history — a materially better position than an abandoned proprietary vendor.
+  - q: Does TerraFluent support PDF/A or PDF/UA (accessible/archival PDF)?
+    a: >-
+      Not currently. TerraFluent.Pdf.Reporting writes standard PDF 1.7 documents; it
+      does not emit PDF/A conformance metadata or tagged-PDF accessibility structure.
+      If your workflow requires archival or accessibility conformance, validate this
+      constraint early — and open a GitHub issue, as demand is tracked there.
+  - q: Is there a paid support tier or SLA?
+    a: >-
+      No. Support is public, free, and best-effort through GitHub issues. Security
+      reports get a private channel via GitHub Security Advisories on every repository.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Enterprise evaluation guide</span>
+    <h1>The answers your <span class="grad">dependency review</span> will ask for</h1>
+    <p class="hero-lede">
+      Licensing, supply chain, security posture, versioning, and — just as important —
+      what TerraFluent doesn't do. Everything below is verifiable from the public
+      packages and repositories.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  <h2>Licensing</h2>
+  <ul>
+    <li>All three packages are <strong>MIT licensed</strong>, declared as an SPDX license expression in the NuGet package metadata — not a license file you have to lawyer over.</li>
+    <li>No dual licensing, no community/commercial split, no revenue thresholds, no page limits, no watermarks. Commercial and closed-source use is unrestricted.</li>
+    <li>License texts: <a href="{{ site.repos.pdf }}/blob/main/LICENSE" target="_blank" rel="noopener">Pdf</a> · <a href="{{ site.repos.html }}/blob/master/LICENSE" target="_blank" rel="noopener">Html</a> · <a href="{{ site.repos.docx }}/blob/master/LICENSE.txt" target="_blank" rel="noopener">Docx</a>.</li>
+  </ul>
+
+  <h2>Supply chain</h2>
+  <ul>
+    <li><strong>Zero runtime dependencies.</strong> Each package's nuspec declares empty dependency groups — nothing transitive enters your build. Check for yourself on the NuGet pages: <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">Pdf</a> · <a href="{{ site.nuget.html }}" target="_blank" rel="noopener">Html</a> · <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">Docx</a>.</li>
+    <li><strong>100% managed code.</strong> No native binaries, no headless browser, no Office automation — nothing platform-specific to scan or approve.</li>
+    <li><strong>Public source with repository metadata.</strong> Every package embeds its GitHub repository URL in the NuGet metadata; the Html and Docx packages also embed the exact source commit each version was built from.</li>
+    <li><strong>CI on every repository.</strong> Each repo builds and tests on GitHub Actions before release — the PDF engine runs its test suite across .NET 8, 9, and 10.</li>
+  </ul>
+
+  <h2>Security posture</h2>
+  <ul>
+    <li>The libraries make <strong>no network calls and collect no telemetry</strong> — data goes in as C# objects, documents come out as bytes.</li>
+    <li>Private vulnerability reporting is enabled on all three repositories via GitHub Security Advisories — see the <a href="{{ '/security/' | relative_url }}">security policy</a> for scope and supported versions.</li>
+    <li>PDF output supports <strong>AES-256 encryption</strong> (default) with user/owner passwords and permission flags — <a href="{{ '/docs/pdf/encryption/' | relative_url }}">documented here</a>, including what PDF permissions can and cannot enforce.</li>
+  </ul>
+
+  <h2>Platform support</h2>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Package</th><th>Targets</th><th>Runs on</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>TerraFluent.Pdf.Reporting {{ site.data.versions.pdf }}</td>
+          <td><code>net8.0</code> · <code>net9.0</code> · <code>net10.0</code></td>
+          <td rowspan="3">Windows, Linux, macOS — including Docker (Alpine images work: no native dependencies), Azure Functions, and AWS Lambda</td>
+        </tr>
+        <tr>
+          <td>TerraFluent.Html.Reporting {{ site.data.versions.html }}</td>
+          <td><code>netstandard2.0</code> · <code>net10.0</code></td>
+        </tr>
+        <tr>
+          <td>TerraFluent.Docx.Reporting {{ site.data.versions.docx }}</td>
+          <td><code>netstandard2.0</code> · <code>net10.0</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    The <code>netstandard2.0</code> targets mean Html and Docx Reporting also run on
+    .NET Framework 4.6.1+ — relevant if you're generating documents from a legacy
+    ASP.NET application.
+  </p>
+
+  <h2>Versioning &amp; releases</h2>
+  <p>
+    Semantic versioning, breaking changes only in major versions, a maintained
+    CHANGELOG.md in every repository, and tagged GitHub releases — the full policy and
+    current versions are on the <a href="{{ '/releases/' | relative_url }}">releases page</a>.
+  </p>
+
+  <h2>What TerraFluent does <em>not</em> do</h2>
+  <p>Knowing the boundaries early saves evaluation time:</p>
+  <ul>
+    <li><strong>No PDF/A or PDF/UA conformance.</strong> PDF output is standard PDF 1.7 without archival metadata or tagged accessibility structure. If you need it, <a href="{{ site.repos.pdf }}/issues" target="_blank" rel="noopener">open an issue</a> — demand is tracked publicly.</li>
+    <li><strong>No HTML-to-PDF conversion.</strong> The PDF engine is code-first; it does not render existing HTML. (The <a href="{{ '/compare/' | relative_url }}">compare page</a> explains when to pick which package.)</li>
+    <li><strong>No visual template designer.</strong> Documents are defined in fluent C#, versioned with your code — there is no drag-and-drop designer or template marketplace.</li>
+    <li><strong>No paid support or SLA.</strong> Support is public and best-effort via <a href="{{ '/support/' | relative_url }}">GitHub issues</a>.</li>
+  </ul>
+
+  <h2>Project continuity</h2>
+  <p>
+    TerraFluent is maintained by a single developer — worth stating plainly, because your
+    review will ask. The mitigations are structural: the MIT license makes forking legal
+    and cheap, the full test suites and CI definitions live in the repositories, every
+    release is reproducible from a tagged commit, and the documentation is versioned with
+    the code. If the project stopped tomorrow, your team could patch its own fork the
+    same afternoon — which is not true of most commercial reporting vendors.
+  </p>
+</div>

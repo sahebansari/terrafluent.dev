@@ -50,7 +50,23 @@ faq:
 <section class="hero">
   <div class="container">
     <span class="hero-badge"><span class="dot"></span> Open source · MIT licensed</span>
-    <h1>Fluent report generation for .NET.<br><span class="grad">True PDF. Print-ready HTML. Native DOCX.</span></h1>
+    <h1 id="hero-headline">Generate <span class="grad">PDF, HTML, and DOCX</span> Reports in C# and .NET with a Fluent API.</h1>
+    <script>
+      (function () {
+        var lines = [
+          'Generate <span class="grad">PDF, HTML, and DOCX</span> Reports in C# and .NET with a Fluent API.',
+          'Fluent Document Generation for .NET &ndash; Create <span class="grad">PDF, Print-Ready HTML, and Native DOCX</span> Reports.',
+          'Build Professional <span class="grad">PDF, HTML, and DOCX</span> Reports in C# with a Fluent .NET API.',
+          'One Fluent API for <span class="grad">PDF, HTML, and DOCX</span> Report Generation in .NET.',
+          'Modern Report Generation for .NET &ndash; <span class="grad">PDF, HTML, and DOCX</span> Made Simple.',
+          'Create Beautiful <span class="grad">PDF, HTML, and Word</span> Documents in C# Using a Fluent API.',
+          'Fast, Fluent Report Generation for C#/.NET &ndash; <span class="grad">PDF, HTML, and Native DOCX</span>.',
+          'Powerful C# Report Generation Library for <span class="grad">PDF, Print-Ready HTML, and DOCX</span>.'
+        ];
+        document.getElementById('hero-headline').innerHTML =
+          lines[Math.floor(Math.random() * lines.length)];
+      })();
+    </script>
     <p class="hero-lede">
       One fluent API family, three professional outputs. Generate real PDF files with zero
       dependencies, paginated printable HTML without a browser engine — and real Word

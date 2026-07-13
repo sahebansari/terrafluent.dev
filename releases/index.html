@@ -1,0 +1,62 @@
+---
+layout: default
+title: Releases & Versioning Policy
+nav_title: Releases
+description: >-
+  TerraFluent release and versioning policy — semantic versioning, breaking-change
+  rules, current package versions, and links to every changelog.
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Releases &amp; versioning</span>
+    <h1>Predictable versions, <span class="grad">documented changes</span></h1>
+    <p class="hero-lede">
+      Every release is tagged on GitHub, published to NuGet, and recorded in a
+      changelog — so you can see exactly what changed before you upgrade.
+    </p>
+  </div>
+</section>
+
+<div class="container prose">
+  <h2>Versioning policy</h2>
+  <ul>
+    <li><strong>Semantic versioning.</strong> All three packages follow <a href="https://semver.org/" target="_blank" rel="noopener">SemVer</a>: <code>major.minor.patch</code>.</li>
+    <li><strong>Breaking changes only in major versions.</strong> Within a major version, upgrades are source compatible — minor versions add features, patch versions fix bugs.</li>
+    <li><strong>Independent release cadence.</strong> The packages version independently; there is no lockstep "suite version" and no cross-package dependency, so upgrading one never forces upgrading another.</li>
+    <li><strong>Security fixes</strong> target the latest release of each package — see the <a href="{{ '/security/' | relative_url }}">security policy</a>.</li>
+  </ul>
+
+  <h2>Current versions</h2>
+
+  <h3>TerraFluent.Pdf.Reporting {{ site.data.versions.pdf }}</h3>
+  <p>
+    <a href="https://www.nuget.org/packages/TerraFluent.Pdf.Reporting" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/v/TerraFluent.Pdf.Reporting?label=nuget&color=b02e2e" alt="TerraFluent.Pdf.Reporting NuGet version" width="106" height="20"></a>
+  </p>
+  <ul>
+    <li><a href="{{ site.repos.pdf }}/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a> · <a href="{{ site.repos.pdf }}/releases" target="_blank" rel="noopener">GitHub releases</a> · <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">NuGet package</a></li>
+  </ul>
+
+  <h3>TerraFluent.Html.Reporting {{ site.data.versions.html }}</h3>
+  <p>
+    <a href="https://www.nuget.org/packages/TerraFluent.Html.Reporting" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/v/TerraFluent.Html.Reporting?label=nuget&color=0e7c7b" alt="TerraFluent.Html.Reporting NuGet version" width="106" height="20"></a>
+  </p>
+  <ul>
+    <li><a href="{{ site.repos.html }}/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a> · <a href="{{ site.repos.html }}/releases" target="_blank" rel="noopener">GitHub releases</a> · <a href="{{ site.nuget.html }}" target="_blank" rel="noopener">NuGet package</a></li>
+  </ul>
+
+  <h3>TerraFluent.Docx.Reporting {{ site.data.versions.docx }}</h3>
+  <p>
+    <a href="https://www.nuget.org/packages/TerraFluent.Docx.Reporting" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/v/TerraFluent.Docx.Reporting?label=nuget&color=c2571b" alt="TerraFluent.Docx.Reporting NuGet version" width="106" height="20"></a>
+  </p>
+  <ul>
+    <li><a href="{{ site.repos.docx }}/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a> · <a href="{{ site.repos.docx }}/releases" target="_blank" rel="noopener">GitHub releases</a> · <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">NuGet package</a></li>
+  </ul>
+
+  <h2>Deprecation</h2>
+  <p>
+    If an API needs to go away, it is marked <code>[Obsolete]</code> with a message
+    pointing at the replacement for at least one minor release before being removed in
+    the next major version. Removals are always listed in the changelog.
+  </p>
+</div>
