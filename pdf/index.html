@@ -10,6 +10,35 @@ software:
   version: 2.0.2
   nuget: https://www.nuget.org/packages/TerraFluent.Pdf.Reporting
   repo: https://github.com/sahebansari/TerraFluent.Pdf.Reporting
+faq:
+  - q: Is TerraFluent.Pdf.Reporting really free for commercial use?
+    a: >-
+      Yes. It is released under the MIT license — use it in closed-source and
+      commercial products at no cost, with no revenue caps, royalties, watermarks,
+      or feature-limited tiers.
+  - q: How does TerraFluent.Pdf.Reporting compare to iTextSharp, QuestPDF, or PDFsharp?
+    a: >-
+      iText (iTextSharp) is AGPL licensed, which requires a commercial license for most
+      closed-source use. QuestPDF's Community license is free only below a company-revenue
+      threshold. PDFsharp is MIT but uses an imperative drawing model.
+      TerraFluent.Pdf.Reporting offers a fluent, composable, code-first API under a plain
+      MIT license with zero runtime dependencies.
+  - q: Does TerraFluent.Pdf.Reporting convert HTML to PDF?
+    a: >-
+      No. It is a code-first PDF generator — you compose documents from C# layout
+      primitives (Column, Row, Table, Text, Image), which means no headless browser,
+      deterministic output, and fast rendering. If your source content is already HTML,
+      an HTML-to-PDF converter is a better fit.
+  - q: Does it run on Linux, macOS, and in Docker?
+    a: >-
+      Yes. It is 100% managed C# with no native binaries, so it runs on any platform
+      supported by .NET 8, 9, or 10 — including Alpine-based Docker images, Azure
+      Functions, and AWS Lambda — with nothing extra to install.
+  - q: Can it create password-protected PDFs?
+    a: >-
+      Yes. Documents can be encrypted with AES-256 (the default) or AES-128 for legacy
+      viewers, with user and owner passwords plus fine-grained permission flags for
+      printing, copying, and editing.
 ---
 
 <section class="hero page-hero">
@@ -327,6 +356,9 @@ container.Canvas(120, c =>
       <a href="{{ '/docs/pdf/bookmarks/' | relative_url }}">Bookmarks<span>Hierarchical PDF outlines</span></a>
     </div>
   </section>
+
+  <!-- FAQ -->
+  {% include faq.html %}
 
   <!-- CTA -->
   <section class="cta-band" aria-labelledby="pdf-cta">

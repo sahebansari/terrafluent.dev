@@ -10,6 +10,26 @@ software:
   version: 1.1.1
   nuget: https://www.nuget.org/packages/TerraFluent.Html.Reporting
   repo: https://github.com/sahebansari/TerraFluent.Html.Reporting
+faq:
+  - q: How do I convert the HTML report output to PDF?
+    a: >-
+      The output is print-perfect, self-contained HTML with fixed page geometry — print
+      or save it as PDF from any browser, or feed it to any HTML-to-PDF converter you
+      already trust. If you want PDF bytes server-side with no browser in the loop, use
+      TerraFluent.Pdf.Reporting instead.
+  - q: Does TerraFluent.Html.Reporting need a browser or PDF engine at runtime?
+    a: >-
+      No. It is pure managed code that writes self-contained HTML/CSS — no headless
+      browser, no PDF engine, no native binaries — so it deploys cleanly to Linux,
+      Docker, and serverless.
+  - q: Which .NET versions does TerraFluent.Html.Reporting support?
+    a: >-
+      It targets netstandard2.0 and net10.0, so it runs on .NET Framework 4.6.1+,
+      .NET Core 2.0+, and every modern .NET release on Windows, Linux, and macOS.
+  - q: Can it generate barcodes?
+    a: >-
+      Yes. Code 128 barcodes are generated in-library as crisp images — no external
+      services or third-party barcode packages required.
 ---
 
 <section class="hero page-hero">
@@ -249,6 +269,9 @@ await report.RenderHtmlDocumentAsync(
       <a href="{{ '/docs/html/extending/' | relative_url }}">Extending<span>Custom elements &amp; renderers</span></a>
     </div>
   </section>
+
+  <!-- FAQ -->
+  {% include faq.html %}
 
   <!-- Quality -->
   <section class="cta-band" aria-labelledby="html-cta">

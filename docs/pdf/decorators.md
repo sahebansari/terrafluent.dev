@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Decorators — C# PDF Docs"
-description: "Decorators wrap a container slot and modify how its content is drawn. They are chainable and compose from the **outside in**:"
+description: "Decorators wrap a container slot and modify how its content is drawn. They are chainable and compose from the outside in:"
 permalink: /docs/pdf/decorators/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

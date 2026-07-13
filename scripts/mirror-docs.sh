@@ -44,7 +44,7 @@ extract_desc () { # first prose paragraph, joined to one line
     /^>/         { if (inpara) exit; next }
     /^[-*] /     { if (inpara) exit; next }
     { inpara=1; printf "%s ", $0 }
-  ' "$1" | sed 's/\\/\\\\/g; s/`//g; s/\[\([^]]*\)\]([^)]*)/\1/g; s/"/\\"/g; s/ *$//' | awk '{ if (length($0) <= 155) print; else { s = substr($0, 1, 155); sub(/ [^ ]*$/, "", s); print s } }'
+  ' "$1" | sed 's/\\/\\\\/g; s/`//g; s/\*\*//g; s/__//g; s/\[\([^]]*\)\]([^)]*)/\1/g; s/"/\\"/g; s/ *$//' | awk '{ if (length($0) <= 155) print; else { s = substr($0, 1, 155); sub(/ [^ ]*$/, "", s); print s } }'
 }
 
 # ---------- HTML Reporting docs ----------

@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Layout — C# PDF Docs"
-description: "TerraFluent.Pdf.Reporting provides three layout elements: **Column**, **Row**, and **Table**. They are all accessed through extension methods on"
+description: "TerraFluent.Pdf.Reporting provides three layout elements: Column, Row, and Table. They are all accessed through extension methods on"
 permalink: /docs/pdf/layout/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Unicode & Character Encoding — C# PDF Docs"
-description: "TerraFluent.Pdf.Reporting uses **WinAnsiEncoding** for all built-in Type 1 fonts (Helvetica, Times, Courier and their Bold/Italic variants). This page"
+description: "TerraFluent.Pdf.Reporting uses WinAnsiEncoding for all built-in Type 1 fonts (Helvetica, Times, Courier and their Bold/Italic variants). This page"
 permalink: /docs/pdf/unicode-and-encoding/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

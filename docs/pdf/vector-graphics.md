@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Vector Graphics — C# PDF Docs"
-description: "TerraFluent.Pdf.Reporting provides a fluent **Canvas API** for drawing vector graphics directly inside any layout container. You can render lines,"
+description: "TerraFluent.Pdf.Reporting provides a fluent Canvas API for drawing vector graphics directly inside any layout container. You can render lines,"
 permalink: /docs/pdf/vector-graphics/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/
