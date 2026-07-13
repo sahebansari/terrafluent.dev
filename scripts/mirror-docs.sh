@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Convert downloaded GitHub docs into Jekyll pages under docs/html/ and docs/docx/,
-# generate _data/docs.yml and llms-full.txt.
+# Convert downloaded GitHub docs into Jekyll pages under docs/html/, docs/docx/,
+# and docs/pdf/, generate _data/docs.yml and llms-full.txt.
 set -euo pipefail
 
 SCRATCH="${TMPDIR:-/tmp}/terrafluent-docs"  # downloaded repo docs go here (see README)
 SITE="$(cd "$(dirname "$0")/.." && pwd)"
 HTML_REPO="https://github.com/sahebansari/TerraFluent.Html.Reporting"
 DOCX_REPO="https://github.com/sahebansari/TerraFluent.Docx.Reporting"
+PDF_REPO="https://github.com/sahebansari/TerraFluent.Pdf.Reporting"
 
-mkdir -p "$SITE/docs/html" "$SITE/docs/docx"
+mkdir -p "$SITE/docs/html" "$SITE/docs/docx" "$SITE/docs/pdf"
 
 DATA_YML="$SITE/_data/docs.yml"
 LLMS_FULL="$SITE/llms-full.txt"
@@ -18,8 +19,9 @@ echo "html:" >> "$DATA_YML"
 
 cat > "$LLMS_FULL" <<'EOF'
 # TerraFluent — Full Documentation
-# Fluent report generation for .NET: print-ready paginated HTML (TerraFluent.Html.Reporting)
-# and native Word .docx documents (TerraFluent.Docx.Reporting). MIT licensed.
+# Fluent report generation for .NET: print-ready paginated HTML (TerraFluent.Html.Reporting),
+# native Word .docx documents (TerraFluent.Docx.Reporting), and true PDF files
+# (TerraFluent.Pdf.Reporting). MIT licensed.
 # Site: https://terrafluent.dev/
 
 EOF
@@ -161,4 +163,49 @@ for f in "${DOCX_ORDER[@]}"; do
   echo "docx: $slug <- $f ('$title')"
 done
 
-echo "DONE. _data/docs.yml + $(ls "$SITE"/docs/html | wc -l) html docs + $(ls "$SITE"/docs/docx | wc -l) docx docs + llms-full.txt ($(wc -l < "$LLMS_FULL") lines)"
+# ---------- PDF Reporting docs (repo default branch: main; slugs match filenames) ----------
+echo "pdf:" >> "$DATA_YML"
+
+PDF_ORDER=(getting-started text-and-spans layout row-and-column-layout decorators images page-sizes-and-units colors encryption vector-graphics table-of-contents bookmarks components-and-templates metadata unicode-and-encoding)
+
+for slug in "${PDF_ORDER[@]}"; do
+  src="$SCRATCH/docs-pdf/$slug.md"
+  out="$SITE/docs/pdf/$slug.md"
+  title="$(extract_title "$src")"
+  title="${title% with TerraFluent.Pdf.Reporting}"
+  title="${title% in TerraFluent.Pdf.Reporting}"
+  desc="$(extract_desc "$src")"
+
+  body="$(sed -E \
+    -e 's|\]\(([a-z0-9-]+)\.md(#[^)]*)?\)|](/docs/pdf/\1/\2)|g' \
+    -e "s|\]\(\.\./|]($PDF_REPO/blob/main/|g" \
+    "$src")"
+
+  {
+    printf -- '---\n'
+    printf 'layout: doc\n'
+    printf 'title: "%s — C# PDF Docs"\n' "$title"
+    printf 'description: "%s"\n' "$desc"
+    printf 'permalink: /docs/pdf/%s/\n' "$slug"
+    printf 'doc_section: PDF Reporting docs\n'
+    printf 'doc_section_url: /docs/\n'
+    printf 'doc_nav: pdf\n'
+    printf 'source_url: %s/blob/main/docs/%s.md\n' "$PDF_REPO" "$slug"
+    printf -- '---\n\n'
+    printf '%s\n' "$body"
+  } > "$out"
+
+  printf '  - title: "%s"\n    url: /docs/pdf/%s/\n' "$title" "$slug" >> "$DATA_YML"
+
+  {
+    printf '\n\n====================================================================\n'
+    printf 'TerraFluent.Pdf.Reporting — %s\n' "$title"
+    printf 'URL: https://terrafluent.dev/docs/pdf/%s/\n' "$slug"
+    printf '====================================================================\n\n'
+    printf '%s\n' "$body"
+  } >> "$LLMS_FULL"
+
+  echo "pdf: $slug ('$title')"
+done
+
+echo "DONE. _data/docs.yml + $(ls "$SITE"/docs/html | wc -l) html docs + $(ls "$SITE"/docs/docx | wc -l) docx docs + $(ls "$SITE"/docs/pdf | wc -l) pdf docs + llms-full.txt ($(wc -l < "$LLMS_FULL") lines)"

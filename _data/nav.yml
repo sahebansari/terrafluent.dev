@@ -1,5 +1,7 @@
 # Site navigation — the single source of truth for the header menu.
 # Adding/removing a menu item is a change to this file only.
+- title: PDF Reporting
+  url: /pdf/
 - title: HTML Reporting
   url: /html/
 - title: DOCX Reporting

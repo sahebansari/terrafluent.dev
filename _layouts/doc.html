@@ -5,6 +5,13 @@ layout: default
   <aside class="doc-sidebar" aria-label="Documentation navigation">
     <a class="doc-back" href="{{ '/docs/' | relative_url }}">← All docs</a>
 
+    <h2>PDF Reporting</h2>
+    <ul>
+      {% for item in site.data.docs.pdf %}
+      <li><a href="{{ item.url | relative_url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.title }}</a></li>
+      {% endfor %}
+    </ul>
+
     <h2>HTML Reporting</h2>
     <ul>
       {% for item in site.data.docs.html %}

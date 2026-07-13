@@ -1,27 +1,34 @@
 ---
 layout: default
-title: HTML vs DOCX Reports in .NET — Which Package?
+title: PDF vs HTML vs DOCX Reports in .NET — Which Package?
 nav_title: Compare
 description: >-
-  HTML vs DOCX report generation in .NET — a practical guide to choosing between
-  printable PDF-style pages and editable Word documents for your C# reports.
+  PDF, HTML, or DOCX report generation in .NET — a practical guide to choosing
+  between true PDF files, printable PDF-style pages, and editable Word documents.
 faq:
-  - q: Should I generate HTML or DOCX reports in .NET?
+  - q: Should I generate PDF, HTML, or DOCX reports in .NET?
     a: >-
-      Pick by what your users open. If they view in a browser or print to PDF, use
-      TerraFluent.Html.Reporting for fixed, paginated pages. If they revise, comment,
-      or track changes in Microsoft Word, use TerraFluent.Docx.Reporting for real
-      editable .docx files. Both share the same fluent mental model.
+      Pick by what your users open. If they need a final, portable file, use
+      TerraFluent.Pdf.Reporting for true PDFs. If they view in a browser or you want
+      an HTML pipeline that prints to PDF, use TerraFluent.Html.Reporting. If they
+      revise, comment, or track changes in Microsoft Word, use
+      TerraFluent.Docx.Reporting. All three share the same fluent mental model.
+  - q: Can I generate PDF files server-side without a browser?
+    a: >-
+      Yes. TerraFluent.Pdf.Reporting writes true PDF 1.7 bytes directly from C# —
+      pure managed code with zero dependencies, so it runs in Docker, Azure Functions,
+      and AWS Lambda with no headless browser or converter in the loop.
   - q: Can I convert the HTML report output to a PDF file server-side?
     a: >-
       TerraFluent.Html.Reporting produces print-perfect, self-contained HTML pages,
       so any HTML-to-PDF step you already trust (a browser print dialog or a
-      server-side converter) turns them into PDF. Neither package emits PDF bytes directly.
-  - q: Can I use both TerraFluent packages in one project?
+      server-side converter) turns them into PDF. If you want PDF bytes without any
+      converter, use TerraFluent.Pdf.Reporting instead.
+  - q: Can I use multiple TerraFluent packages in one project?
     a: >-
       Yes. They are independent NuGet packages with no shared dependency — adding
-      both costs nothing but the two package references, and the fluent API skills
-      transfer between them.
+      more than one costs nothing but the package references, and the fluent API
+      skills transfer between them.
 ---
 
 <section class="hero page-hero">
@@ -29,69 +36,97 @@ faq:
     <span class="hero-badge"><span class="dot"></span> Decision guide</span>
     <h1>Which package <span class="grad">do you need?</span></h1>
     <p class="hero-lede">
-      Short answer: pick by what your users open. A browser or a printer — HTML Reporting.
-      Microsoft Word — DOCX Reporting. Both share the same fluent mental model, and many
-      teams ship both.
+      Short answer: pick by what your users open. A final, portable file — PDF Reporting.
+      A browser or an HTML pipeline — HTML Reporting. Microsoft Word — DOCX Reporting.
+      All three share the same fluent mental model, and many teams ship more than one.
     </p>
   </div>
 </section>
 
-<div class="container prose" style="max-width: 900px">
+<div class="container prose" style="max-width: 1000px">
   <h2>By requirement</h2>
   <div class="table-scroll">
     <table class="compare-table">
       <thead>
         <tr>
           <th>You need…</th>
+          <th class="col-pdf">Pdf.Reporting</th>
           <th class="col-html">Html.Reporting</th>
           <th class="col-docx">Docx.Reporting</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>A printable, PDF-style page</td>
+          <td>A true PDF file, server-side</td>
+          <td><span class="yes-pdf">✓ Best fit</span><small>Real PDF 1.7 bytes, no browser or converter</small></td>
+          <td>—<small>Needs a browser or HTML-to-PDF step</small></td>
+          <td>—<small>Word can export, but that needs Word</small></td>
+        </tr>
+        <tr>
+          <td>A printable, PDF-style page in the browser</td>
+          <td>—<small>PDFs need a viewer, not a web page</small></td>
           <td><span class="yes">✓ Best fit</span><small>Fixed pages; print/save to PDF from any browser</small></td>
           <td>—<small>Word can print, but layout lives in Word's engine</small></td>
         </tr>
         <tr>
           <td>An editable deliverable</td>
+          <td>—<small>Output is final-form PDF</small></td>
           <td>—<small>Output is final-form HTML</small></td>
           <td><span class="yes-docx">✓ Best fit</span><small>Real .docx users can revise and track changes in</small></td>
         </tr>
         <tr>
           <td>Charts</td>
+          <td><span class="yes-pdf">✓ Vector canvas</span><small>Draw bars, lines, shapes with the Canvas API</small></td>
           <td>—<small>Bring your own SVG via raw HTML</small></td>
           <td><span class="yes-docx">✓ Native</span><small>Editable Word charts: bar, line, pie, stacked</small></td>
         </tr>
         <tr>
-          <td>Barcodes (Code 128)</td>
-          <td><span class="yes">✓ Native PNG</span><small>Generated in-library</small></td>
-          <td><span class="yes-docx">✓ Native vector</span><small>Crisp at any zoom and print resolution</small></td>
+          <td>Barcodes &amp; QR codes</td>
+          <td><span class="yes-pdf">✓ Code 128 + QR</span><small>Vector barcodes and full ISO 18004 QR codes</small></td>
+          <td><span class="yes">✓ Code 128 PNG</span><small>Generated in-library</small></td>
+          <td><span class="yes-docx">✓ Code 128 vector</span><small>Crisp at any zoom and print resolution</small></td>
         </tr>
         <tr>
           <td>Filling an existing branded template</td>
+          <td>—<small>Reusable IComponent templates, not file-based</small></td>
           <td>—</td>
           <td><span class="yes-docx">✓</span><small>Placeholder &amp; content-control replacement</small></td>
         </tr>
         <tr>
+          <td>Password protection / encryption</td>
+          <td><span class="yes-pdf">✓ AES-256</span><small>User/owner passwords, permission flags</small></td>
+          <td>—</td>
+          <td><span class="yes-docx">✓ Restrict Editing</span><small>Guard rail, not encryption</small></td>
+        </tr>
+        <tr>
+          <td>Bookmarks &amp; table of contents</td>
+          <td><span class="yes-pdf">✓</span><small>Auto TOC from headings, hierarchical outlines</small></td>
+          <td>—</td>
+          <td><span class="yes-docx">✓</span><small>Captions and table of figures</small></td>
+        </tr>
+        <tr>
           <td>Precise pagination control</td>
+          <td><span class="yes-pdf">✓</span><small>Two-pass layout, explicit page breaks, repeating headers</small></td>
           <td><span class="yes">✓</span><small>Line-level splits, atomic row groups, layout warnings</small></td>
           <td>—<small>Word paginates when the document opens</small></td>
         </tr>
         <tr>
-          <td>Document protection</td>
-          <td>—</td>
-          <td><span class="yes-docx">✓</span><small>Restrict Editing with password verifier</small></td>
-        </tr>
-        <tr>
           <td>Very large reports</td>
+          <td><span class="yes-pdf">✓</span><small>Deterministic code-first rendering, no browser engine</small></td>
           <td><span class="yes">✓</span><small>Streaming, page-at-a-time async rendering</small></td>
           <td><span class="yes-docx">✓</span><small>Open XML packages are compact</small></td>
         </tr>
         <tr>
           <td>Zero dependencies</td>
+          <td><span class="yes-pdf">✓</span><small>Pure managed C#, no native binaries</small></td>
           <td><span class="yes">✓</span><small>Dependency-free core</small></td>
           <td><span class="yes-docx">✓</span><small>No Word, no COM — writes Open XML directly</small></td>
+        </tr>
+        <tr>
+          <td>.NET Framework support</td>
+          <td>—<small>Targets .NET 8, 9, and 10</small></td>
+          <td><span class="yes">✓</span><small>netstandard2.0 — .NET Framework 4.6.1+</small></td>
+          <td><span class="yes-docx">✓</span><small>netstandard2.0 — .NET Framework 4.6.1+</small></td>
         </tr>
       </tbody>
     </table>
@@ -101,12 +136,37 @@ faq:
   <p>
     Whichever you choose, the skills transfer: create a document, describe pages and
     content with fluent builders, publish. Here is the same header-content-footer
-    shape in both:
+    shape in all three:
   </p>
 </div>
 
-<div class="container" style="max-width: 1100px">
+<div class="container" style="max-width: 1200px">
   <div class="compare-pair">
+    <div>
+      <h3>TerraFluent.Pdf.Reporting</h3>
+      <div class="code-panel">
+{% highlight csharp %}
+PdfDocument.Create(container =>
+{
+    container.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Header().Text("Quarterly Report").Bold();
+        page.Footer().AlignCenter().Text(t =>
+        {
+            t.Span("Page "); t.CurrentPageNumber();
+            t.Span(" / "); t.TotalPages();
+        });
+        page.Content().Column(col =>
+        {
+            col.Item().H1("Executive Summary");
+            col.Item().Text("Revenue improved across every practice.");
+        });
+    });
+}).PublishPdf("report.pdf");
+{% endhighlight %}
+      </div>
+    </div>
     <div>
       <h3>TerraFluent.Html.Reporting</h3>
       <div class="code-panel">
@@ -153,10 +213,12 @@ Document.Create(doc =>
 <div class="container prose" style="max-width: 900px; padding-top: 8px">
   <h2>Honest counter-signals</h2>
   <ul>
+    <li><strong>Pick Html.Reporting even for PDF asks</strong> if your report must also live on a web page or in an email — one HTML output serves the browser, and printing covers the occasional PDF.</li>
     <li><strong>Pick Docx.Reporting even for print</strong> if your organization's workflow reviews and signs documents in Word — fidelity to Word's own pagination matters more than pixel control.</li>
     <li><strong>Pick Html.Reporting even for "editable" asks</strong> if edits are really data changes — regenerate the report instead of letting people hand-edit output.</li>
-    <li><strong>Need a true PDF file server-side</strong> (no browser in the loop)? Neither package produces PDF bytes directly; Html.Reporting gets you print-perfect pages you can convert with any HTML-to-PDF step you already trust.</li>
-    <li><strong>Using both?</strong> They're independent packages with no shared dependency — adding both costs nothing but the two package references.</li>
+    <li><strong>Converting existing HTML to PDF?</strong> Pdf.Reporting is code-first, not an HTML-to-PDF converter — if your source content is already HTML, an HTML-to-PDF converter is a better fit.</li>
+    <li><strong>Still on .NET Framework?</strong> Pdf.Reporting needs .NET 8+; Html.Reporting and Docx.Reporting run all the way back to .NET Framework 4.6.1 via netstandard2.0.</li>
+    <li><strong>Using more than one?</strong> They're independent packages with no shared dependency — adding another costs nothing but the package reference.</li>
   </ul>
 </div>
 
@@ -165,7 +227,7 @@ Document.Create(doc =>
 <section class="cta-band" aria-labelledby="compare-cta">
   <div class="container">
     <h2 id="compare-cta">Still unsure? Look at the output.</h2>
-    <p>The samples gallery shows real rendered documents from both libraries — five minutes there usually settles it.</p>
+    <p>The samples gallery shows real rendered documents from every library — five minutes there usually settles it.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary" href="{{ '/samples/' | relative_url }}">Browse samples</a>
       <a class="btn btn-ghost" href="{{ '/getting-started/' | relative_url }}">Getting started</a>

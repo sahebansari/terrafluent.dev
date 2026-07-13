@@ -1,6 +1,7 @@
 # TerraFluent — Full Documentation
-# Fluent report generation for .NET: print-ready paginated HTML (TerraFluent.Html.Reporting)
-# and native Word .docx documents (TerraFluent.Docx.Reporting). MIT licensed.
+# Fluent report generation for .NET: print-ready paginated HTML (TerraFluent.Html.Reporting),
+# native Word .docx documents (TerraFluent.Docx.Reporting), and true PDF files
+# (TerraFluent.Pdf.Reporting). MIT licensed.
 # Site: https://terrafluent.dev/
 
 
@@ -3684,3 +3685,3179 @@ The package should include:
 - `lib/net10.0/TerraFluent.Docx.Reporting.xml`
 
 See [Release And Publishing](https://github.com/sahebansari/TerraFluent.Docx.Reporting/blob/master/docs/RELEASE.md) for the full checklist.
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Getting Started
+URL: https://terrafluent.dev/docs/pdf/getting-started/
+====================================================================
+
+# Getting Started with TerraFluent.Pdf.Reporting
+
+## Installation
+
+```sh
+dotnet add package TerraFluent.Pdf.Reporting
+```
+
+## Namespaces
+
+| Namespace | Contents |
+|-----------|----------|
+| `TerraFluent.Pdf.Reporting.Core` | Fluent API entry points, descriptors, extension methods |
+| `TerraFluent.Pdf.Reporting.Infra` | `IContainer`, `IDocument`, `IComponent` interfaces |
+| `TerraFluent.Pdf.Reporting.Helpers` | `Color`, `PageSize`, `Unit`, `TextStyle` |
+
+---
+
+TerraFluent.Pdf.Reporting 1.4.0 brings a few notable upgrades for document authorship: AES-256 encryption is now the default, images can be supplied from bytes or streams, anchor-based bookmarks track rendered content automatically, and the multi-span text API uses immutable `TextStyle` callbacks.
+
+## Minimal Example
+
+```csharp
+using TerraFluent.Pdf.Reporting.Core;
+using TerraFluent.Pdf.Reporting.Helpers;
+
+PdfDocument.Create(container =>
+{
+    container.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Margin(2, Unit.Centimetre);
+        page.PageColor(Color.White);
+        page.DefaultTextStyle(s => s.FontSize(11));
+
+        page.Header().Text("My First PDF").Bold().FontSize(20);
+
+        page.Content().Column(col =>
+        {
+            col.Spacing(8);
+            col.Item().Text("Hello, TerraFluent.Pdf.Reporting!");
+            col.Item().Text("A second paragraph.").Italic();
+        });
+
+        page.Footer().AlignCenter().Text(t =>
+        {
+            t.Span("Page ");
+            t.CurrentPageNumber();
+            t.Span(" / ");
+            t.TotalPages();
+        });
+    });
+})
+.PublishPdf("output.pdf");
+```
+
+---
+
+## Document Entry Points
+
+```csharp
+// Inline callback
+PdfDocument.Create(container => { ... }).PublishPdf("output.pdf");
+
+// Reusable IDocument class
+PdfDocument.Create(new MyReport(data)).PublishPdf("output.pdf");
+```
+
+---
+
+## Page Configuration
+
+Every page is configured through `PageDescriptor`:
+
+```csharp
+container.Page(page =>
+{
+    // Size
+    page.Size(PageSize.A4);                        // standard size
+    page.Size(PageSize.Landscape(PageSize.A4));    // landscape
+    page.Size(210, 297, Unit.Millimetre);          // explicit dimensions
+
+    // Margins
+    page.Margin(2, Unit.Centimetre);               // all sides
+    page.MarginVertical(1, Unit.Centimetre);       // top + bottom
+    page.MarginHorizontal(1.5, Unit.Centimetre);   // left + right
+    page.Margin(top: 72, right: 54, bottom: 72, left: 54); // individual (points)
+
+    // Appearance
+    page.PageColor(Color.White);
+    page.DefaultTextStyle(s => s.FontSize(11).FontColor(Color.Grey.Darken2));
+
+    // Layout slots
+    page.Header()   // IContainer — drawn above content on every page
+    page.Content()  // IContainer — main scrollable area
+    page.Footer()   // IContainer — drawn below content on every page
+});
+```
+
+---
+
+## Output Methods
+
+```csharp
+var composer = PdfDocument.Create(...);
+
+// Write to file
+composer.PublishPdf("report.pdf");
+
+// Return as byte array (API responses, email attachments)
+byte[] bytes = composer.PublishPdf();
+
+// Write to any stream
+using var stream = new MemoryStream();
+composer.PublishPdf(stream);
+```
+
+---
+
+## Next Steps
+
+- [Text & Spans](/docs/pdf/text-and-spans/) — styling, underline, line-height, multi-span, page numbers
+- [Layout](/docs/pdf/layout/) — Column, Row, Table
+- [Decorators](/docs/pdf/decorators/) — Padding, Margin, Background, Border, Rounded Border, Per-Edge Borders, Alignment, Lines, PageBreak, Hyperlink, ShowIf
+- [Vector Graphics](/docs/pdf/vector-graphics/) — Canvas API, lines, shapes, Bézier paths, polygons, grids, charts
+- [Images](/docs/pdf/images/) — PNG and JPEG embedding
+- [Encryption](/docs/pdf/encryption/) — AES-256 by default, plus AES-128 compatibility mode and permission flags
+- [Table of Contents](/docs/pdf/table-of-contents/) — headings, automatic TOC generation, internal links
+- [Bookmarks](/docs/pdf/bookmarks/) — PDF outlines / hierarchical navigation tree
+- [Unicode & Character Encoding](/docs/pdf/unicode-and-encoding/) — WinAnsiEncoding coverage, Windows-1252 specials, Latin-1 Supplement, avoiding `?` characters
+- [Metadata](/docs/pdf/metadata/) — document properties (Title, Author, Subject, Keywords, Creator)
+- [Colors](/docs/pdf/colors/) — full built-in palette reference
+- [Page Sizes & Units](/docs/pdf/page-sizes-and-units/) — all standard sizes and unit conversions
+- [Components & Templates](/docs/pdf/components-and-templates/) — reusable `IComponent` and `IDocument`
+- [Row & Column Layout](/docs/pdf/row-and-column-layout/) — deep dive with diagrams
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Text & Spans
+URL: https://terrafluent.dev/docs/pdf/text-and-spans/
+====================================================================
+
+# Text & Spans
+
+## Single-String Text
+
+The simplest form — one string, block-level style:
+
+```csharp
+container.Text("Hello, world!");
+```
+
+Chain style methods on the returned `TextDescriptor` to format the whole block:
+
+```csharp
+container.Text("Section Heading")
+    .Bold()
+    .FontSize(16)
+    .FontColor(Color.Blue.Darken2)
+    .AlignCenter();
+```
+
+### All `TextDescriptor` style methods
+
+| Method | Effect |
+|--------|--------|
+| `.Bold()` | Bold weight |
+| `.SemiBold()` | Semi-bold (mapped to bold in the built-in font set) |
+| `.Italic()` | Italic style |
+| `.Strikethrough()` | Horizontal strikethrough line |
+| `.Underline()` | Underline beneath the text |
+| `.FontSize(double)` | Font size in PDF points |
+| `.FontFamily(string)` | Font family: `"Helvetica"` (default), `"Times"`, or `"Courier"` |
+| `.LineHeight(double)` | Line-height multiplier (e.g. `1.0` = tight, `1.4` = default, `2.0` = double-spaced) |
+| `.FontColor(string)` | Hex colour, e.g. `"#1a4a8a"` or `Color.Red.Medium` |
+| `.AlignLeft()` | Left-align (default) |
+| `.AlignCenter()` | Centre-align |
+| `.AlignRight()` | Right-align |
+| `.Justify()` | Justify all lines except the last |
+
+### Font families
+
+TerraFluent.Pdf.Reporting ships the three standard-14 font families, each in regular, **bold**,
+*italic*, and ***bold-italic*** — no font files or embedding required:
+
+```csharp
+container.Text("Sans-serif (default)");                       // Helvetica
+container.Text("Serif body text").FontFamily("Times");        // Times-Roman
+container.Text("Code sample").FontFamily("Courier");          // Courier (monospaced)
+container.Text("Serif heading").FontFamily("Times").Bold();   // Times-Bold
+```
+
+`Bold()` and `Italic()` always stay within the selected family — bold Helvetica
+renders **Helvetica-Bold**, not a serif face. Common aliases are accepted
+(`"Arial"` → Helvetica, `"Times New Roman"` → Times, `"Courier New"` → Courier);
+unknown names fall back to Helvetica.
+
+---
+
+## Multi-Span Text
+
+Use the `Func<TextStyle, TextStyle>` overload to compose a text block from multiple
+independently styled spans. Because `TextStyle` is immutable, the callback receives
+a fresh style object and must return the configured style.
+
+```csharp
+container.Text(t =>
+{
+    t.Span("Normal  ");
+    t.Span("Bold  ", s => s.Bold());
+    t.Span("Italic  ", s => s.Italic());
+    t.Span("Struck  ", s => s.Strikethrough());
+    t.Span("Coloured  ", s => s.FontColor(Color.Red.Medium));
+    t.Span("Large", s => s.FontSize(16).FontColor("#1a4a8a"));
+});
+```
+
+> **Important:** `t.Span(...)` returns a `SpanDescriptor`, not a `TextDescriptor`.
+> Style methods chained after `.Span()` apply **only to that span**. This is intentional —
+> it prevents accidental formatting of the whole block.
+
+### `SpanDescriptor` methods
+
+| Method | Effect |
+|--------|--------|
+| `.Bold()` | Bold weight for this span |
+| `.SemiBold()` | Semi-bold for this span |
+| `.Italic()` | Italic for this span |
+| `.Strikethrough()` | Strikethrough for this span |
+| `.Underline()` | Underline for this span |
+| `.FontSize(double)` | Font size for this span |
+| `.FontFamily(string)` | Font family for this span (`"Helvetica"`, `"Times"`, `"Courier"`) |
+| `.FontColor(string)` | Text colour for this span |
+
+---
+
+## Page Numbers
+
+`CurrentPageNumber()` and `TotalPages()` also return `SpanDescriptor` so they
+can be individually styled:
+
+```csharp
+page.Footer().AlignCenter().Text(t =>
+{
+    t.Span("Page ").FontSize(9).FontColor(Color.Grey.Medium);
+    t.CurrentPageNumber().FontSize(9).FontColor(Color.Grey.Medium);
+    t.Span(" of ").FontSize(9).FontColor(Color.Grey.Medium);
+    t.TotalPages().FontSize(9).FontColor(Color.Grey.Medium);
+});
+```
+
+---
+
+## Mixing Styles in One Block
+
+Because the block's alignment is controlled at the `TextDescriptor` level, you can
+combine per-span colour/size with a block-level alignment:
+
+```csharp
+container.Text(t =>
+{
+    t.Span("Status: ").Bold();
+    t.Span("Approved").FontColor(Color.Green.Darken2).Bold();
+    t.Span("  (June 2025)").FontColor(Color.Grey.Medium).FontSize(9);
+})
+.AlignRight();
+```
+
+---
+
+## Underline
+
+`.Underline()` draws a line beneath the text. It works on both the whole block
+(`TextDescriptor`) and on individual spans (`SpanDescriptor`).
+
+```csharp
+// Whole block underlined
+container.Text("Important notice").Underline().Bold();
+
+// Only one span underlined in a mixed block
+container.Text(t =>
+{
+    t.Span("Visit ");
+    t.Span("TerraFluent.Pdf.Reporting").Underline().FontColor(Color.Blue.Medium);
+    t.Span(" for more info.");
+});
+
+// Underline and strikethrough can be combined
+container.Text("Deprecated").Underline().Strikethrough().FontColor(Color.Grey.Medium);
+```
+
+---
+
+## Line Height
+
+`.LineHeight(double)` sets a multiplier applied to the natural line height.
+The default multiplier is approximately `1.4`.
+
+```csharp
+container.Text("Tight paragraph.").LineHeight(1.0);
+container.Text("Normal paragraph.").LineHeight(1.4);
+container.Text("Relaxed paragraph.").LineHeight(1.6);
+container.Text("Double-spaced paragraph.").LineHeight(2.0);
+```
+
+Line height can also be set page-wide via `DefaultTextStyle`:
+
+```csharp
+page.DefaultTextStyle(s => s.FontSize(11).LineHeight(1.5));
+```
+
+---
+
+## Default Text Style
+
+A page-wide default style is set on `PageDescriptor` and inherited by all text
+unless explicitly overridden at the block or span level:
+
+```csharp
+page.DefaultTextStyle(s => s.FontSize(11).FontColor(Color.Grey.Darken2));
+```
+
+Style resolution order (highest wins):
+
+```
+Span style  >  Block style (TextDescriptor)  >  Page default style  >  Library default (12 pt, black)
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Layout
+URL: https://terrafluent.dev/docs/pdf/layout/
+====================================================================
+
+# Layout
+
+TerraFluent.Pdf.Reporting provides three layout elements: **Column**, **Row**, and **Table**.
+They are all accessed through extension methods on `IContainer`.
+
+For a visual explanation of how Column and Row relate to each other see
+[Row & Column Layout](/docs/pdf/row-and-column-layout/).
+
+---
+
+## Column
+
+`Column` stacks its children **vertically** (top → bottom).
+
+```csharp
+container.Column(col =>
+{
+    col.Spacing(8);          // vertical gap between items in points
+
+    col.Item().Text("First paragraph");
+    col.Item().Text("Second paragraph");
+    col.Item().Background(Color.Grey.Lighten4).Padding(10).Text("Highlighted box");
+});
+```
+
+### Column alignment
+
+Each `Item()` can be aligned independently by calling an `AlignItems*` method
+**before** the `Item()` call it should affect:
+
+```csharp
+col.AlignItemsLeft();           // default
+col.Item().Text("Left");
+
+col.AlignItemsCenter();
+col.Item().Text("Centred");
+
+col.AlignItemsRight();
+col.Item().Text("Right");
+```
+
+### `ColumnDescriptor` API
+
+| Method | Description |
+|--------|-------------|
+| `Spacing(double)` | Vertical gap between items in points |
+| `AlignItemsLeft()` | Left-align subsequent items (default) |
+| `AlignItemsCenter()` | Centre-align subsequent items |
+| `AlignItemsRight()` | Right-align subsequent items |
+| `Item()` | Adds an item slot; returns `IContainer` |
+| `PageBreak()` | Inserts an explicit page break at this position |
+
+---
+
+## Row
+
+`Row` arranges its children **horizontally** (left → right).
+
+```csharp
+container.Row(row =>
+{
+    row.Spacing(6);   // horizontal gap between items in points
+
+    row.RelativeItem(2).Text("Takes 2x the share");
+    row.RelativeItem(1).Text("Takes 1x the share");
+    row.AutoItem().Text("Natural content width");
+    row.ConstantItem(80).Text("Always 80 pt wide");
+});
+```
+
+### Item sizing
+
+| Method | Width |
+|--------|-------|
+| `RelativeItem(weight = 1)` | Proportional share of remaining space after constant/auto items |
+| `AutoItem()` | Measured natural content width |
+| `ConstantItem(points)` | Fixed number of PDF points |
+
+Width calculation order:
+1. Subtract spacing from available width.
+2. Measure all `ConstantItem` widths and `AutoItem` widths (content measurement pass).
+3. Distribute remaining space among `RelativeItem` slots proportionally by weight.
+
+### `RowDescriptor` API
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `Spacing(double)` | `RowDescriptor` | Horizontal gap in points |
+| `RelativeItem(double weight = 1)` | `IContainer` | Proportional slot |
+| `AutoItem()` | `IContainer` | Auto-sized slot |
+| `ConstantItem(double pts)` | `IContainer` | Fixed-width slot |
+
+---
+
+## Table
+
+`Table` renders a grid with fixed or proportional columns. Header rows are
+automatically repeated on every continuation page when the table spans multiple pages.
+
+```csharp
+container.Table(table =>
+{
+    // 1. Define columns
+    table.ColumnsDefinition(cols =>
+    {
+        cols.RelativeColumn(4);    // proportional
+        cols.RelativeColumn(1);
+        cols.ConstantColumn(70);   // fixed width in points
+    });
+
+    // 2. Header row (repeated on continuation pages)
+    table.HeaderRow(row =>
+    {
+        row.Cell().Background("#1a4a8a").Padding(6)
+           .Text("Description").Bold().FontColor(Color.White);
+        row.Cell().Background("#1a4a8a").Padding(6).AlignCenter()
+           .Text("Qty").Bold().FontColor(Color.White);
+        row.Cell().Background("#1a4a8a").Padding(6).AlignRight()
+           .Text("Price").Bold().FontColor(Color.White);
+    });
+
+    // 3. Data rows
+    bool shade = false;
+    foreach (var item in lineItems)
+    {
+        string bg = shade ? Color.Grey.Lighten4 : Color.White;
+        table.Row(row =>
+        {
+            row.Cell().Background(bg).Padding(6).Text(item.Name);
+            row.Cell().Background(bg).Padding(6).AlignCenter().Text(item.Qty.ToString());
+            row.Cell().Background(bg).Padding(6).AlignRight().Text($"${item.Price:N2}");
+        });
+        shade = !shade;
+    }
+});
+```
+
+### Column definitions
+
+| Method | Description |
+|--------|-------------|
+| `RelativeColumn(weight = 1)` | Proportional share of available width |
+| `ConstantColumn(points)` | Fixed width in PDF points |
+
+### `TableDescriptor` API
+
+| Method | Description |
+|--------|-------------|
+| `ColumnsDefinition(Action<ColumnsDefinitionDescriptor>)` | Define all columns |
+| `HeaderRow(Action<TableRowDescriptor>)` | Add a header row (repeats on new pages) |
+| `Row(Action<TableRowDescriptor>)` | Add a data row |
+
+### `TableRowDescriptor` API
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `Cell()` | `IContainer` | Next cell slot (left to right); supports all decorators |
+
+> **Tip:** Cells support the full decorator chain:
+> `row.Cell().Background(bg).Padding(6).AlignRight().Text("value")`
+
+---
+
+## Header on First Page Only
+
+By default, the page header appears on every page. Use `HeaderOnFirstPageOnly()` to
+show the header only on the first page, freeing vertical space for content on continuation pages:
+
+```csharp
+page.Header().Text("Confidential").Bold();
+page.HeaderOnFirstPageOnly();  // header only on page 1
+```
+
+This is useful for cover pages or documents where the header should not repeat.
+
+---
+
+## Nesting Layouts
+
+`Column`, `Row`, and `Table` nest freely inside each other.
+
+### Two-column page layout
+
+```csharp
+container.Row(row =>
+{
+    row.RelativeItem().Column(left =>
+    {
+        left.Spacing(6);
+        left.Item().Text("Left heading").Bold();
+        left.Item().Text("Left body text.");
+    });
+
+    row.ConstantItem(1).Background(Color.Grey.Lighten2);  // divider
+
+    row.RelativeItem().PaddingLeft(12).Column(right =>
+    {
+        right.Spacing(6);
+        right.Item().Text("Right heading").Bold();
+        right.Item().Text("Right body text.");
+    });
+});
+```
+
+### Header / body / footer page structure
+
+```csharp
+container.Column(page =>
+{
+    page.Spacing(10);
+
+    // Header row
+    page.Item().Row(header =>
+    {
+        header.RelativeItem().Text("Logo").Bold();
+        header.AutoItem().Text("Page 1").FontColor(Color.Grey.Medium);
+    });
+
+    // Body
+    page.Item().Text("Main content goes here.");
+
+    // Footer row
+    page.Item().Row(footer =>
+    {
+        footer.RelativeItem().Text("Company Name");
+        footer.AutoItem().Text("Confidential").Italic();
+    });
+});
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Row & Column Layout
+URL: https://terrafluent.dev/docs/pdf/row-and-column-layout/
+====================================================================
+
+# Row & Column Layout in TerraFluent.Pdf.Reporting
+
+## Core Concept
+
+The name describes **how children are arranged**, not the shape of the container itself.
+
+| Element | Direction | Axis |
+|---------|-----------|------|
+| `Column` | Top → Bottom | Vertical |
+| `Row` | Left → Right | Horizontal |
+
+---
+
+## Column
+
+A `Column` stacks its children **vertically**, one below the other — like a column of text in a newspaper.
+
+```
+┌──────────────────┐
+│     Item 1       │
+├──────────────────┤
+│     Item 2       │
+├──────────────────┤
+│     Item 3       │
+└──────────────────┘
+```
+
+### Fluent API
+
+```csharp
+container.Column(col =>
+{
+    col.Spacing(10); // vertical gap between items in points
+
+    col.Item().Text("First line");
+    col.Item().Text("Second line");
+    col.Item().Text("Third line");
+});
+```
+
+### What happens internally
+
+- `Measure()` accumulates **height** for each item and tracks the **maximum width**.
+- `Draw()` advances the cursor **downward** (`curY`) after each item.
+
+---
+
+## Row
+
+A `Row` arranges its children **horizontally**, side by side — like cells in a table row.
+
+```
+┌──────────┬──────────┬──────────┐
+│  Item 1  │  Item 2  │  Item 3  │
+└──────────┴──────────┴──────────┘
+```
+
+### Fluent API
+
+```csharp
+container.Row(row =>
+{
+    row.Spacing(5); // horizontal gap between items in points
+
+    row.AutoItem().Text("Auto-sized");        // takes its natural content width
+    row.RelativeItem(2).Text("2x wide");      // takes 2x the share of remaining space
+    row.RelativeItem(1).Text("1x wide");      // takes 1x the share of remaining space
+    row.ConstantItem(80).Text("Fixed 80pt");  // always exactly 80 points wide
+});
+```
+
+### Item sizing options
+
+| Method | Behaviour |
+|--------|-----------|
+| `AutoItem()` | Width = natural content width (measured first) |
+| `RelativeItem(weight = 1)` | Width = proportional share of remaining space after auto/constant items (default weight = 1) |
+| `ConstantItem(pts)` | Width = fixed number of PDF points, always |
+
+### What happens internally
+
+- `CalculateWidths()` resolves all item widths from available space.
+- `Measure()` accumulates **widths** and tracks the **maximum height**.
+- `Draw()` advances the cursor **to the right** (`curX`) after each item.
+
+---
+
+## Combining Row & Column
+
+`Row` and `Column` are designed to be **nested** freely to build any layout.
+
+### Example: Two-column page layout
+
+```csharp
+// Side-by-side columns, each containing stacked content
+container.Row(row =>
+{
+    row.RelativeItem().Column(left =>
+    {
+        left.Spacing(8);
+        left.Item().Text("Left heading");
+        left.Item().Text("Left body text...");
+    });
+
+    row.ConstantItem(20); // spacer
+
+    row.RelativeItem().Column(right =>
+    {
+        right.Spacing(8);
+        right.Item().Text("Right heading");
+        right.Item().Text("Right body text...");
+    });
+});
+```
+
+Result:
+
+```
+┌─────────────────────┬────┬─────────────────────┐
+│  Left heading       │    │  Right heading       │
+│  Left body text...  │    │  Right body text...  │
+└─────────────────────┴────┴─────────────────────┘
+```
+
+### Example: Header + body + footer (Column wrapping Rows)
+
+```csharp
+container.Column(page =>
+{
+    page.Spacing(12);
+
+    // Header row
+    page.Item().Row(header =>
+    {
+        header.RelativeItem().Text("Logo");
+        header.RelativeItem().Text("Title");
+        header.AutoItem().Text("Page 1");
+    });
+
+    // Body content
+    page.Item().Text("Main body paragraph text goes here...");
+
+    // Footer row
+    page.Item().Row(footer =>
+    {
+        footer.RelativeItem().Text("Company Name");
+        footer.AutoItem().Text("Confidential");
+    });
+});
+```
+
+Result:
+
+```
+┌──────────────────────────────────────────┐
+│  Logo          Title            Page 1   │  ← Row (header)
+├──────────────────────────────────────────┤
+│  Main body paragraph text goes here...   │  ← Column item
+├──────────────────────────────────────────┤
+│  Company Name                Confidential│  ← Row (footer)
+└──────────────────────────────────────────┘
+```
+
+---
+
+## Quick Reference
+
+```
+Column  =  vertical stacking   (think: stack of pancakes)
+Row     =  horizontal stacking (think: seats in a cinema row)
+```
+
+> **Tip:** This is the same convention used by CSS Flexbox (`flex-direction: column` / `row`),
+> Flutter (`Column` / `Row` widgets) — so the mental model transfers directly.
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Decorators
+URL: https://terrafluent.dev/docs/pdf/decorators/
+====================================================================
+
+# Decorators
+
+Decorators wrap a container slot and modify how its content is drawn.
+They are chainable and compose from the **outside in**:
+
+```
+.Margin()  →  .Background()  →  .Border()  →  .Padding()  →  content
+```
+
+Each decorator method returns a new inner `IContainer` so the chain continues
+into the decorated area.
+
+---
+
+## Padding
+
+Adds space **inside** the element's box, between the background/border edge and
+the content. The background and border cover the padded region.
+
+```csharp
+container.Padding(10)                         // all sides, in points
+container.Padding(0.5, Unit.Centimetre)       // all sides, with unit
+container.PaddingVertical(8)                  // top + bottom
+container.PaddingVertical(4, Unit.Millimetre)
+container.PaddingHorizontal(12)               // left + right
+container.PaddingTop(4)
+container.PaddingBottom(4)
+container.PaddingLeft(6)
+container.PaddingRight(6)
+```
+
+---
+
+## Margin
+
+Adds space **outside** the element's box, between the element and its surroundings.
+The margin region is always transparent — background and border start after it.
+
+```csharp
+container.Margin(10)                          // all sides, in points
+container.Margin(0.5, Unit.Centimetre)        // all sides, with unit
+container.MarginVertical(8)                   // top + bottom
+container.MarginVertical(4, Unit.Millimetre)
+container.MarginHorizontal(12)               // left + right
+container.MarginTop(4)
+container.MarginBottom(4)
+container.MarginLeft(6)
+container.MarginRight(6)
+```
+
+### Padding vs Margin illustrated
+
+```
+┌─────────────────────────────────────────┐  ← outer slot
+│           margin (transparent)          │
+│   ┌─────────────────────────────────┐   │
+│   │       background / border       │   │
+│   │   ┌─────────────────────────┐   │   │
+│   │   │        padding          │   │   │
+│   │   │   ┌─────────────────┐   │   │   │
+│   │   │   │    content      │   │   │   │
+│   │   │   └─────────────────┘   │   │   │
+│   │   └─────────────────────────┘   │   │
+│   └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
+```
+
+```csharp
+// The red box is inset by 10 pt; text is inset 5 pt inside the red edge.
+container
+    .Margin(10)
+    .Background(Color.Red.Lighten4)
+    .Padding(5)
+    .Text("Inside the box");
+```
+
+---
+
+## Background
+
+Fills the element's area with a solid colour.
+
+```csharp
+container.Background(Color.Blue.Lighten5)
+container.Background("#1a4a8a")
+```
+
+---
+
+## Border
+
+Draws a rectangular border around the element's area.
+
+```csharp
+container.Border(1.5, "#1a4a8a")   // line width in points + hex colour
+container.Border(1)                 // black, 1 pt (default colour)
+```
+
+---
+
+## Rounded Border
+
+Draws a border with rounded corners. Optionally fills the interior to create a
+"rounded box" in a single call.
+
+```csharp
+// Stroke-only rounded border
+container.RoundedBorder()                                         // 8 pt radius, 1 pt black
+container.RoundedBorder(radius: 12, lineWidth: 1.5, hexColor: Color.Blue.Darken2)
+
+// Filled rounded box (background fill + rounded border in one call)
+container.RoundedBox()                                            // white fill, 8 pt radius, 1 pt black border
+container.RoundedBox(radius: 10, fillHexColor: Color.Blue.Lighten5, borderHexColor: Color.Blue.Darken2)
+```
+
+### Rounded card example
+
+```csharp
+col.Item()
+   .Margin(6)
+   .RoundedBox(radius: 10, fillHexColor: Color.Grey.Lighten5, borderHexColor: Color.Grey.Lighten2)
+   .Padding(12)
+   .Column(card =>
+   {
+       card.Item().Text("Card Title").Bold().FontSize(13);
+       card.Item().PaddingTop(4).Text("Card body text.").FontColor(Color.Grey.Darken1);
+   });
+```
+
+---
+
+## Per-Edge Borders
+
+Draw a border on individual sides only, each with its own width and colour.
+Useful for table-cell separators or left-accent quote blocks.
+
+```csharp
+container.BorderTop(1.5, Color.Grey.Darken2)       // top only
+container.BorderBottom(1)                           // bottom only, black
+container.BorderLeft(3, Color.Blue.Darken2)         // left accent
+container.BorderRight(0.5, "#cccccc")               // right only
+```
+
+All four methods accept an optional `hexColor` (defaults to `"#000000"`).
+
+### Table column-separator pattern
+
+```csharp
+table.Row(row =>
+{
+    row.Cell().BorderBottom(1.5, Color.Grey.Darken2).Padding(6).Text("Column A").Bold();
+    row.Cell().BorderBottom(1.5, Color.Grey.Darken2).Padding(6).Text("Column B").Bold();
+});
+```
+
+### Left-accent callout block
+
+```csharp
+col.Item()
+   .BorderLeft(4, Color.Blue.Darken2)
+   .PaddingLeft(10).PaddingVertical(6)
+   .Text("Note: this is important information.").Italic();
+```
+
+---
+
+## Page Break
+
+Forces the document engine to start a new PDF page at the current position.
+A `PageBreak()` inside a `Column` is silently ignored when it falls at the very
+bottom of one page (i.e. the next page would start anyway).
+
+```csharp
+container.Column(col =>
+{
+    col.Item().Text("Chapter 1").Bold().FontSize(18);
+    col.Item().Text("Body text for chapter one...");
+
+    col.Item().PageBreak();   // ← forces new page here
+
+    col.Item().Text("Chapter 2").Bold().FontSize(18);
+    col.Item().Text("Body text for chapter two...");
+});
+```
+
+---
+
+## Hyperlink
+
+Wraps any child content in a clickable PDF URI annotation.
+Clicking the rendered area in a conforming PDF viewer opens the URL in a browser.
+
+```csharp
+// Wrap a text span
+container.Hyperlink("https://example.com").Text("Visit Example");
+
+// Wrap styled text
+container.Hyperlink("https://example.com")
+         .Text("Click here").Underline().FontColor(Color.Blue.Medium);
+
+// Wrap an image (clickable logo)
+container.AlignCenter()
+         .Hyperlink("https://example.com")
+         .Image("logo.png", 120);
+```
+
+Hyperlink participates in the full decorator chain — chain it after alignment
+and margin decorators and before the content:
+
+```csharp
+col.Item()
+   .Margin(4)
+   .Hyperlink("https://docs.example.com")
+   .Text("Read the documentation").Underline().FontColor(Color.Blue.Darken2);
+```
+
+---
+
+### Internal Link
+
+Creates a clickable internal link (GoTo action) that navigates to a specific page
+within the same PDF document. This is the mechanism used by the automatic Table
+of Contents feature to make entries clickable.
+
+```csharp
+// Jump to page 5, at the default vertical position (top of page)
+container.InternalLink(5).Text("See Chapter 5");
+
+// Jump to page 3 at a specific Y coordinate (e.g. 150 pt from top)
+container.InternalLink(3, 150).Text("Back to top");
+```
+
+Multiple internal links can be combined with other decorators. The target page
+must exist when the PDF is rendered; otherwise an `InvalidOperationException`
+is thrown during saving.
+
+---
+
+### Horizontal alignment
+
+Positions the child within the available width without changing available height.
+
+```csharp
+container.AlignLeft()      // default
+container.AlignCenter()    // centres child horizontally
+container.AlignRight()     // pushes child to the right edge
+```
+
+### Vertical alignment
+
+Positions the child within the available height.
+
+```csharp
+container.AlignMiddle()    // centres child vertically
+container.AlignBottom()    // pushes child to the bottom edge
+```
+
+### Combining horizontal and vertical
+
+```csharp
+container.AlignCenter().AlignMiddle().Text("Centred both axes");
+```
+
+---
+
+## Lines
+
+Rule lines that span the full available width or height of their container.
+
+```csharp
+// Horizontal rule
+container.LineHorizontal()                          // 1 pt, black
+container.LineHorizontal(2, Color.Blue.Darken2)     // 2 pt, coloured
+
+// Vertical rule
+container.LineVertical()                            // 1 pt, black
+container.LineVertical(1.5, "#cccccc")
+```
+
+> **Tip:** Use a `ConstantItem` inside a `Row` as a thin vertical divider:
+> ```csharp
+> row.ConstantItem(1).Background(Color.Grey.Lighten2);
+> ```
+
+---
+
+## ShowIf — Conditional Rendering
+
+Renders child content only when a condition is `true`. When `false` the slot is
+replaced with a zero-size no-op, so surrounding layout is unaffected.
+
+```csharp
+container.ShowIf(isAdmin).Text("Admin panel");
+container.ShowIf(invoice.IsPaid).Background(Color.Green.Lighten4).Padding(6).Text("PAID");
+```
+
+---
+
+## Chaining Examples
+
+### Card with coloured header
+
+```csharp
+col.Item()
+   .Margin(6)
+   .Border(1, Color.Grey.Lighten2)
+   .Column(card =>
+   {
+       card.Item()
+           .Background(Color.Blue.Darken2)
+           .Padding(8)
+           .Text("Card Title").Bold().FontColor(Color.White);
+
+       card.Item()
+           .Padding(10)
+           .Text("Card body text goes here.");
+   });
+```
+
+### Right-aligned badge
+
+```csharp
+row.AutoItem()
+   .Margin(4)
+   .Background(Color.Green.Lighten4)
+   .Border(1, Color.Green.Darken1)
+   .Padding(4)
+   .AlignCenter()
+   .Text("NEW").Bold().FontSize(9).FontColor(Color.Green.Darken2);
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Images
+URL: https://terrafluent.dev/docs/pdf/images/
+====================================================================
+
+# Images
+
+TerraFluent.Pdf.Reporting supports **PNG** and **JPEG** image embedding with automatic aspect-ratio
+preservation. The format is detected from the data itself (magic bytes), so the
+file extension does not matter. In 1.4.0, images can also be supplied directly
+from `byte[]` or `Stream` instances, which is useful for embedded resources and
+generated content.
+
+---
+
+## Basic Usage
+
+### Fill available width
+
+The image scales to fill the full width of its container slot while keeping the
+original aspect ratio. Height is calculated automatically; when the available
+height is the binding constraint, both axes shrink together so the image is
+never distorted.
+
+```csharp
+container.Image("path/to/photo.jpg");
+container.Image("path/to/diagram.png");
+```
+
+### From bytes or a stream
+
+Images can come from embedded resources, databases, HTTP responses, or
+generated data — no temporary file needed:
+
+```csharp
+byte[] logoBytes = await httpClient.GetByteArrayAsync(logoUrl);
+container.Image(logoBytes, 120);
+
+using Stream s = assembly.GetManifestResourceStream("MyApp.logo.png")!;
+container.Image(s);            // stream is read to the end; caller disposes it
+```
+
+### Transparency
+
+RGBA PNGs keep their alpha channel — it is embedded as a PDF soft mask
+(`/SMask`), so transparent logos composite correctly over page backgrounds.
+Fully opaque images skip the mask automatically. Indexed-transparency (tRNS)
+PNGs are not supported and render opaque.
+
+### Deduplication
+
+Identical image data used on multiple pages (for example a logo in a repeated
+header) is embedded **once** and shared document-wide — file size does not grow
+with the page count.
+
+### Fixed width
+
+Constrains the image to a specific width in PDF points. Height is still computed
+from the aspect ratio. Useful for logos and icons that should not fill the page.
+
+```csharp
+container.Image("logo.png", 120);      // 120 pt wide
+container.Image("thumbnail.jpg", 60);
+```
+
+---
+
+## Positioning Fixed-Width Images
+
+Because `Image()` returns `IContainer`, wrap it with an alignment decorator to
+control horizontal position:
+
+```csharp
+// Centred logo
+container.AlignCenter().Image("logo.png", 150);
+
+// Right-aligned stamp
+container.AlignRight().Image("stamp.png", 80);
+
+// Left-aligned (default, no wrapper needed)
+container.Image("icon.png", 32);
+```
+
+---
+
+## Combining with Other Decorators
+
+Images participate in the full decorator chain:
+
+```csharp
+// Logo inside a padded, bordered box
+container
+    .Border(1, Color.Grey.Lighten2)
+    .Padding(8)
+    .AlignCenter()
+    .Image("logo.png", 100);
+
+// Full-width banner with a bottom accent bar
+page.Header().Column(col =>
+{
+    col.Item().Image("banner.jpg");
+    col.Item().Background(Color.Blue.Darken2).Padding(3);
+});
+```
+
+---
+
+## Supported Formats
+
+| Format | Extensions |
+|--------|------------|
+| PNG | `.png` |
+| JPEG | `.jpg`, `.jpeg` |
+
+> Files are read from the file-system path supplied at render time.
+> Use `AppContext.BaseDirectory` to resolve paths relative to the executable:
+> ```csharp
+> string logo = Path.Combine(AppContext.BaseDirectory, "logo.png");
+> container.Image(logo, 120);
+> ```
+
+---
+
+## Checking File Existence
+
+When the image file may not be present (e.g. optional branding), guard with a
+file check and provide a text fallback:
+
+```csharp
+if (File.Exists(logoPath))
+    container.Image(logoPath, 100);
+else
+    container.Text("CompanyName").Bold().FontSize(18);
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Page Sizes & Units
+URL: https://terrafluent.dev/docs/pdf/page-sizes-and-units/
+====================================================================
+
+# Page Sizes & Units
+
+---
+
+## Page Sizes
+
+All constants live in `TerraFluent.Pdf.Reporting.Helpers.PageSize` and are expressed as
+`(double Width, double Height)` tuples in **PDF points** (1 pt = 1/72 inch).
+
+### ISO A-Series
+
+| Constant | Width (pt) | Height (pt) | Approx. mm |
+|----------|-----------|------------|------------|
+| `PageSize.A0` | 2383.94 | 3370.39 | 841 × 1189 |
+| `PageSize.A1` | 1683.78 | 2383.94 | 594 × 841 |
+| `PageSize.A2` | 1190.55 | 1683.78 | 420 × 594 |
+| `PageSize.A3` | 841.89 | 1190.55 | 297 × 420 |
+| `PageSize.A4` | 595.28 | 841.89 | 210 × 297 |
+| `PageSize.A5` | 419.53 | 595.28 | 148 × 210 |
+| `PageSize.A6` | 297.64 | 419.53 | 105 × 148 |
+
+### North American
+
+| Constant | Width (pt) | Height (pt) | Approx. inches |
+|----------|-----------|------------|----------------|
+| `PageSize.Letter` | 612.00 | 792.00 | 8.5 × 11 |
+| `PageSize.Legal` | 612.00 | 1008.00 | 8.5 × 14 |
+| `PageSize.Tabloid` | 792.00 | 1224.00 | 11 × 17 |
+| `PageSize.Executive` | 521.86 | 756.00 | 7.25 × 10.5 |
+
+### Landscape Variant
+
+Use `PageSize.Landscape()` to swap width and height for any size:
+
+```csharp
+page.Size(PageSize.Landscape(PageSize.A4));      // 841.89 × 595.28 pt
+page.Size(PageSize.Landscape(PageSize.Letter));   // 792.00 × 612.00 pt
+```
+
+### Custom Size
+
+Pass explicit dimensions with an optional unit:
+
+```csharp
+page.Size(148, 210, Unit.Millimetre);    // A5 in millimetres
+page.Size(6, 4, Unit.Inch);             // 6 × 4 inch card
+page.Size(300, 500);                    // raw points
+```
+
+---
+
+## Units
+
+All API methods that accept a measurement also accept an optional `Unit` parameter.
+Without a unit the value is interpreted as **PDF points**.
+
+| `Unit` value | Description | Conversion |
+|--------------|-------------|------------|
+| `Unit.Point` | PDF native unit (default) | 1 pt = 1/72 inch |
+| `Unit.Millimetre` | Millimetres | 1 mm ≈ 2.835 pt |
+| `Unit.Centimetre` | Centimetres | 1 cm ≈ 28.35 pt |
+| `Unit.Inch` | Inches | 1 in = 72 pt |
+
+### Methods that accept a Unit
+
+```csharp
+// Page margin
+page.Margin(2, Unit.Centimetre);
+page.MarginVertical(10, Unit.Millimetre);
+page.MarginHorizontal(0.75, Unit.Inch);
+
+// Container padding
+container.Padding(0.5, Unit.Centimetre);
+container.PaddingTop(5, Unit.Millimetre);
+
+// Container margin
+container.Margin(0.25, Unit.Inch);
+container.MarginLeft(8, Unit.Millimetre);
+```
+
+### Manual conversion
+
+Use `UnitConversion.ToPoints()` when you need to convert a value yourself:
+
+```csharp
+using TerraFluent.Pdf.Reporting.Helpers;
+
+double pts = UnitConversion.ToPoints(2.5, Unit.Centimetre);  // ≈ 70.87 pt
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Colors
+URL: https://terrafluent.dev/docs/pdf/colors/
+====================================================================
+
+# Colors
+
+TerraFluent.Pdf.Reporting ships a full **Material Design**-inspired colour palette as static string
+constants in the `TerraFluent.Pdf.Reporting.Helpers.Color` class. All values are CSS hex strings
+compatible with every API that accepts a colour (`FontColor`, `Background`,
+`Border`, `LineHorizontal`, etc.).
+
+---
+
+## Special Constants
+
+```csharp
+Color.White        // "#FFFFFF"
+Color.Black        // "#000000"
+Color.Transparent  // "#00000000"
+```
+
+---
+
+## Full Palette
+
+Each colour family exposes shades from `Lighten5` (near-white) through `Medium`
+to `Darken4` (near-black). Not all families have every shade.
+
+### Red
+| Constant | Hex |
+|----------|-----|
+| `Color.Red.Lighten5` | `#FFEBEE` |
+| `Color.Red.Lighten4` | `#FFCDD2` |
+| `Color.Red.Lighten3` | `#EF9A9A` |
+| `Color.Red.Lighten2` | `#E57373` |
+| `Color.Red.Lighten1` | `#EF5350` |
+| `Color.Red.Medium`   | `#F44336` |
+| `Color.Red.Darken1`  | `#E53935` |
+| `Color.Red.Darken2`  | `#D32F2F` |
+| `Color.Red.Darken3`  | `#C62828` |
+| `Color.Red.Darken4`  | `#B71C1C` |
+
+### Pink
+| Constant | Hex |
+|----------|-----|
+| `Color.Pink.Medium`   | `#E91E63` |
+| `Color.Pink.Darken2`  | `#C2185B` |
+
+### Purple
+| Constant | Hex |
+|----------|-----|
+| `Color.Purple.Medium`   | `#9C27B0` |
+| `Color.Purple.Darken2`  | `#7B1FA2` |
+
+### Deep Purple
+| Constant | Hex |
+|----------|-----|
+| `Color.DeepPurple.Medium`   | `#673AB7` |
+| `Color.DeepPurple.Darken2`  | `#512DA8` |
+
+### Indigo
+| Constant | Hex |
+|----------|-----|
+| `Color.Indigo.Lighten5` | `#E8EAF6` |
+| `Color.Indigo.Medium`   | `#3F51B5` |
+| `Color.Indigo.Darken2`  | `#283593` |
+
+### Blue
+| Constant | Hex |
+|----------|-----|
+| `Color.Blue.Lighten5` | `#E3F2FD` |
+| `Color.Blue.Lighten4` | `#BBDEFB` |
+| `Color.Blue.Lighten3` | `#90CAF9` |
+| `Color.Blue.Lighten2` | `#64B5F6` |
+| `Color.Blue.Lighten1` | `#42A5F5` |
+| `Color.Blue.Medium`   | `#2196F3` |
+| `Color.Blue.Darken1`  | `#1E88E5` |
+| `Color.Blue.Darken2`  | `#1976D2` |
+| `Color.Blue.Darken3`  | `#1565C0` |
+| `Color.Blue.Darken4`  | `#0D47A1` |
+
+### Teal
+| Constant | Hex |
+|----------|-----|
+| `Color.Teal.Medium`   | `#009688` |
+| `Color.Teal.Darken2`  | `#00796B` |
+
+### Green
+| Constant | Hex |
+|----------|-----|
+| `Color.Green.Lighten5` | `#E8F5E9` |
+| `Color.Green.Lighten4` | `#C8E6C9` |
+| `Color.Green.Lighten3` | `#A5D6A7` |
+| `Color.Green.Lighten2` | `#81C784` |
+| `Color.Green.Lighten1` | `#66BB6A` |
+| `Color.Green.Medium`   | `#4CAF50` |
+| `Color.Green.Darken1`  | `#43A047` |
+| `Color.Green.Darken2`  | `#388E3C` |
+| `Color.Green.Darken3`  | `#2E7D32` |
+| `Color.Green.Darken4`  | `#1B5E20` |
+
+### Light Green
+| Constant | Hex |
+|----------|-----|
+| `Color.LightGreen.Medium`   | `#8BC34A` |
+| `Color.LightGreen.Darken2`  | `#689F38` |
+
+### Lime
+| Constant | Hex |
+|----------|-----|
+| `Color.Lime.Medium`   | `#CDDC39` |
+| `Color.Lime.Darken2`  | `#AFB42B` |
+
+### Yellow
+| Constant | Hex |
+|----------|-----|
+| `Color.Yellow.Medium`   | `#FFEB3B` |
+| `Color.Yellow.Darken2`  | `#F9A825` |
+
+### Amber
+| Constant | Hex |
+|----------|-----|
+| `Color.Amber.Medium`   | `#FFC107` |
+| `Color.Amber.Darken2`  | `#FF8F00` |
+
+### Orange
+| Constant | Hex |
+|----------|-----|
+| `Color.Orange.Medium`   | `#FF9800` |
+| `Color.Orange.Darken2`  | `#E65100` |
+
+### Deep Orange
+| Constant | Hex |
+|----------|-----|
+| `Color.DeepOrange.Medium`   | `#FF5722` |
+| `Color.DeepOrange.Darken2`  | `#BF360C` |
+
+### Brown
+| Constant | Hex |
+|----------|-----|
+| `Color.Brown.Lighten5` | `#EFEBE9` |
+| `Color.Brown.Medium`   | `#795548` |
+| `Color.Brown.Darken2`  | `#4E342E` |
+
+### Grey
+| Constant | Hex |
+|----------|-----|
+| `Color.Grey.Lighten5` | `#FAFAFA` |
+| `Color.Grey.Lighten4` | `#F5F5F5` |
+| `Color.Grey.Lighten3` | `#EEEEEE` |
+| `Color.Grey.Lighten2` | `#E0E0E0` |
+| `Color.Grey.Lighten1` | `#BDBDBD` |
+| `Color.Grey.Medium`   | `#9E9E9E` |
+| `Color.Grey.Darken1`  | `#757575` |
+| `Color.Grey.Darken2`  | `#616161` |
+| `Color.Grey.Darken3`  | `#424242` |
+| `Color.Grey.Darken4`  | `#212121` |
+
+### Blue Grey
+| Constant | Hex |
+|----------|-----|
+| `Color.BlueGrey.Lighten5` | `#ECEFF1` |
+| `Color.BlueGrey.Lighten4` | `#CFD8DC` |
+| `Color.BlueGrey.Medium`   | `#607D8B` |
+| `Color.BlueGrey.Darken2`  | `#37474F` |
+| `Color.BlueGrey.Darken4`  | `#263238` |
+
+---
+
+## Using Raw Hex Strings
+
+Any method that accepts a colour string also accepts a plain hex literal:
+
+```csharp
+container.Background("#FFF8E1");
+container.FontColor("#333333");
+container.Border(1, "#DDDDDD");
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Encryption & Password Protection
+URL: https://terrafluent.dev/docs/pdf/encryption/
+====================================================================
+
+# Encryption & Password Protection
+
+TerraFluent.Pdf.Reporting encrypts documents with **AES-256** using the PDF Standard Security
+Handler **Revision 6** (ISO 32000-2 / PDF 2.0) by default — SHA-2 based key
+derivation with no MD5 or RC4 in the chain. Encrypted documents are opened by
+every major PDF viewer — Adobe Acrobat 9+ (2008), Chrome, Edge, Firefox,
+Preview, Foxit, Okular, and others.
+
+For documents that must open in very old viewers, legacy **AES-128
+(Revision 4)** remains available via
+`Algorithm = EncryptionAlgorithm.Aes128`.
+
+No external packages are required.  The entire implementation uses
+`System.Security.Cryptography` only.
+
+---
+
+## Quick start
+
+```csharp
+PdfDocument.Create(container =>
+{
+    container.Encrypt(new EncryptionOptions
+    {
+        UserPassword  = "open123",    // required to open the document
+        OwnerPassword = "admin456",   // grants full access regardless of permissions
+        Permissions   = PdfPermissions.Print | PdfPermissions.CopyText,
+    });
+
+    container.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Margin(2, Unit.Centimetre);
+        page.Content().Text("This PDF is password-protected.").Bold().FontSize(18);
+    });
+})
+.PublishPdf("protected.pdf");
+```
+
+---
+
+## `EncryptionOptions` properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `UserPassword` | `string?` | `null` | Password required to *open* the document. `null` or empty = no open password (but content is still encrypted and permissions still enforced). |
+| `OwnerPassword` | `string?` | `null` | Password granting *full* access, bypassing all `Permissions` restrictions. When `null` a random value is used so the encryption dictionary is always valid. |
+| `Permissions` | `PdfPermissions` | `All` | Bitwise combination of permission flags that apply when the user opens with the `UserPassword`. |
+| `Algorithm` | `EncryptionAlgorithm` | `Aes256` | `Aes256` = Revision 6 (modern, PDF 2.0, default). `Aes128` = Revision 4 for viewers released before ~2008. |
+
+---
+
+## `PdfPermissions` flags
+
+Combine flags with the bitwise-OR operator:
+
+```csharp
+PdfPermissions.Print | PdfPermissions.CopyText
+```
+
+| Flag | Description |
+|------|-------------|
+| `PdfPermissions.Print` | High-quality printing |
+| `PdfPermissions.PrintLowResolution` | Degraded (low-resolution) printing only |
+| `PdfPermissions.ModifyContents` | Modify document contents |
+| `PdfPermissions.CopyText` | Copy or extract text and graphics |
+| `PdfPermissions.ModifyAnnotations` | Add or modify annotations and form fields |
+| `PdfPermissions.FillForms` | Fill in interactive form fields |
+| `PdfPermissions.ExtractForAccessibility` | Text extraction for screen readers |
+| `PdfPermissions.AssembleDocument` | Insert, rotate, or delete pages |
+| `PdfPermissions.All` | All permissions granted (default) |
+| `PdfPermissions.None` | No permissions — view only |
+
+---
+
+## Common patterns
+
+### View-only — no printing or copying
+
+```csharp
+container.Encrypt(new EncryptionOptions
+{
+    UserPassword = "readonly",
+    Permissions  = PdfPermissions.None,
+});
+```
+
+### Open without a password, but restrict printing
+
+Leaving `UserPassword` empty means the viewer opens the document without prompting,
+while still enforcing the permission flags:
+
+```csharp
+container.Encrypt(new EncryptionOptions
+{
+    OwnerPassword = "admin",
+    Permissions   = PdfPermissions.None,   // viewer cannot print or copy
+});
+```
+
+### Owner password only — full restriction for all users
+
+```csharp
+container.Encrypt(new EncryptionOptions
+{
+    UserPassword  = "userpass",
+    OwnerPassword = "ownerpass",
+    Permissions   = PdfPermissions.Print | PdfPermissions.ExtractForAccessibility,
+});
+```
+
+### Encrypt everything, allow all permissions
+
+This encrypts content (making copy-paste from outside viewers harder) while
+allowing full interactive use inside the viewer:
+
+```csharp
+container.Encrypt(new EncryptionOptions
+{
+    UserPassword = "open",
+    Permissions  = PdfPermissions.All,
+});
+```
+
+---
+
+## Technical details
+
+### AES-256 — Revision 6 (default)
+
+| Property | Value |
+|----------|-------|
+| Security Handler | PDF Standard Security Handler |
+| Revision | 6 (ISO 32000-2 §7.6.4 / PDF 2.0) |
+| Content cipher | AES-256 CBC, file encryption key used directly (V5 has no per-object keys) |
+| IV | 16-byte random (per string/stream) |
+| Padding | PKCS#7 to 16-byte boundary |
+| Key derivation | SHA-256/384/512 iterated hash (algorithm 2.B) with random salts |
+| O / U entries | 48-byte verifiers (algorithms 8 & 9) |
+| OE / UE entries | File key wrapped with AES-256 under password-derived intermediate keys |
+| Perms entry | Permission bits encrypted with the file key (algorithm 10) |
+| Passwords | UTF-8, up to 127 bytes |
+| PDF version | 2.0 (set automatically) |
+
+### AES-128 — Revision 4 (legacy opt-in)
+
+| Property | Value |
+|----------|-------|
+| Revision | 4 (PDF 1.6 / §7.6.5) |
+| Content cipher | AES-128 CBC with per-object keys (Algorithm 1 — FEK + obj/gen bytes + `sAlT`) |
+| Key derivation | MD5 + 50 rounds (PDF §7.6.3.3 Algorithm 2) |
+| O entry | Algorithm 3 — MD5 key + RC4 × 20 |
+| U entry | Algorithm 5 (Rev 4) — MD5 + RC4 × 20 |
+| PDF version | 1.6 (set automatically) |
+
+> **Note on MD5/RC4:** used exclusively in the Revision 4 key-derivation steps
+> mandated by the PDF specification — never for content encryption, and not at
+> all in the Revision 6 default.
+
+### What gets encrypted
+
+- **Content streams** — the PDF drawing operators for every page
+- **Image XObjects** — PNG and JPEG pixel data (and alpha soft masks)
+- **Strings** — document metadata, bookmark titles, hyperlink URIs
+
+### What is NOT encrypted (per PDF specification)
+
+- The `/Encrypt` dictionary itself (§7.6.1)
+- Cross-reference tables and trailer
+- Stream lengths
+- The `%PDF-` header
+
+### Zero-dependency
+
+The implementation uses only `System.Security.Cryptography`
+(`Aes`, `SHA256`/`SHA384`/`SHA512`, `MD5` for Rev 4 only, and
+`RandomNumberGenerator`).
+
+---
+
+## Calling `Encrypt` in your document
+
+Call `container.Encrypt(options)` once inside the `PdfDocument.Create` callback.
+It may be called before or after adding pages; the encryption is applied when
+`PublishPdf()` is called.  Calling `Encrypt` a second time replaces the previous
+settings.
+
+```csharp
+PdfDocument.Create(container =>
+{
+    // Encryption must be configured before PublishPdf() is called.
+    // Position relative to Page() calls does not matter.
+    container.Encrypt(new EncryptionOptions { UserPassword = "secret" });
+
+    container.MetadataTitle("Confidential Report");
+
+    container.Page(page => { /* … */ });
+    container.Page(page => { /* … */ });
+})
+.PublishPdf("report.pdf");
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Vector Graphics
+URL: https://terrafluent.dev/docs/pdf/vector-graphics/
+====================================================================
+
+# Vector Graphics
+
+TerraFluent.Pdf.Reporting provides a fluent **Canvas API** for drawing vector graphics directly inside
+any layout container. You can render lines, rectangles, circles, ellipses, rounded
+rectangles, arbitrary Bézier paths, polygons, and grids — all without any external
+dependencies.
+
+---
+
+## Adding a canvas
+
+Call `container.Canvas(height, draw)` anywhere a container slot is available. The canvas
+occupies the full available width and the exact height you specify.
+
+```csharp
+container.Canvas(120, c =>
+{
+    c.FillRect(0, 0, 200, 80, Color.Blue.Lighten4);
+    c.StrokeRect(0, 0, 200, 80, Color.Blue.Darken2, 1.5);
+    c.Line(0, 40, 200, 40, Color.Blue.Medium, 0.5);
+});
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `height` | `double` | Canvas height in PDF points (must be > 0) |
+| `draw` | `Action<VectorCanvas>` | Callback that issues drawing commands |
+
+### Coordinate system
+
+All coordinates are in **PDF points** with a **top-left origin** (0, 0) at the
+upper-left corner of the canvas element — consistent with TerraFluent.Pdf.Reporting's layout
+coordinate system.
+
+```
+(0,0) ──────────────────────► x
+  │
+  │      canvas area
+  │
+  ▼
+  y
+```
+
+---
+
+## VectorCanvas primitives
+
+Every method returns `this` so calls can be chained.
+
+---
+
+### Lines
+
+```csharp
+canvas.Line(x1, y1, x2, y2, hexColor = "#000000", lineWidth = 1);
+```
+
+Draws a straight line from `(x1, y1)` to `(x2, y2)`.
+
+```csharp
+c.Line(0, 20, 300, 20, "#CCCCCC", 0.5);   // thin grey rule
+c.Line(0,  0, 150, 80, Color.Red.Medium, 2);
+```
+
+---
+
+### Rectangles
+
+Three variants give you fill-only, stroke-only, or both:
+
+```csharp
+// Filled rectangle
+canvas.FillRect(x, y, width, height, hexColor = "#000000");
+
+// Stroked (outline) rectangle
+canvas.StrokeRect(x, y, width, height, hexColor = "#000000", lineWidth = 1);
+
+// Filled + stroked rectangle
+canvas.DrawRect(x, y, width, height,
+    fillHex = "#FFFFFF", strokeHex = "#000000", lineWidth = 1);
+```
+
+```csharp
+c.FillRect  (  0, 0, 80, 50, Color.Blue.Lighten3);
+c.StrokeRect(100, 0, 80, 50, Color.Blue.Darken2, 1.5);
+c.DrawRect  (200, 0, 80, 50, Color.Blue.Lighten5, Color.Blue.Darken2, 1);
+```
+
+---
+
+### Rounded rectangles
+
+Identical variants to the rectangle API, but with a `radius` parameter for
+the corner curve:
+
+```csharp
+canvas.FillRoundedRect  (x, y, w, h, radius, hexColor = "#000000");
+canvas.StrokeRoundedRect(x, y, w, h, radius, hexColor = "#000000", lineWidth = 1);
+canvas.DrawRoundedRect  (x, y, w, h, radius,
+    fillHex = "#FFFFFF", strokeHex = "#000000", lineWidth = 1);
+```
+
+```csharp
+c.FillRoundedRect  (  0, 0, 90, 50,  6, "#2E6DA4");      // r=6 badge
+c.StrokeRoundedRect(110, 0, 90, 50, 12, "#E87722", 2);   // r=12 outline
+c.DrawRoundedRect  (220, 10, 90, 30, 15, "#FFF", "#1A3C5E", 1); // pill
+```
+
+---
+
+### Circles
+
+```csharp
+canvas.FillCircle  (cx, cy, radius, hexColor = "#000000");
+canvas.StrokeCircle(cx, cy, radius, hexColor = "#000000", lineWidth = 1);
+canvas.DrawCircle  (cx, cy, radius,
+    fillHex = "#FFFFFF", strokeHex = "#000000", lineWidth = 1);
+```
+
+`(cx, cy)` is the centre of the circle.
+
+```csharp
+c.FillCircle  ( 40, 40, 30, Color.Blue.Medium);
+c.StrokeCircle(120, 40, 30, Color.Orange.Medium, 2);
+c.DrawCircle  (200, 40, 30, Color.Green.Lighten4, Color.Green.Darken2, 1.5);
+```
+
+---
+
+### Ellipses
+
+Same variants as circles, but with independent horizontal (`rx`) and vertical
+(`ry`) radii:
+
+```csharp
+canvas.FillEllipse  (cx, cy, rx, ry, hexColor = "#000000");
+canvas.StrokeEllipse(cx, cy, rx, ry, hexColor = "#000000", lineWidth = 1);
+canvas.DrawEllipse  (cx, cy, rx, ry,
+    fillHex = "#FFFFFF", strokeHex = "#000000", lineWidth = 1);
+```
+
+```csharp
+c.FillEllipse(100, 40, 80, 30, Color.Purple.Lighten3);   // wide, flat ellipse
+```
+
+---
+
+### Grid helper
+
+Draws a full-canvas grid of evenly spaced vertical and horizontal lines:
+
+```csharp
+canvas.Grid(cellWidth, cellHeight = null, hexColor = "#CCCCCC", lineWidth = 0.5);
+```
+
+When `cellHeight` is `null`, square cells are used (`cellHeight = cellWidth`).
+
+```csharp
+c.Grid(20);                          // 20 × 20 pt square grid, light grey
+c.Grid(30, 20, "#E0E0E0", 0.3);     // 30 × 20 pt rectangular grid
+```
+
+> **Note:** `Grid` reads the canvas's allocated width and height to fill the area,
+> so it must be called inside the `Canvas(height, draw)` callback (not stored and
+> called later).
+
+---
+
+## Arbitrary paths with `PathDescriptor`
+
+`canvas.Path(p => ...)` gives you full control via a fluent `PathDescriptor`. Use it
+for triangles, custom polygons, Bézier curves, compound shapes, and shapes with holes.
+
+### Move and line commands
+
+```csharp
+canvas.Path(p => p
+    .MoveTo(50, 10)     // lift pen, move to (50, 10)
+    .LineTo(90, 80)     // line to (90, 80)
+    .LineTo(10, 80)     // line to (10, 80)
+    .Close()            // close subpath back to (50, 10)
+    .Fill(Color.Blue.Lighten3)
+    .Stroke(Color.Blue.Darken2, 1.5));
+```
+
+### Cubic Bézier curves
+
+```csharp
+p.CurveTo(cx1, cy1, cx2, cy2, x, y)
+```
+
+Draws a cubic Bézier curve from the current point to `(x, y)`, using `(cx1, cy1)`
+and `(cx2, cy2)` as control points.
+
+```csharp
+canvas.Path(p => p
+    .MoveTo(10, 60)
+    .CurveTo(30, 10, 70, 10, 90, 60)   // smooth arch
+    .Stroke("#1A3C5E", 2));
+```
+
+### Convenience shapes on PathDescriptor
+
+These helpers append subpaths to the current descriptor:
+
+| Method | Description |
+|--------|-------------|
+| `Rect(x, y, width, height)` | Rectangular subpath |
+| `Ellipse(cx, cy, rx, ry)` | Ellipse subpath (cubic Bézier approximation) |
+| `Circle(cx, cy, radius)` | Circle subpath |
+| `Polyline((x,y)[] points)` | Open polyline through 2+ points |
+| `Polygon((x,y)[] points)` | Closed polygon through 3+ points |
+
+```csharp
+// Star-of-David using two overlapping triangles
+canvas.Path(p => p
+    .Polygon((50,10), (90,80), (10,80))
+    .Fill(Color.Blue.Lighten4)
+    .Stroke(Color.Blue.Darken2, 1));
+
+canvas.Path(p => p
+    .Polygon((50,80), (10,10), (90,10))
+    .Fill(Color.Blue.Lighten4)
+    .Stroke(Color.Blue.Darken2, 1));
+```
+
+### Paint methods
+
+| Method | Description |
+|--------|-------------|
+| `.Fill(hexColor)` | Fill the path with the given colour |
+| `.Stroke(hexColor, lineWidth = 1)` | Stroke the path outline |
+| `.UseEvenOddFill()` | Use even-odd rule (for shapes with holes, e.g. donuts) |
+
+You can call both `.Fill()` and `.Stroke()` on the same path to fill and stroke it.
+
+### Shapes with holes (even-odd fill)
+
+```csharp
+// Donut: outer circle + inner circle, even-odd fill creates the hole
+canvas.Path(p => p
+    .Circle(100, 60, 50)   // outer
+    .Circle(100, 60, 25)   // inner (becomes a hole)
+    .Fill(Color.Orange.Medium)
+    .UseEvenOddFill());
+```
+
+---
+
+## All `VectorCanvas` methods at a glance
+
+| Method | Description |
+|--------|-------------|
+| `Line(x1,y1, x2,y2, color, lw)` | Straight line |
+| `FillRect(x,y,w,h, color)` | Filled rectangle |
+| `StrokeRect(x,y,w,h, color, lw)` | Stroked rectangle |
+| `DrawRect(x,y,w,h, fill, stroke, lw)` | Filled + stroked rectangle |
+| `FillRoundedRect(x,y,w,h, r, color)` | Filled rounded rectangle |
+| `StrokeRoundedRect(x,y,w,h, r, color, lw)` | Stroked rounded rectangle |
+| `DrawRoundedRect(x,y,w,h, r, fill, stroke, lw)` | Filled + stroked rounded rect |
+| `FillCircle(cx,cy, r, color)` | Filled circle |
+| `StrokeCircle(cx,cy, r, color, lw)` | Stroked circle |
+| `DrawCircle(cx,cy, r, fill, stroke, lw)` | Filled + stroked circle |
+| `FillEllipse(cx,cy, rx,ry, color)` | Filled ellipse |
+| `StrokeEllipse(cx,cy, rx,ry, color, lw)` | Stroked ellipse |
+| `DrawEllipse(cx,cy, rx,ry, fill, stroke, lw)` | Filled + stroked ellipse |
+| `Path(Action<PathDescriptor>)` | Arbitrary path with full Bézier support |
+| `Grid(cw, ch?, color, lw)` | Full-canvas rectangular grid |
+
+---
+
+## All `PathDescriptor` methods at a glance
+
+| Method | Description |
+|--------|-------------|
+| `MoveTo(x, y)` | Move current point without drawing |
+| `LineTo(x, y)` | Straight line to point |
+| `CurveTo(cx1,cy1, cx2,cy2, x,y)` | Cubic Bézier curve |
+| `Close()` | Close subpath to its start |
+| `Rect(x,y,w,h)` | Append rectangular subpath |
+| `Ellipse(cx,cy,rx,ry)` | Append ellipse subpath |
+| `Circle(cx,cy,r)` | Append circle subpath |
+| `Polyline(points[])` | Append open polyline (≥ 2 points) |
+| `Polygon(points[])` | Append closed polygon (≥ 3 points) |
+| `Fill(hexColor)` | Set fill paint |
+| `Stroke(hexColor, lw)` | Set stroke paint and width |
+| `UseEvenOddFill()` | Switch to even-odd fill rule |
+
+---
+
+## Practical examples
+
+### Simple bar chart
+
+```csharp
+(string Label, double Value)[] data = [("Q1", 38), ("Q2", 52), ("Q3", 71), ("Q4", 64)];
+double maxValue = 80;
+double canvasHeight = 120;
+double barWidth = 40;
+double gap = 20;
+
+container.Canvas(canvasHeight, c =>
+{
+    for (int i = 0; i < data.Length; i++)
+    {
+        double barH = data[i].Value / maxValue * (canvasHeight - 20);
+        double x = i * (barWidth + gap);
+        double y = canvasHeight - 20 - barH;
+        c.FillRoundedRect(x, y, barWidth, barH, 3, Color.Blue.Medium);
+    }
+    // baseline
+    c.Line(0, canvasHeight - 20, data.Length * (barWidth + gap), canvasHeight - 20,
+           Color.Grey.Lighten2, 0.5);
+});
+```
+
+### Donut chart segment
+
+```csharp
+// Draw a filled donut wedge using Path + UseEvenOddFill
+container.Canvas(160, c =>
+{
+    // Full outer circle minus inner circle
+    c.Path(p => p
+        .Circle(80, 80, 60)   // outer radius
+        .Circle(80, 80, 35)   // inner radius (hole)
+        .Fill(Color.Blue.Lighten3)
+        .UseEvenOddFill());
+
+    c.Path(p => p
+        .Circle(80, 80, 60)
+        .Stroke(Color.White, 2));
+});
+```
+
+### Sparkline
+
+```csharp
+double[] values = [22, 35, 29, 48, 41, 60, 55, 73];
+double canvasH = 60;
+double stepX = 40;
+
+container.Canvas(canvasH, c =>
+{
+    // Shaded area under the line
+    c.Path(p =>
+    {
+        p.MoveTo(0, canvasH);
+        for (int i = 0; i < values.Length; i++)
+            p.LineTo(i * stepX, canvasH - (values[i] / 80.0 * canvasH));
+        p.LineTo((values.Length - 1) * stepX, canvasH);
+        p.Close();
+        p.Fill(Color.Blue.Lighten5);
+    });
+
+    // Line on top
+    c.Path(p =>
+    {
+        p.MoveTo(0, canvasH - (values[0] / 80.0 * canvasH));
+        for (int i = 1; i < values.Length; i++)
+            p.LineTo(i * stepX, canvasH - (values[i] / 80.0 * canvasH));
+        p.Stroke(Color.Blue.Darken2, 1.5);
+    });
+});
+```
+
+---
+
+## Sample
+
+The `10_VectorGraphicsShowcase.cs` sample in `samples/TerraFluent.Pdf.Reporting.Sample/Samples/`
+generates a 4-page PDF demonstrating every primitive and three chart types:
+
+```
+Page 1  Primitives reference sheet (lines, rects, rounded rects, circles, ellipses)
+Page 2  Arbitrary paths — triangles, polygons, Bézier curves, compound shapes
+Page 3  Data visualisation — bar chart, donut chart, line/sparkline chart
+Page 4  Design patterns — badges, progress bars, callout boxes, icon grid
+```
+
+Run it with:
+
+```sh
+cd samples/TerraFluent.Pdf.Reporting.Sample
+dotnet run
+# Output: 10_vector_graphics_showcase.pdf
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Table of Contents
+URL: https://terrafluent.dev/docs/pdf/table-of-contents/
+====================================================================
+
+# Table of Contents
+
+TerraFluent.Pdf.Reporting can automatically generate a navigable Table of Contents page from the headings (`.H1()` — `.H6()`) used throughout your document.
+
+---
+
+## Adding a TOC page
+
+Call `container.TableOfContents()` inside the document composition callback. The TOC page is inserted at that exact point in the document sequence.
+
+```csharp
+PdfDocument.Create(container =>
+{
+    // TOC page is placed first
+    container.TableOfContents(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Margin(2, Unit.Centimetre);
+        p.PageColor(Color.White);
+        p.DefaultTextStyle(s => s.FontSize(11));
+    });
+
+    // Rest of the document (chapters, sections, etc.)
+    container.Page(page => { /* … */ });
+}).PublishPdf("output.pdf");
+```
+
+The TOC page can be configured like any other page (size, margins, default text style, header/footer).
+
+### Optional configuration
+
+The `TableOfContents` method accepts an optional `Action<PageDescriptor>` for per-page settings. If omitted, sensible defaults are used.
+
+---
+
+## Headings (H1 – H6)
+
+TerraFluent.Pdf.Reporting provides six levels of headings via extension methods on `IContainer`:
+
+| Method | Typical use | Default style |
+|--------|------------|---------------|
+| `.H1(string)` | Document / chapter title | 24 pt, bold |
+| `.H2(string)` | Major section heading | 20 pt, bold |
+| `.H3(string)` | Sub-section heading | 16 pt, bold |
+| `.H4(string)` | Minor heading | 14 pt, italic |
+| `.H5(string)` | Small heading | 12 pt, bold |
+| `.H6(string)` | Smallest heading | 11 pt, regular |
+
+All six methods accept plain text and return a `TextDescriptor`, so you can customise the appearance further:
+
+```csharp
+container.H1("Chapter 1")
+          .FontColor(Color.Blue.Darken2)
+          .Underline();
+
+container.H2("2.1 Installation")
+          .FontSize(18)
+          .FontColor(Color.Grey.Darken2);
+```
+
+### Where to place headings
+
+Headings can be added anywhere a normal text element is allowed — directly in a `Column`, inside a decorated container, or nested in Rows and Tables. The TOC engine walks the entire element tree, collecting every heading it finds in the order they would be rendered.
+
+---
+
+## How it works
+
+TerraFluent.Pdf.Reporting uses a **two-pass layout engine**:
+
+1. **First pass** – The document is measured with a placeholder TOC. Every `HeadingElement` encountered reports its level, title, and page position to the TOC builder.
+2. **Second pass** – The final TOC is constructed with real page numbers and internal hyperlinks, inserted into the TOC page slot. The document is rendered again to produce the final PDF.
+
+This approach guarantees accurate page numbers even when headings cause page breaks or overflow.
+
+---
+
+## Internal links
+
+The TOC entries themselves are clickable. Under the hood TerraFluent.Pdf.Reporting creates `/GoTo` link annotations that jump directly to the heading's page and vertical position. You can also add your own internal links:
+
+```csharp
+container.InternalLink(targetPageNumber, topY).Text("Jump to section");
+```
+
+Use `InternalLink` to build cross-references, a custom index, or a "return to top" link at the end of a chapter.
+
+---
+
+## Page numbering
+
+TOC entries display **logical page numbers** — the TOC page itself is treated as page 0 and is not counted. Therefore, the first content page after the TOC is shown as page 1 in the TOC, regardless of how many pages the TOC occupies.
+
+Internal links use the **physical page numbers** (including the TOC pages), so clicking a TOC entry correctly jumps to the heading's location. TerraFluent.Pdf.Reporting computes the offset automatically from the actual height of the generated TOC.
+
+Example: If the TOC occupies 2 pages, the first chapter heading appears on physical page 3. The TOC will display "1" for that chapter, but the link will go to page 3.
+
+---
+
+## Limitations & notes
+
+- Only one `TableOfContents()` call is allowed per document. Attempting to add multiple TOC pages throws `InvalidOperationException`.
+- The TOC page(s) themselves are **excluded** from the heading list. Headings placed inside the TOC container are ignored (they would appear as self-references).
+- Heading levels can be mixed arbitrarily; the generated TOC defaults to 20 pt indentation per level.
+- Headings inside tables or rows are collected just like block-level headings.
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Bookmarks (PDF Outlines)
+URL: https://terrafluent.dev/docs/pdf/bookmarks/
+====================================================================
+
+# Bookmarks (PDF Outlines)
+
+TerraFluent.Pdf.Reporting supports PDF bookmarks (also called outlines) — the hierarchical tree structure displayed in PDF viewers' sidebar that allows readers to jump directly to sections of a document.
+
+---
+
+## Overview
+
+Bookmarks are defined at the document level via `IDocumentContainer.Bookmark()` methods. Each bookmark entry consists of:
+
+- A **title** displayed in the viewer's outline pane
+- A **destination** — the page number (and optional position) the bookmark links to
+- Optional **hierarchy** — child bookmarks nested under a parent
+
+When the PDF is saved, TerraFluent.Pdf.Reporting generates a complete `/Outlines` dictionary tree referenced from the document catalog.
+
+---
+
+## Anchor-Based Bookmarks (recommended)
+
+Instead of supplying a page number, anchor a bookmark directly to content with
+the `IContainer.Bookmark()` extension — the target page and vertical position
+are resolved automatically when the document is rendered, so bookmarks stay
+correct as content grows or reflows:
+
+```csharp
+PdfDocument.Create(c =>
+{
+    c.Page(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Content().Column(col =>
+        {
+            col.Item().Bookmark("Chapter 1").H1("Chapter 1");
+            col.Item().Text("...");
+            col.PageBreak();
+            // Nested under Chapter 1, wherever it lands
+            col.Item().Bookmark("Section 1.1", parentTitle: "Chapter 1").H2("Section 1.1");
+        });
+    });
+})
+.PublishPdf("book.pdf");
+```
+
+Anchored bookmarks generate zoom-retaining `/XYZ` destinations at the anchored
+element's position — clicking one scrolls to the element without changing the
+reader's zoom level — and can be nested under other anchors or manual bookmarks
+via `parentTitle`. Anchors wrap individual items — wrapping a whole multi-page
+column records only the column's starting position. These destinations also
+keep the reader's zoom level and land at the correct Y position after layout.
+
+The page-number-based API below remains available for cases where you want an
+outline entry that does not correspond to a specific element.
+
+---
+
+## Basic Usage (manual page numbers)
+
+### Simple bookmark
+
+```csharp
+PdfDocument.Create(c =>
+{
+    c.Page(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Content().Text("Chapter 1 content...");
+    });
+
+    // Bookmark pointing to page 1
+    c.Bookmark("Chapter 1", 1);
+})
+.PublishPdf("book.pdf");
+```
+
+The bookmark above appears in the PDF viewer's outline pane as **Chapter 1**. Clicking it jumps to page 1.
+
+### Bookmark with view position
+
+Supply a Y-coordinate (in points from the top of the page) to control where the view is positioned when the bookmark is activated:
+
+```csharp
+c.Bookmark("Introduction", 1, 72.0);  // starts 1 inch from page top
+```
+
+This generates an `/XYZ` destination with a null zoom, so the view scrolls to the given position while keeping the reader's current zoom level. If the `top` parameter is omitted, the view scrolls to the top of the page (still zoom-retaining).
+
+---
+
+## Hierarchical Bookmarks
+
+Create nested bookmark structures by specifying a parent title:
+
+```csharp
+PdfDocument.Create(c =>
+{
+    c.Page(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Content().Column(col =>
+        {
+            col.Item().Text("Chapter 1 content...");
+            col.Item().Text("Section 1.1 content...");
+            col.Item().Text("Section 1.2 content...");
+        });
+    });
+
+    // Parent bookmark — must be added first
+    c.Bookmark("Chapter 1", 1);
+
+    // Children
+    c.Bookmark("1.1 Introduction", 1, "Chapter 1");
+    c.Bookmark("1.2 Overview",   1, "Chapter 1");
+
+    // Grandchild (three levels deep)
+    c.Bookmark("1.2.1 Background", 1, "1.2 Overview");
+})
+.PublishPdf("book.pdf");
+```
+
+**Rules:**
+
+- Parent bookmarks must exist before creating children. Call `c.Bookmark()` for the parent before any child calls that reference it.
+- Parent lookup is by **exact title match**. The title string is case-sensitive.
+- Children can reference any previously defined bookmark as their parent, not only top-level entries.
+- All bookmarks (parents and children) are linked into a single outline tree with proper `/First`, `/Last`, `/Count`, `/Parent`, `/Prev`, and `/Next` references.
+
+---
+
+## Multi-Page Documents
+
+Bookmarks work seamlessly with multi-page documents. The `pageNumber` argument is the 1-based logical page number of the target page.
+
+```csharp
+PdfDocument.Create(c =>
+{
+    // Page 1
+    c.Page(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Content().Text("Cover page content");
+    });
+
+    // Page 2
+    c.Page(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Content().Text("Table of Contents");
+    });
+
+    // Page 3+
+    c.Page(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Content().Column(col =>
+        {
+            col.Item().Text("Chapter 1 — Basics");
+            col.Item().Text("Chapter 2 — Advanced");
+        });
+    });
+
+    // Bookmarks
+    c.Bookmark("Cover",     1);
+    c.Bookmark("Contents",  2);
+    c.Bookmark("Chapter 1", 3);
+    c.Bookmark("Chapter 2", 3);
+})
+.PublishPdf("book.pdf");
+```
+
+> **Note:** If a bookmark targets a page number greater than the total pages in the final document, an `InvalidOperationException` is thrown at save time.
+
+---
+
+## Complete API Reference
+
+All bookmark methods are defined on `IDocumentContainer` (the parameter passed to `PdfDocument.Create`).
+
+### Method Signatures
+
+| Method | Parameters | Description |
+|--------|------------|-------------|
+| `Bookmark(string title, int pageNumber)` | `title`: display text<br>`pageNumber`: 1-based page | Top-level bookmark with `/Fit` destination |
+| `Bookmark(string title, int pageNumber, double top)` | `title`, `pageNumber`, `top`: Y position in points | Top-level bookmark with `/FitH` destination |
+| `Bookmark(string title, int pageNumber, string parentTitle)` | `title`, `pageNumber`, `parentTitle`: existing bookmark title | Child bookmark under `parentTitle` with `/Fit` |
+| `Bookmark(string title, int pageNumber, string parentTitle, double top)` | `title`, `pageNumber`, `parentTitle`, `top` | Child bookmark with `/FitH` destination |
+
+### Exceptions
+
+- `ArgumentNullException` / `ArgumentException` — `title` or `parentTitle` is null/empty/whitespace
+- `ArgumentOutOfRangeException` — `pageNumber ≤ 0` or `top < 0`
+- `InvalidOperationException` — `parentTitle` does not match any previously defined bookmark
+
+---
+
+## PDF Structure Details
+
+TerraFluent.Pdf.Reporting emits standard PDF 1.7 outline objects:
+
+- **Outlines dictionary** (`/Type /Outlines`) — the root node referenced from `/Catalog`
+  - `/First` → first top-level bookmark object
+  - `/Last` → last top-level bookmark object
+  - `/Count` → total number of outline entries (positive integer; negative when collapsed, but TerraFluent.Pdf.Reporting emits positive)
+
+Each **bookmark item** dictionary contains:
+
+- `/Type /Outlines`
+- `/Title (string)` — the display title (PDF string literal; special chars escaped)
+- `/Parent N 0 R` — reference to parent, or to the Outlines root for top-level
+- `/Prev N 0 R` — previous sibling (omitted for first sibling)
+- `/Next N 0 R` — next sibling (omitted for last sibling)
+- `/First N 0 R` — first child (if any)
+- `/Last N 0 R` — last child (if any)
+- `/Count N` — number of children (positive; negative would indicate collapsed state, unused)
+- `/Dest [ pageObj N 0 R /Fit ]` — fit-whole-page destination, **or**
+- `/Dest [ pageObj N 0 R /FitH top ]` — fit-width with top edge at `top` coordinate
+
+Page object references are resolved from the 1-based `pageNumber` after all pages are created.
+
+---
+
+## Best Practices
+
+### Order of Definition
+
+Always define parent bookmarks **before** their children:
+
+```csharp
+// Good — parent first
+c.Bookmark("Chapter 1", 1);
+c.Bookmark("Section 1.1", 1, "Chapter 1");
+
+// Bad — child before parent throws InvalidOperationException
+c.Bookmark("Section 1.1", 1, "Chapter 1");  // ❌ parent not yet defined
+c.Bookmark("Chapter 1", 1);
+```
+
+### Unique Titles
+
+Bookmark titles must be unique among siblings but can be reused in different branches:
+
+```csharp
+c.Bookmark("Chapter 1", 1);
+c.Bookmark("Section A", 1, "Chapter 1");   // OK
+
+c.Bookmark("Chapter 2", 1);
+c.Bookmark("Section A", 1, "Chapter 2");   // OK — different parent
+```
+
+### Page Number Validation
+
+Page numbers are validated at `PublishPdf()` time after the full document is composed. This means bookmarks can reference any page regardless of the order in which `Page()` calls appear:
+
+```csharp
+c.Bookmark("Appendix", 5);        // OK even if Page 5 is defined later
+c.Page(p => { /* page 5 definition */ });
+```
+
+### Use Positioning for Precision
+
+For long documents, consider setting `top` on section-opening bookmarks so the view lands at the section heading rather than the page top:
+
+```csharp
+c.Bookmark("Chapter 1", 3, 72.0);   // starts 1 inch down, heading area
+c.Bookmark("Chapter 2", 8, 72.0);
+```
+
+---
+
+## Limitations
+
+- PDF outlines do not support styling (font, colour, icons). Appearance is controlled by the PDF viewer.
+- No support for **named destinations** with zoom levels beyond `/Fit` and `/FitH`. Future versions may add `/XYZ` for custom zoom.
+- No direct API for collapsible initial state — all outline trees open by default in viewers.
+- Bookmarks are document-global; they cannot be scoped to a single `PageDescriptor`.
+
+---
+
+## Sample Code
+
+A full working example is available in the TerraFluent.Pdf.Reporting sample application:
+
+```
+samples/TerraFluent.Pdf.Reporting.Sample/Program.cs → GenerateReportWithBookmarks()
+```
+
+This generates `08_report_with_bookmarks.pdf` with 5 top-level bookmarks, nested children, and a mix of `/Fit` and `/FitH` destinations across 6 pages.
+
+---
+
+## Related
+
+- [Getting Started](/docs/pdf/getting-started/) — basic document structure
+- [Page Sizes & Units](/docs/pdf/page-sizes-and-units/) — setting page dimensions
+- [Layout](/docs/pdf/layout/) — Column, Row, Table for structuring content
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Components & Templates
+URL: https://terrafluent.dev/docs/pdf/components-and-templates/
+====================================================================
+
+# Components & Templates
+
+TerraFluent.Pdf.Reporting provides two interfaces for structuring and reusing document content:
+
+| Interface | Scope | Purpose |
+|-----------|-------|---------|
+| `IComponent` | Container slot | Reusable content block injected anywhere in a layout |
+| `IDocument` | Whole document | Reusable, self-contained document template |
+
+Both live in the `TerraFluent.Pdf.Reporting.Infra` namespace.
+
+---
+
+## IComponent — Reusable Content Blocks
+
+`IComponent` encapsulates a piece of content that can be composed into any
+`IContainer` slot. Ideal for repeated UI elements like header cards, badges,
+callout boxes, or address blocks.
+
+### Interface
+
+```csharp
+namespace TerraFluent.Pdf.Reporting.Infra;
+
+public interface IComponent
+{
+    void Compose(IContainer container);
+}
+```
+
+### Example — Callout box
+
+```csharp
+using TerraFluent.Pdf.Reporting.Core;
+using TerraFluent.Pdf.Reporting.Helpers;
+using TerraFluent.Pdf.Reporting.Infra;
+
+public class CalloutBox : IComponent
+{
+    private readonly string _text;
+    private readonly string _color;
+
+    public CalloutBox(string text, string color = "#E3F2FD")
+    {
+        _text  = text;
+        _color = color;
+    }
+
+    public void Compose(IContainer container) =>
+        container
+            .Margin(6)
+            .Background(_color)
+            .Border(1, Color.Blue.Lighten2)
+            .Padding(10)
+            .Text(_text).Italic().FontColor(Color.Blue.Darken2);
+}
+```
+
+### Usage
+
+```csharp
+col.Item().Component(new CalloutBox("Note: prices exclude VAT."));
+col.Item().Component(new CalloutBox("Warning: read before proceeding.", Color.Orange.Medium));
+```
+
+### Example — Address block
+
+```csharp
+public class AddressBlock : IComponent
+{
+    private readonly string _name;
+    private readonly string[] _lines;
+
+    public AddressBlock(string name, params string[] lines)
+    {
+        _name  = name;
+        _lines = lines;
+    }
+
+    public void Compose(IContainer container)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(2);
+            col.Item().Text(_name).Bold();
+            foreach (var line in _lines)
+                col.Item().Text(line).FontColor(Color.Grey.Darken1);
+        });
+    }
+}
+
+// Usage
+row.RelativeItem().Component(new AddressBlock(
+    "Acme Corp.",
+    "88 Commerce Blvd, Floor 12",
+    "New York, NY 10001",
+    "billing@acme.example"
+));
+```
+
+---
+
+## IDocument — Reusable Document Templates
+
+`IDocument` encapsulates an entire multi-page document. Use it to separate
+document structure from data and to enable unit testing.
+
+### Interface
+
+```csharp
+namespace TerraFluent.Pdf.Reporting.Infra;
+
+public interface IDocument
+{
+    void Compose(IDocumentContainer container);
+}
+```
+
+### Example — Invoice template
+
+```csharp
+using TerraFluent.Pdf.Reporting.Core;
+using TerraFluent.Pdf.Reporting.Helpers;
+using TerraFluent.Pdf.Reporting.Infra;
+
+public record InvoiceData(string Number, string ClientName, decimal Total);
+
+public class InvoiceDocument : IDocument
+{
+    private readonly InvoiceData _data;
+
+    public InvoiceDocument(InvoiceData data) => _data = data;
+
+    public void Compose(IDocumentContainer container)
+    {
+        container.Page(page =>
+        {
+            page.Size(PageSize.A4);
+            page.Margin(2, Unit.Centimetre);
+            page.DefaultTextStyle(s => s.FontSize(11));
+
+            page.Header().Column(col =>
+            {
+                col.Item()
+                   .Background(Color.Blue.Darken2)
+                   .Padding(12)
+                   .Text($"INVOICE  #{_data.Number}")
+                   .Bold().FontSize(18).FontColor(Color.White);
+            });
+
+            page.Content().Column(col =>
+            {
+                col.Spacing(10);
+                col.Item().Text($"Bill To: {_data.ClientName}").Bold();
+                col.Item().Text($"Total Due: ${_data.Total:N2}").FontSize(14);
+            });
+
+            page.Footer().AlignCenter().Text(t =>
+            {
+                t.Span("Page ").FontSize(9).FontColor(Color.Grey.Medium);
+                t.CurrentPageNumber().FontSize(9).FontColor(Color.Grey.Medium);
+            });
+        });
+    }
+}
+```
+
+### Generating the document
+
+```csharp
+var data = new InvoiceData("2025-042", "Acme Corp.", 14_250.00m);
+
+// To file
+PdfDocument.Create(new InvoiceDocument(data)).PublishPdf("invoice.pdf");
+
+// To byte array
+byte[] pdf = PdfDocument.Create(new InvoiceDocument(data)).PublishPdf();
+
+// To stream
+PdfDocument.Create(new InvoiceDocument(data)).PublishPdf(responseStream);
+```
+
+---
+
+## Combining IDocument with IComponent
+
+Components can be used freely inside `IDocument.Compose`:
+
+```csharp
+public class ReportDocument : IDocument
+{
+    public void Compose(IDocumentContainer container)
+    {
+        container.Page(page =>
+        {
+            page.Size(PageSize.A4);
+            page.Margin(2, Unit.Centimetre);
+
+            page.Content().Column(col =>
+            {
+                col.Spacing(12);
+                col.Item().Component(new CalloutBox("This report is confidential."));
+                col.Item().Text("Report body...").Justify();
+            });
+        });
+    }
+}
+```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Document Metadata
+URL: https://terrafluent.dev/docs/pdf/metadata/
+====================================================================
+
+# Document Metadata
+
+TerraFluent.Pdf.Reporting allows you to set standard PDF document metadata properties that appear in the document properties dialog of PDF viewers (File → Properties in Adobe Reader, Preview, etc.). These include Title, Author, Subject, Keywords, and Creator.
+
+Metadata is set via methods on `IDocumentContainer` (the object passed to `PdfDocument.Create`).
+
+---
+
+## Supported Fields
+
+| Method | PDF Key | Description |
+|--------|---------|-------------|
+| `MetadataTitle(string?)` | `/Title` | Document title |
+| `MetadataAuthor(string?)` | `/Author` | Author name(s) |
+| `MetadataSubject(string?)` | `/Subject` | Subject line / topic |
+| `MetadataKeywords(string?)` | `/Keywords` | Comma- or semicolon-separated keywords |
+| `MetadataCreator(string?)` | `/Creator` | Software that generated the PDF |
+
+All methods accept `null` or whitespace strings to clear/omit that field.
+
+---
+
+## Basic Usage
+
+Set metadata before adding pages (or after — order doesn't matter):
+
+```csharp
+using TerraFluent.Pdf.Reporting.Core;
+using TerraFluent.Pdf.Reporting.Helpers;
+
+PdfDocument.Create(c =>
+{
+    // Set metadata first (optional order)
+    c.MetadataTitle("Quarterly Report Q1 2025");
+    c.MetadataAuthor("Acme Finance Division");
+    c.MetadataSubject("Financial Performance Review");
+    c.MetadataKeywords("finance, quarterly, report, 2025");
+    c.MetadataCreator("Acme Reporting Engine v3.2");
+
+    // Add at least one page
+    c.Page(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Margin(2, Unit.Centimetre);
+        p.Content().Text("Report content goes here...");
+    });
+})
+.PublishPdf("report.pdf");
+```
+
+The resulting PDF will contain an **Info dictionary**:
+
+```pdf
+<< /Title (Quarterly Report Q1 2025)
+   /Author (Acme Finance Division)
+   /Subject (Financial Performance Review)
+   /Keywords (finance, quarterly, report, 2025)
+   /Creator (Acme Reporting Engine v3.2)
+   /Producer (TerraFluent.Pdf.Reporting)          % added automatically by TerraFluent.Pdf.Reporting? No
+   /CreationDate (D:202505031...) % PDF viewers may add
+>>
+```
+
+> **Note:** TerraFluent.Pdf.Reporting does not currently set `/Producer` or `/CreationDate` automatically. Only the fields you explicitly set appear in the Info dictionary.
+
+---
+
+## Null / Whitespace Handling
+
+Passing `null`, empty, or whitespace-only strings omits that field from the Info dictionary:
+
+```csharp
+c.MetadataAuthor("");         // Author key not included
+c.MetadataKeywords(null);    // Keywords key not included
+c.MetadataTitle("   ");      // Title key not included
+```
+
+If **no metadata fields are set**, the Info dictionary is omitted entirely and the Catalog contains no `/Info` entry.
+
+---
+
+## Special Character Escaping
+
+PDF string literals require escaping for:
+- Backslash `\` → `\\`
+- Opening parenthesis `(` → `\(`
+- Closing parenthesis `)` → `\)`
+
+TerraFluent.Pdf.Reporting handles this escaping automatically for all metadata values:
+
+```csharp
+c.MetadataTitle("Report (Final) \\ 2025");
+// Escapes to: /Title (Report \(Final\) \\ 2025)
+```
+
+---
+
+## API Reference
+
+All metadata methods have the signature:
+
+```csharp
+void MetadataXxx(string? value);
+```
+
+They are chainable (though they return `void` — they are called for side effects on the composer, not for fluent chaining on the `IDocumentContainer`):
+
+```csharp
+c.MetadataTitle("My Doc");
+c.MetadataAuthor("Jane Smith");
+// Not chainable: c.MetadataTitle("...").MetadataAuthor("...") won't compile
+```
+
+If you need conditional setting:
+
+```csharp
+if (includeAuthor)
+    c.MetadataAuthor(userName);
+```
+
+---
+
+## PDF Structure Details
+
+### Info Dictionary Object
+
+When metadata is present, TerraFluent.Pdf.Reporting allocates a PDF object like:
+
+```pdf
+5 0 obj
+<< /Title (My Document)
+   /Author (John Smith)
+   /CreationDate (D:20250503153000-05'00')
+>>
+endobj
+```
+
+### Catalog Reference
+
+The Catalog object gains an `/Info` entry pointing to this dictionary:
+
+```pdf
+7 0 obj
+<< /Type /Catalog
+   /Pages 6 0 R
+   /Info 5 0 R
+>>
+endobj
+```
+
+If no metadata is set, the `/Info` entry is omitted from the Catalog.
+
+---
+
+## Best Practices
+
+### Set metadata early
+
+Call metadata methods at the start of your `PdfDocument.Create` block to keep configuration together:
+
+```csharp
+PdfDocument.Create(c =>
+{
+    // Metadata first
+    c.MetadataTitle("Invoice #12345");
+    c.MetadataAuthor("Acme Billing");
+    c.MetadataKeywords("invoice; billing; 2025");
+
+    // Then pages
+    c.Page(...);
+})
+```
+
+### Use consistent keywords
+
+PDF viewers use the Keywords field for search and filtering. Separate with commas or semicolons:
+
+```
+keywords: "quarterly, finance, board, q1"      // ← OK
+keywords: "annual report; 2025; audit"          // ← OK
+```
+
+Avoid extremely long keyword strings.
+
+### Include author when distributing externally
+
+For documents that leave your organization, setting the `/Author` field aids traceability and professionalism.
+
+### Combine with `Bookmark` for complete navigation
+
+Metadata provides document identity; bookmarks provide in-document navigation:
+
+```csharp
+PdfDocument.Create(c =>
+{
+    c.MetadataTitle("User Guide");
+    c.MetadataAuthor("Tech Writers Ltd");
+    c.Bookmark("Introduction", 1);
+    c.Bookmark("Installation", 2);
+    c.Bookmark("Configuration", 3);
+    // ...
+});
+```
+
+---
+
+## Limitations
+
+- No support for custom metadata keys beyond the five standard fields. For advanced use cases (XMP metadata, custom XMP properties), you'd need to extend `PdfWriter` directly.
+- No automatic population of `/CreationDate` or `/ModDate`. You can suggest a `Creator` string (e.g., app name + version), but PDF viewers show their own creation timestamp.
+- All values are **text strings** — no date type parsing or numeric types. If you need a date field, format it yourself and put it into `Subject` or `Keywords`.
+- Unicode beyond Latin-1 may not display correctly in older PDF viewers; TerraFluent.Pdf.Reporting uses ISO-8859-1 encoding for Info strings (same as content streams).
+
+---
+
+## Sample
+
+A full working example is in the TerraFluent.Pdf.Reporting sample application:
+
+```
+samples/TerraFluent.Pdf.Reporting.Sample/Program.cs
+```
+
+Look for `Metadata` in the code or add the calls to any sample to produce a PDF with document properties filled in.
+
+---
+
+## Related
+
+- [Getting Started](/docs/pdf/getting-started/) — basic document structure
+- [Bookmarks](/docs/pdf/bookmarks/) — hierarchical outline entries for navigation
+- [Page Sizes & Units](/docs/pdf/page-sizes-and-units/) — page configuration
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Unicode & Character Encoding
+URL: https://terrafluent.dev/docs/pdf/unicode-and-encoding/
+====================================================================
+
+# Unicode & Character Encoding
+
+TerraFluent.Pdf.Reporting uses **WinAnsiEncoding** for all built-in Type 1 fonts (Helvetica, Times, Courier
+and their Bold/Italic variants). This page explains what that means in practice — which
+characters render correctly, how they are encoded in the PDF content stream, and how to
+avoid the common pitfall of characters appearing as `?` in the output.
+
+---
+
+## What is WinAnsiEncoding?
+
+WinAnsiEncoding is the character encoding vector declared in the PDF font dictionary for
+every built-in Type 1 font. It maps byte values in the range 0x20–0xFF to Unicode
+code points (and therefore to printable glyphs) using the **Windows-1252** code page.
+
+The mapping covers three distinct regions:
+
+| Byte range | Region | Characters |
+|------------|--------|-----------|
+| 0x20–0x7E | Printable ASCII | Space through tilde — all 95 printable ASCII characters |
+| 0x80–0x9F | Windows-1252 specials | 27 typographic characters (see table below) |
+| 0xA0–0xFF | Latin-1 Supplement | All 96 Latin-1 characters (U+00A0–U+00FF) |
+
+Byte values 0x7F, 0x81, 0x8D, 0x8F, 0x90, and 0x9D are **undefined** in WinAnsiEncoding
+and have no glyph. Any Unicode code point outside the ranges listed above — such as
+characters in the Latin Extended-A/B blocks (U+0100+) — likewise has no mapping and
+**will render as `?`** in the PDF viewer.
+
+---
+
+## Safe character ranges
+
+To guarantee correct rendering with WinAnsiEncoding, limit your text to:
+
+- All standard ASCII printable characters (U+0020–U+007E).
+- The 27 Windows-1252 typographic specials listed below.
+- The full Latin-1 Supplement block (U+00A0–U+00FF), which includes all common
+  Western-European accented letters (À–ÿ), currency symbols (¢ £ ¥), mathematical
+  symbols (± × ÷ °), and more.
+
+Characters in **U+0100 and above** (e.g. Polish Ł/ł, Czech Č/č/Ř/ř, Turkish Ş/ş/Ğ/ğ/ı,
+Romanian Ș/ț, Hungarian Ő/ő/Ű/ű) are **not** covered by WinAnsiEncoding and will not
+render correctly with the built-in Type 1 fonts.
+
+---
+
+## Windows-1252 Typographic Specials (0x80–0x9F)
+
+These 27 characters occupy the byte range that the C1 control codes occupy in pure
+ISO-8859-1. Windows-1252 repurposes them for useful typographic glyphs, and TerraFluent.Pdf.Reporting's
+AFM width tables cover all 27:
+
+| Unicode | WinAnsi byte | Character | Name |
+|---------|-------------|-----------|------|
+| U+2018 | 0x91 | ' | Left single quotation mark |
+| U+2019 | 0x92 | ' | Right single quotation mark |
+| U+201C | 0x93 | " | Left double quotation mark |
+| U+201D | 0x94 | " | Right double quotation mark |
+| U+2013 | 0x96 | – | En dash |
+| U+2014 | 0x97 | — | Em dash |
+| U+2026 | 0x85 | … | Horizontal ellipsis |
+| U+2022 | 0x95 | • | Bullet |
+| U+20AC | 0x80 | € | Euro sign |
+| U+2122 | 0x99 | ™ | Trade mark sign |
+| U+0152 | 0x8C | Œ | OE ligature (capital) |
+| U+0153 | 0x9C | œ | OE ligature (small) |
+| U+2020 | 0x86 | † | Dagger |
+| U+2021 | 0x87 | ‡ | Double dagger |
+| U+2030 | 0x89 | ‰ | Per mille sign |
+| U+0160 | 0x8A | Š | S with caron (capital) |
+| U+0161 | 0x9A | š | S with caron (small) |
+| U+2018 | 0x91 | ' | Left single quotation mark |
+| U+201A | 0x82 | ‚ | Single low-9 quotation mark |
+| U+0192 | 0x83 | ƒ | Latin small letter f with hook |
+| U+201E | 0x84 | „ | Double low-9 quotation mark |
+| U+2020 | 0x86 | † | Dagger |
+| U+0152 | 0x8C | Œ | OE ligature (capital) |
+| U+017D | 0x8E | Ž | Z with caron (capital) |
+| U+017E | 0x9E | ž | Z with caron (small) |
+| U+0178 | 0x9F | Ÿ | Y with diaeresis (capital) |
+| U+2039 | 0x8B | ‹ | Single left-pointing angle quotation mark |
+| U+203A | 0x9B | › | Single right-pointing angle quotation mark |
+
+Use these characters directly in your C# strings with their Unicode escape sequences
+or by typing them as literal characters:
+
+```csharp
+// Typographic quotes, dashes, and ellipsis
+container.Text("\u201CHello,\u201D she said\u2026");
+container.Text("Pages 42\u201347");         // en dash
+container.Text("Time\u2014and tide.");      // em dash
+container.Text("Price: \u20AC 1,299.00");  // Euro sign
+container.Text("TerraFluent.Pdf.Reporting\u2122");           // trade mark
+```
+
+---
+
+## Latin-1 Supplement (U+00A0–U+00FF)
+
+All 96 characters in the Latin-1 Supplement block are covered by WinAnsiEncoding.
+This includes:
+
+- **Accented capitals**: À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö Ø Ù Ú Û Ü Ý Þ
+- **Accented lowercase**: à á â ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö ø ù ú û ü ý þ ÿ ß
+- **Punctuation & spacing**: non-breaking space, «, », ¿, ¡, ·, ¶, §
+- **Mathematical & technical**: ± × ÷ ° µ ² ³ ¼ ½ ¾
+- **Currency & commerce**: ¢ £ ¤ ¥ ¦ © ® ¯
+
+These render perfectly in all built-in TerraFluent.Pdf.Reporting fonts:
+
+```csharp
+// All of these are safe — they are in Latin-1 Supplement
+container.Text("Ágnes sétált a városban.");       // á, é — U+00E1, U+00E9 ✓
+container.Text("Français, señor, São Paulo.");    // ç, ñ, ã — all Latin-1 ✓
+container.Text("Björk åkte till Göteborg.");      // ö, å — U+00F6, U+00E5 ✓
+container.Text("Mjölk kostar 3 kr/l ± 5 öre."); // ö, ± — all Latin-1 ✓
+```
+
+---
+
+## Content-stream encoding
+
+Internally, TerraFluent.Pdf.Reporting converts every non-ASCII character to its WinAnsi byte value and
+writes it as an **octal escape** (`\nnn`) in the PDF string literal. This keeps the
+content stream pure 7-bit ASCII while the PDF reader resolves each byte value through
+the font's `/WinAnsiEncoding` vector.
+
+For example, the character `é` (U+00E9) maps to WinAnsi byte 0xE9 (233 decimal) and
+is written as `\351` in the content stream. The PDF reader sees byte 0xE9, looks it up
+in the `/WinAnsiEncoding` array, finds `eacute`, and renders the correct glyph.
+
+Metadata fields (document title, author, subject, keywords) and bookmark titles are
+encoded as **UTF-16BE hex strings** (`<FEFF…>`) so that viewer title bars and outline
+panels display the correct text regardless of encoding limitations.
+
+---
+
+## AFM glyph-width tables
+
+TerraFluent.Pdf.Reporting ships with extended AFM (Adobe Font Metrics) advance-width tables covering the
+**full WinAnsi byte range** 0x20–0xFF — not just printable ASCII. This ensures that
+word-wrapping, justification, and column-width calculations are pixel-accurate for
+every accented character and typographic special.
+
+The width tables are sourced from the Adobe Core-14 AFM files and are compiled directly
+into the library (no external files required at runtime).
+
+---
+
+## Avoiding `?` characters
+
+A character renders as `?` when TerraFluent.Pdf.Reporting cannot map it to a WinAnsi byte value. The
+most common cause is using characters from the Latin Extended-A/B blocks (U+0100+) that
+Windows-1252 does not cover.
+
+**Checklist:**
+
+1. Check the Unicode code point of the problem character (e.g. `Ł` is U+0141).
+2. If it is above U+00FF and not one of the 27 Windows-1252 specials, it will not render.
+3. Replace it with a visually similar character that is within the safe range, or
+   rewrite the text to avoid it.
+
+**Common substitutions:**
+
+| Problematic character | Unicode | Substitute | Notes |
+|-----------------------|---------|-----------|-------|
+| Ł / ł (Polish L) | U+0141 / U+0142 | L / l | Drop the stroke |
+| Ż / ż (Polish Z dot) | U+017B / U+017C | Z / z | Drop the dot |
+| Č / č (Czech C caron) | U+010C / U+010D | C / c | Drop the caron |
+| Ř / ř (Czech R caron) | U+0158 / U+0159 | R / r | Drop the caron |
+| Ş / ş (Turkish S cedilla) | U+015E / U+015F | Ş → use ş from Latin-1? No — use S/s | Not in WinAnsi |
+| Ğ / ğ (Turkish G breve) | U+011E / U+011F | G / g | Drop the breve |
+| İ / ı (Turkish dotted/dotless I) | U+0130 / U+0131 | I / i | Use plain I |
+| Ő / ő (Hungarian O double acute) | U+0150 / U+0151 | Ö / ö (U+00D6 / U+00F6) | Close visual match |
+| Ű / ű (Hungarian U double acute) | U+0170 / U+0171 | Ü / ü (U+00DC / U+00FC) | Close visual match |
+
+---
+
+## Sample: language showcase
+
+The `11_UnicodeShowcase.cs` sample in `samples/TerraFluent.Pdf.Reporting.Sample/Samples/` generates a
+5-page PDF that demonstrates all aspects of WinAnsiEncoding support:
+
+```
+Page 1  Introduction and 18-language sample table
+Page 2  Windows-1252 specials table + Latin-1 supplement groups
+Page 3  Complete WinAnsiEncoding reference grid (0x20–0xFF)
+Page 4  Multi-font comparison (Helvetica / Times / Courier)
+Page 5  Font-metrics deep-dive: advance-width heat-map + justified paragraph
+```
+
+Run it with:
+
+```sh
+cd samples/TerraFluent.Pdf.Reporting.Sample
+dotnet run
+# Output: 11_unicode_showcase.pdf
+```

@@ -3,8 +3,8 @@ layout: default
 title: Getting Started — First C# Report in 5 Minutes
 nav_title: Getting Started
 description: >-
-  Install TerraFluent from NuGet and generate your first paginated HTML report or
-  native Word document in five minutes of fluent C#. No PDF engine, no interop.
+  Install TerraFluent from NuGet and generate your first PDF file, paginated HTML
+  report, or native Word document in five minutes of fluent C#. Zero dependencies.
 ---
 
 <section class="hero page-hero">
@@ -12,8 +12,8 @@ description: >-
     <span class="hero-badge"><span class="dot"></span> Five-minute quickstart</span>
     <h1>Your first report in <span class="grad">five minutes</span></h1>
     <p class="hero-lede">
-      Pick an output, add one package, write one fluent builder. Both libraries share the
-      same mental model, so everything you learn transfers.
+      Pick an output, add one package, write one fluent builder. All three libraries share
+      the same mental model, so everything you learn transfers.
     </p>
   </div>
 </section>
@@ -21,21 +21,83 @@ description: >-
 <div class="container prose">
   <h2>1. Choose your output</h2>
   <ul>
-    <li><strong>Need a printable page / PDF-style report?</strong> Use <a href="{{ '/html/' | relative_url }}">TerraFluent.Html.Reporting</a> — paginated HTML that opens in any browser and prints or saves to PDF.</li>
+    <li><strong>Need a true PDF file, server-side?</strong> Use <a href="{{ '/pdf/' | relative_url }}">TerraFluent.Pdf.Reporting</a> — real PDF 1.7 documents written by a zero-dependency managed engine.</li>
+    <li><strong>Need a printable page / PDF-style report from an HTML pipeline?</strong> Use <a href="{{ '/html/' | relative_url }}">TerraFluent.Html.Reporting</a> — paginated HTML that opens in any browser and prints or saves to PDF.</li>
     <li><strong>Need an editable Word deliverable?</strong> Use <a href="{{ '/docx/' | relative_url }}">TerraFluent.Docx.Reporting</a> — real <code>.docx</code> written as Open XML.</li>
-    <li><strong>Not sure?</strong> Both share the fluent-builder mental model; start with the output your users open most.</li>
+    <li><strong>Not sure?</strong> All three share the fluent-builder mental model; start with the output your users open most.</li>
   </ul>
 
   <h2>2. Install</h2>
+  {% include install-row.html package="TerraFluent.Pdf.Reporting" %}
+  <div style="height: 10px"></div>
   {% include install-row.html package="TerraFluent.Html.Reporting" %}
   <div style="height: 10px"></div>
   {% include install-row.html package="TerraFluent.Docx.Reporting" %}
   <p style="margin-top: 20px">
-    Both target <code>netstandard2.0</code> and <code>net10.0</code>, so they run on
-    .NET Framework 4.6.1+, .NET Core 2.0+, and the latest .NET — on Windows, Linux, and macOS.
+    <code>Html.Reporting</code> and <code>Docx.Reporting</code> target
+    <code>netstandard2.0</code> and <code>net10.0</code>, so they run on .NET Framework
+    4.6.1+, .NET Core 2.0+, and the latest .NET. <code>Pdf.Reporting</code> targets
+    .NET 8, 9, and 10 — all on Windows, Linux, and macOS.
   </p>
 
   <h2>3. Write a report</h2>
+
+  <h3>True PDF</h3>
+{% highlight csharp %}
+using TerraFluent.Pdf.Reporting.Core;
+using TerraFluent.Pdf.Reporting.Helpers;
+
+PdfDocument.Create(container =>
+{
+    container.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Margin(2, Unit.Centimetre);
+        page.DefaultTextStyle(s => s.FontSize(11));
+
+        page.Header().Text("Monthly Sales Report").Bold().FontSize(24);
+
+        page.Content().Column(col =>
+        {
+            col.Spacing(8);
+            col.Item().Text("This report summarizes sales activity for the period.");
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(cols =>
+                {
+                    cols.RelativeColumn(3);
+                    cols.RelativeColumn(1);
+                    cols.RelativeColumn(1);
+                });
+                table.HeaderRow(row =>
+                {
+                    row.Cell().Padding(6).Text("Product").Bold();
+                    row.Cell().Padding(6).AlignCenter().Text("Qty").Bold();
+                    row.Cell().Padding(6).AlignRight().Text("Revenue").Bold();
+                });
+                table.Row(row =>
+                {
+                    row.Cell().Padding(6).Text("Widget A");
+                    row.Cell().Padding(6).AlignCenter().Text("120");
+                    row.Cell().Padding(6).AlignRight().Text("$2,400");
+                });
+            });
+        });
+
+        page.Footer().AlignCenter().Text(t =>
+        {
+            t.Span("Page ");
+            t.CurrentPageNumber();
+            t.Span(" / ");
+            t.TotalPages();
+        });
+    });
+}).PublishPdf("monthly-sales.pdf");
+{% endhighlight %}
+  <p>
+    <code>monthly-sales.pdf</code> opens in any PDF viewer — a real PDF 1.7 file, no
+    browser or converter in the loop.
+  </p>
 
   <h3>Paginated HTML</h3>
 {% highlight csharp %}
@@ -105,6 +167,9 @@ Document.Create(doc =>
   <h2>4. Run the samples</h2>
   <p>Each repository ships a runnable sample project — the fastest way to see every feature:</p>
 {% highlight shell %}
+# Thirteen PDFs: invoices, brochures, TOC, encryption, barcodes & QR …
+dotnet run --project samples/TerraFluent.Pdf.Reporting.Sample
+
 # Thirteen HTML reports: invoices, certificates, barcodes, span tables …
 dotnet run --project samples/TerraFluent.Html.Reporting.Sample
 
@@ -118,8 +183,9 @@ dotnet run --project samples/TerraFluent.Docx.Reporting.Sample/TerraFluent.Docx.
 
   <h2>5. Go deeper</h2>
   <ul>
+    <li><a href="{{ '/docs/pdf/getting-started/' | relative_url }}">PDF Reporting documentation</a> — layout, text, decorators, encryption, barcodes, vector graphics.</li>
     <li><a href="{{ '/docs/html/getting-started/' | relative_url }}">HTML Reporting documentation</a> — core concepts, styling, tables, pagination, a cookbook of recipes.</li>
     <li><a href="{{ '/docs/docx/getting-started/' | relative_url }}">DOCX Reporting documentation</a> — feature guide, API reference, troubleshooting.</li>
-    <li>Product pages on this site: <a href="{{ '/html/' | relative_url }}">HTML Reporting</a> · <a href="{{ '/docx/' | relative_url }}">DOCX Reporting</a>.</li>
+    <li>Product pages on this site: <a href="{{ '/pdf/' | relative_url }}">PDF Reporting</a> · <a href="{{ '/html/' | relative_url }}">HTML Reporting</a> · <a href="{{ '/docx/' | relative_url }}">DOCX Reporting</a>.</li>
   </ul>
 </div>

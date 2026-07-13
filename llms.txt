@@ -1,18 +1,27 @@
 # TerraFluent
 
-> Open-source fluent .NET report generation libraries, MIT licensed. TerraFluent.Html.Reporting creates paginated, print-ready HTML reports in C# without a PDF engine or headless browser. TerraFluent.Docx.Reporting creates native Word (.docx) documents without Microsoft Office or COM interop. Both target netstandard2.0 and net10.0 and run on Windows, Linux, macOS, Docker, and serverless.
+> Open-source fluent .NET report generation libraries, MIT licensed. TerraFluent.Pdf.Reporting creates true PDF 1.7 files in C# with zero dependencies — no native binaries, no headless browser. TerraFluent.Html.Reporting creates paginated, print-ready HTML reports in C# without a PDF engine. TerraFluent.Docx.Reporting creates native Word (.docx) documents without Microsoft Office or COM interop. Html and Docx target netstandard2.0 and net10.0; Pdf targets .NET 8/9/10. All run on Windows, Linux, macOS, Docker, and serverless.
 
 Key facts:
-- Install: `dotnet add package TerraFluent.Html.Reporting` or `dotnet add package TerraFluent.Docx.Reporting`
+- Install: `dotnet add package TerraFluent.Pdf.Reporting`, `dotnet add package TerraFluent.Html.Reporting`, or `dotnet add package TerraFluent.Docx.Reporting`
 - Free for commercial use (MIT). No page limits, watermarks, or paid tiers.
+- PDF output: true PDF 1.7 bytes from pure managed C# — Column/Row/Table layouts, text styling, PNG/JPEG images, hyperlinks, bookmarks, automatic table of contents, Code 128 barcodes, QR codes (ISO/IEC 18004), vector graphics canvas, headers/footers with page numbers, AES-256 encryption by default (AES-128 compatibility), document metadata. TerraFluent.Pdf.Reporting 2.x is the continuation of TerraPDF 1.x.
 - HTML output: fixed page geometry (A4/Letter/Legal/custom), repeating headers/footers with {page}/{totalPages}, line-level pagination, ColSpan/RowSpan tables, native Code 128 barcodes, async streaming.
 - DOCX output: real Open XML .docx (no Word required), styled tables, native editable charts, images, vector barcodes, template placeholder replacement, document protection.
-- Neither package emits PDF bytes directly; the HTML output prints/saves to PDF from any browser or HTML-to-PDF converter.
+- For server-side PDF bytes use TerraFluent.Pdf.Reporting; the HTML output also prints/saves to PDF from any browser or HTML-to-PDF converter.
 
 ## Docs
 
-- [Documentation index](https://terrafluent.dev/docs/): all guides for both libraries
+- [Documentation index](https://terrafluent.dev/docs/): all guides for all three libraries
 - [Getting started](https://terrafluent.dev/getting-started/): first report in five minutes
+- [PDF Reporting — Getting Started](https://terrafluent.dev/docs/pdf/getting-started/)
+- [PDF Reporting — Layout](https://terrafluent.dev/docs/pdf/layout/): Column, Row, and Table
+- [PDF Reporting — Text & Spans](https://terrafluent.dev/docs/pdf/text-and-spans/)
+- [PDF Reporting — Decorators](https://terrafluent.dev/docs/pdf/decorators/): padding, borders, backgrounds
+- [PDF Reporting — Encryption](https://terrafluent.dev/docs/pdf/encryption/): AES-256, permissions
+- [PDF Reporting — Vector Graphics](https://terrafluent.dev/docs/pdf/vector-graphics/): canvas, shapes, charts
+- [PDF Reporting — Table of Contents](https://terrafluent.dev/docs/pdf/table-of-contents/)
+- [PDF Reporting — Bookmarks](https://terrafluent.dev/docs/pdf/bookmarks/)
 - [HTML Reporting — Getting Started](https://terrafluent.dev/docs/html/getting-started/)
 - [HTML Reporting — Core Concepts](https://terrafluent.dev/docs/html/core-concepts/)
 - [HTML Reporting — Content Elements](https://terrafluent.dev/docs/html/content-elements/)
@@ -27,15 +36,18 @@ Key facts:
 
 ## Product pages
 
+- [TerraFluent.Pdf.Reporting](https://terrafluent.dev/pdf/): free C# PDF library, zero dependencies
 - [TerraFluent.Html.Reporting](https://terrafluent.dev/html/): C# HTML report generator, no PDF engine
 - [TerraFluent.Docx.Reporting](https://terrafluent.dev/docx/): C# Word document library, no Office interop
-- [Which package do I need?](https://terrafluent.dev/compare/): HTML vs DOCX decision guide
-- [Sample output](https://terrafluent.dev/samples/): live rendered reports and Word documents
+- [Which package do I need?](https://terrafluent.dev/compare/): PDF vs HTML vs DOCX decision guide
+- [Sample output](https://terrafluent.dev/samples/): live rendered reports, Word documents, and runnable PDF samples
 
 ## Source and packages
 
+- [TerraFluent.Pdf.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Pdf.Reporting)
 - [TerraFluent.Html.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Html.Reporting)
 - [TerraFluent.Docx.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Docx.Reporting)
+- [TerraFluent.Pdf.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Pdf.Reporting)
 - [TerraFluent.Html.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Html.Reporting)
 - [TerraFluent.Docx.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Docx.Reporting)
 

@@ -1,34 +1,44 @@
 ---
 layout: default
-title: Open-Source .NET Report Generator — HTML & Word
+title: Open-Source .NET Report Generator — PDF, HTML & Word
 description: >-
-  Open-source C# libraries for report generation: paginated, print-ready HTML with
-  no PDF engine, and native Word .docx with no Office interop. MIT licensed.
+  Open-source C# libraries for report generation: true PDF files with zero
+  dependencies, paginated print-ready HTML, and native Word .docx with no Office
+  interop. MIT licensed.
 faq:
   - q: Is TerraFluent free for commercial use?
     a: >-
-      Yes. Both TerraFluent.Html.Reporting and TerraFluent.Docx.Reporting are MIT
-      licensed — free for personal, commercial, and open-source projects with no
-      page limits, watermarks, or paid tiers.
+      Yes. TerraFluent.Pdf.Reporting, TerraFluent.Html.Reporting, and
+      TerraFluent.Docx.Reporting are all MIT licensed — free for personal, commercial,
+      and open-source projects with no page limits, watermarks, or paid tiers.
+  - q: Can TerraFluent generate PDF files?
+    a: >-
+      Yes. TerraFluent.Pdf.Reporting writes true PDF 1.7 files directly from fluent C#
+      — pure managed code with zero dependencies, including tables, images, barcodes,
+      QR codes, bookmarks, and AES-256 encryption. And TerraFluent.Html.Reporting
+      produces print-ready HTML that saves to PDF from any browser if you prefer an
+      HTML pipeline.
   - q: Do I need Microsoft Word installed to generate .docx files in C#?
     a: >-
       No. TerraFluent.Docx.Reporting writes Open XML packages directly, so it creates
       real Word documents without Microsoft Office, Word automation, or COM interop —
       on Windows, Linux, and macOS, including Docker containers and serverless.
-  - q: Can TerraFluent generate PDF files?
+  - q: How is TerraFluent.Pdf.Reporting different from iText or QuestPDF?
     a: >-
-      Not directly. TerraFluent.Html.Reporting produces paginated, print-ready HTML
-      with fixed page geometry that prints or saves to PDF from any browser, and works
-      with any HTML-to-PDF converter you already trust. No PDF engine ships in the library.
+      iText (iTextSharp) is AGPL licensed, which requires a commercial license for most
+      closed-source use, and QuestPDF's free Community tier has a company-revenue cap.
+      TerraFluent.Pdf.Reporting is plain MIT with zero runtime dependencies — free for
+      any commercial use with a fluent, composable, code-first API.
   - q: Which .NET versions does TerraFluent support?
     a: >-
-      Both packages target netstandard2.0 and net10.0, so they run on .NET Framework
-      4.6.1+, .NET Core 2.0+, and every modern .NET release.
+      TerraFluent.Html.Reporting and TerraFluent.Docx.Reporting target netstandard2.0
+      and net10.0, so they run on .NET Framework 4.6.1+, .NET Core 2.0+, and every
+      modern .NET release. TerraFluent.Pdf.Reporting targets .NET 8, .NET 9, and .NET 10.
   - q: Does TerraFluent run on Linux and in Docker?
     a: >-
-      Yes. Both libraries are pure managed code with no native binaries, no headless
+      Yes. All three libraries are pure managed code with no native binaries, no headless
       browser, and no Office dependency, so they deploy cleanly to Linux, macOS,
-      containers, and locked-down servers.
+      containers, Azure Functions, AWS Lambda, and locked-down servers.
   - q: How is TerraFluent different from the Open XML SDK?
     a: >-
       The Open XML SDK exposes the raw WordprocessingML document model. TerraFluent
@@ -41,10 +51,11 @@ faq:
 <section class="hero">
   <div class="container">
     <span class="hero-badge"><span class="dot"></span> Open source · MIT licensed</span>
-    <h1>Fluent report generation for .NET.<br><span class="grad">Print-ready HTML. Native DOCX.</span></h1>
+    <h1>Fluent report generation for .NET.<br><span class="grad">True PDF. Print-ready HTML. Native DOCX.</span></h1>
     <p class="hero-lede">
-      One fluent API family, two professional outputs. Build paginated, printable reports
-      without a PDF engine — and real Word documents without Word automation.
+      One fluent API family, three professional outputs. Generate real PDF files with zero
+      dependencies, paginated printable HTML without a browser engine — and real Word
+      documents without Word automation.
     </p>
     <div class="hero-ctas">
       <a class="btn btn-primary" href="{{ '/getting-started/' | relative_url }}">Get started</a>
@@ -117,12 +128,31 @@ report.RenderHtmlDocument("monthly-sales.html");
 <section aria-labelledby="products-title">
   <div class="container">
     <div class="section-head">
-      <span class="eyebrow">Two packages, one mental model</span>
+      <span class="eyebrow">Three packages, one mental model</span>
       <h2 id="products-title">Pick your output. Keep your API.</h2>
-      <p>Both libraries share the same fluent design, so a team that learns one already knows the other.</p>
+      <p>All three libraries share the same fluent design, so a team that learns one already knows the others.</p>
     </div>
 
     <div class="product-grid">
+      <article class="product-card accent-pdf">
+        <span class="product-kicker">True PDF</span>
+        <h3>TerraFluent.Pdf.Reporting</h3>
+        <p>Real PDF 1.7 files written by a pure managed C# engine — invoices, reports,
+           and labels with zero dependencies and no native binaries.</p>
+        <ul class="product-points">
+          <li>Column, Row, and Table layouts with repeating headers</li>
+          <li>Code 128 barcodes, QR codes, vector graphics canvas</li>
+          <li>Automatic table of contents, bookmarks, hyperlinks</li>
+          <li>AES-256 encryption with permission flags, by default</li>
+        </ul>
+        {% include install-row.html package="TerraFluent.Pdf.Reporting" %}
+        <div class="product-links">
+          <a href="{{ '/pdf/' | relative_url }}">Learn more →</a>
+          <a href="{{ site.repos.pdf }}" target="_blank" rel="noopener">GitHub</a>
+          <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">NuGet</a>
+        </div>
+      </article>
+
       <article class="product-card accent-html">
         <span class="product-kicker">Print-ready HTML</span>
         <h3>TerraFluent.Html.Reporting</h3>
@@ -181,8 +211,8 @@ report.RenderHtmlDocument("monthly-sales.html");
       </div>
       <div class="cap-card">
         <span class="cap-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5v14M8 5v14M12 5v14M15 5v14M19 5v14M17 5v14"/></svg></span>
-        <h3>Native barcodes</h3>
-        <p>Code 128 generated in-library — crisp vectors, no external services.</p>
+        <h3>Native barcodes &amp; QR</h3>
+        <p>Code 128 and QR codes generated in-library — crisp vectors, no external services.</p>
       </div>
       <div class="cap-card">
         <span class="cap-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 10v10"/></svg></span>
@@ -202,7 +232,7 @@ report.RenderHtmlDocument("monthly-sales.html");
       <div class="cap-card">
         <span class="cap-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 4 5-8 4 6"/><path d="M3 21h18"/></svg></span>
         <h3>Charts &amp; images</h3>
-        <p>Bar, stacked, legends and data labels in DOCX; images with wrapping and cropping.</p>
+        <p>Editable Word charts in DOCX, a vector canvas in PDF, images with wrapping and cropping.</p>
       </div>
       <div class="cap-card">
         <span class="cap-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 4 14h6l-1 7 9-11h-6l1-7z"/></svg></span>
@@ -231,8 +261,8 @@ report.RenderHtmlDocument("monthly-sales.html");
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
           No heavyweight engines
         </h3>
-        <p>No PDF engine, no headless browser, no Word COM interop. Pure managed code that
-           deploys cleanly to containers, serverless, and locked-down servers.</p>
+        <p>No headless browser, no Word COM interop, no native PDF binaries. Pure managed code
+           that deploys cleanly to containers, serverless, and locked-down servers.</p>
       </div>
       <div class="why-item">
         <h3>
@@ -240,7 +270,8 @@ report.RenderHtmlDocument("monthly-sales.html");
           Validated, tested output
         </h3>
         <p>DOCX output is validated with the Open XML SDK test suite; HTML output carries unit,
-           pagination, and browser-compatibility tests.</p>
+           pagination, and browser-compatibility tests; the PDF writer runs a full
+           multi-framework test suite across .NET 8, 9, and 10.</p>
       </div>
       <div class="why-item">
         <h3>

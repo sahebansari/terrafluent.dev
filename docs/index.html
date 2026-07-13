@@ -3,15 +3,15 @@ layout: default
 title: Documentation — .NET Report Generation Guides
 nav_title: Docs
 description: >-
-  TerraFluent documentation — guides to generating paginated HTML reports and native
-  Word .docx documents in C#, from getting started to troubleshooting.
+  TerraFluent documentation — guides to generating true PDF files, paginated HTML
+  reports, and native Word .docx documents in C#, from getting started to troubleshooting.
 permalink: /docs/
 ---
 
 <section class="hero page-hero">
   <div class="container">
     <span class="hero-badge"><span class="dot"></span> Documentation</span>
-    <h1>Guides for both libraries, <span class="grad">first report to custom renderers</span></h1>
+    <h1>Guides for all three libraries, <span class="grad">first report to custom renderers</span></h1>
     <p class="hero-lede">
       Everything here is versioned with the code — each page links back to its
       source in the repository.
@@ -19,7 +19,22 @@ permalink: /docs/
   </div>
 </section>
 
-<section aria-labelledby="docs-html-title" style="padding-top: 32px">
+<section aria-labelledby="docs-pdf-title" style="padding-top: 32px">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--accent-pdf)">TerraFluent.Pdf.Reporting</span>
+      <h2 id="docs-pdf-title">True PDF files in C#</h2>
+      <p>A zero-dependency managed PDF writer — layout, text, encryption, barcodes, QR codes, and vector graphics.</p>
+    </div>
+    <div class="docs-grid">
+      {% for item in site.data.docs.pdf %}
+      <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="docs-html-title">
   <div class="container">
     <div class="section-head">
       <span class="eyebrow">TerraFluent.Html.Reporting</span>
@@ -52,7 +67,7 @@ permalink: /docs/
 <section class="cta-band" aria-labelledby="docs-cta">
   <div class="container">
     <h2 id="docs-cta">Prefer reading code?</h2>
-    <p>Both repositories ship runnable sample projects covering every feature on this site.</p>
+    <p>Every repository ships a runnable sample project covering the features on this site.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary" href="{{ '/samples/' | relative_url }}">Browse rendered samples</a>
       <a class="btn btn-ghost" href="{{ '/getting-started/' | relative_url }}">Getting started</a>

@@ -37,3 +37,34 @@ docx:
     url: /docs/docx/samples/
   - title: "Troubleshooting"
     url: /docs/docx/troubleshooting/
+pdf:
+  - title: "Getting Started"
+    url: /docs/pdf/getting-started/
+  - title: "Text & Spans"
+    url: /docs/pdf/text-and-spans/
+  - title: "Layout"
+    url: /docs/pdf/layout/
+  - title: "Row & Column Layout"
+    url: /docs/pdf/row-and-column-layout/
+  - title: "Decorators"
+    url: /docs/pdf/decorators/
+  - title: "Images"
+    url: /docs/pdf/images/
+  - title: "Page Sizes & Units"
+    url: /docs/pdf/page-sizes-and-units/
+  - title: "Colors"
+    url: /docs/pdf/colors/
+  - title: "Encryption & Password Protection"
+    url: /docs/pdf/encryption/
+  - title: "Vector Graphics"
+    url: /docs/pdf/vector-graphics/
+  - title: "Table of Contents"
+    url: /docs/pdf/table-of-contents/
+  - title: "Bookmarks (PDF Outlines)"
+    url: /docs/pdf/bookmarks/
+  - title: "Components & Templates"
+    url: /docs/pdf/components-and-templates/
+  - title: "Document Metadata"
+    url: /docs/pdf/metadata/
+  - title: "Unicode & Character Encoding"
+    url: /docs/pdf/unicode-and-encoding/

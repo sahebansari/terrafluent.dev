@@ -1,0 +1,344 @@
+---
+layout: default
+title: Free C# PDF Library — Zero Dependencies, MIT
+nav_title: PDF Reporting
+description: >-
+  Generate true PDF files in C# with a fluent API — invoices, reports, barcodes,
+  QR codes, AES-256 encryption. Pure managed code, zero dependencies, MIT licensed.
+software:
+  name: TerraFluent.Pdf.Reporting
+  version: 2.0.2
+  nuget: https://www.nuget.org/packages/TerraFluent.Pdf.Reporting
+  repo: https://github.com/sahebansari/TerraFluent.Pdf.Reporting
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot" style="background: var(--accent-pdf)"></span> TerraFluent.Pdf.Reporting · v2.0.2</span>
+    <h1>True PDF files, <span class="grad">zero dependencies</span></h1>
+    <p class="hero-lede">
+      A pure managed C# PDF 1.7 writer — invoices, reports, statements, labels, and
+      certificates composed from fluent layout primitives. No native binaries, no
+      headless browser, no third-party packages.
+    </p>
+    <div class="hero-ctas" style="margin-top: 28px">
+      <a class="btn btn-primary" style="background: var(--accent-pdf)" href="{{ site.repos.pdf }}" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-ghost" href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">NuGet</a>
+      <a class="btn btn-ghost" href="{{ '/docs/pdf/getting-started/' | relative_url }}">Getting started</a>
+    </div>
+    <div class="badge-row">
+      <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/v/TerraFluent.Pdf.Reporting?label=nuget&color=b02e2e" alt="NuGet version" width="106" height="20"></a>
+      <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/dt/TerraFluent.Pdf.Reporting?label=downloads&color=2f4858" alt="NuGet downloads" width="120" height="20"></a>
+      <a href="{{ site.repos.pdf }}/blob/main/LICENSE" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/license-MIT-2f4858" alt="MIT license" width="82" height="20"></a>
+    </div>
+  </div>
+</section>
+
+<div class="container accent-scope-pdf">
+  <div class="prose" style="padding-bottom: 0">
+    {% include install-row.html package="TerraFluent.Pdf.Reporting" %}
+  </div>
+
+  <div class="features">
+
+    <!-- Quick start -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Quick start</span>
+        <h3>A complete PDF in one lambda</h3>
+        <p>
+          Page setup, styled header, content column, page-numbered footer — published
+          straight to a PDF that opens in every major viewer. Deterministic, code-first
+          output with no browser engine to babysit.
+        </p>
+        <ul>
+          <li>Targets .NET 8 (LTS), .NET 9, and .NET 10 (LTS)</li>
+          <li>Built-in Helvetica, Times, and Courier families — no font embedding needed</li>
+          <li>Metric and imperial units via <code>Unit</code> helpers</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+using TerraFluent.Pdf.Reporting.Core;
+using TerraFluent.Pdf.Reporting.Helpers;
+
+PdfDocument.Create(container =>
+{
+    container.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Margin(2, Unit.Centimetre);
+        page.DefaultTextStyle(s => s.FontSize(11));
+
+        page.Header()
+            .Text("My Report").Bold().FontSize(24)
+            .FontColor(Color.Blue.Darken2);
+
+        page.Content().Column(col =>
+        {
+            col.Spacing(8);
+            col.Item().Text("Hello, TerraFluent.Pdf.Reporting!");
+            col.Item()
+               .Margin(6).Background(Color.Grey.Lighten4).Padding(10)
+               .Text("Indented callout box").Bold();
+        });
+
+        page.Footer().AlignCenter().Text(t =>
+        {
+            t.Span("Page ");
+            t.CurrentPageNumber().FontSize(9);
+            t.Span(" / ");
+            t.TotalPages().FontSize(9);
+        });
+    });
+})
+.PublishPdf("output.pdf");
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tables -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Tables</span>
+        <h3>Tables that paginate themselves</h3>
+        <p>
+          Relative and fixed-width columns, styled header rows, and full decorator
+          support on every cell. Header rows repeat automatically on every
+          continuation page when a table spans multiple pages.
+        </p>
+        <ul>
+          <li><code>RelativeColumn</code> / <code>ConstantColumn</code> definitions</li>
+          <li>Backgrounds, padding, borders, and alignment per cell</li>
+          <li>Material-style <code>Color</code> palette with shade scales</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+container.Table(table =>
+{
+    table.ColumnsDefinition(cols =>
+    {
+        cols.RelativeColumn(4);
+        cols.RelativeColumn(1);
+        cols.ConstantColumn(70);
+    });
+
+    table.HeaderRow(row =>
+    {
+        row.Cell().Background("#1a4a8a").Padding(6)
+           .Text("Description").Bold().FontColor(Color.White);
+        row.Cell().Background("#1a4a8a").Padding(6).AlignCenter()
+           .Text("Qty").Bold().FontColor(Color.White);
+        row.Cell().Background("#1a4a8a").Padding(6).AlignRight()
+           .Text("Price").Bold().FontColor(Color.White);
+    });
+
+    foreach (var item in lineItems)
+    {
+        table.Row(row =>
+        {
+            row.Cell().Padding(6).Text(item.Name);
+            row.Cell().Padding(6).AlignCenter().Text(item.Qty.ToString());
+            row.Cell().Padding(6).AlignRight().Text($"${item.Price:N2}");
+        });
+    }
+});
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Barcodes & QR -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Barcodes &amp; QR codes</span>
+        <h3>Code 128 and QR, rendered as vectors</h3>
+        <p>
+          Code 128 barcodes with optional human-readable captions, and a full
+          ISO/IEC 18004 QR generator — versions 1–40, error-correction levels
+          L/M/Q/H — drawn as vector rectangles that stay crisp at any zoom.
+        </p>
+        <ul>
+          <li>Custom module and background colours</li>
+          <li>Configurable quiet zones</li>
+          <li>Drop them anywhere — columns, rows, even table cells</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+container.Barcode("SKU-00042-A", width: 260, height: 50,
+    hexColor: "#1A3C5E", showCaption: true);
+
+container.QrCode("https://terrafluent.dev/", size: 90,
+    level: QrErrorCorrectionLevel.Q);
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Encryption -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Security</span>
+        <h3>AES-256 encryption by default</h3>
+        <p>
+          Password-protect documents with the PDF 2.0 Standard Security Handler
+          (Revision 6) — SHA-2 key derivation, no MD5 or RC4 in the chain. Legacy
+          AES-128 remains available for very old viewers. Built entirely on
+          <code>System.Security.Cryptography</code>.
+        </p>
+        <ul>
+          <li>User and owner passwords</li>
+          <li>Fine-grained <code>PdfPermissions</code> flags — print, copy, edit, fill forms</li>
+          <li>Opens in Acrobat, Chrome, Edge, Firefox, Preview, and more</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+PdfDocument.Create(container =>
+{
+    container.Encrypt(new EncryptionOptions
+    {
+        UserPassword  = "open123",
+        OwnerPassword = "admin456",
+        Permissions   = PdfPermissions.Print | PdfPermissions.CopyText,
+    });
+
+    container.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.Content().Text("This PDF is password-protected.").Bold();
+    });
+})
+.PublishPdf("protected.pdf");
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- TOC & bookmarks -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Navigation</span>
+        <h3>Automatic TOC, bookmarks, and links</h3>
+        <p>
+          A navigable Table of Contents is generated from your <code>H1()</code>–<code>H6()</code>
+          headings by the two-pass layout engine. Add hierarchical PDF bookmarks,
+          clickable hyperlinks, and internal GoTo links between sections.
+        </p>
+        <ul>
+          <li><code>container.TableOfContents()</code> — placed wherever you call it</li>
+          <li>Anchor-based bookmarks track rendered content automatically</li>
+          <li><code>Hyperlink()</code> and <code>InternalLink()</code> annotations</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+PdfDocument.Create(container =>
+{
+    // TOC page is placed first
+    container.TableOfContents(p =>
+    {
+        p.Size(PageSize.A4);
+        p.Margin(2, Unit.Centimetre);
+    });
+
+    container.Page(page =>
+    {
+        page.Content().Column(col =>
+        {
+            col.Item().H1("Chapter 1");
+            col.Item().Text("Body text…");
+            col.Item().H2("1.1 Details");
+        });
+    });
+}).PublishPdf("output.pdf");
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Vector graphics -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Vector graphics</span>
+        <h3>A fluent canvas for drawing</h3>
+        <p>
+          Draw lines, rectangles, rounded boxes, circles, ellipses, Bézier paths,
+          polygons, and grids directly inside any layout slot — perfect for custom
+          charts, dividers, and diagrams, with no imaging library required.
+        </p>
+        <ul>
+          <li>Top-left origin, PDF-point coordinates</li>
+          <li>Chainable drawing commands</li>
+          <li>Fills the available width at the height you specify</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+container.Canvas(120, c =>
+{
+    c.FillRect(0, 0, 200, 80, Color.Blue.Lighten4);
+    c.StrokeRect(0, 0, 200, 80, Color.Blue.Darken2, 1.5);
+    c.Line(0, 40, 200, 40, Color.Blue.Medium, 0.5);
+});
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's new -->
+  <div class="whatsnew">
+    <span class="version-chip">v2.0.2</span>
+    <h2>What's new</h2>
+    <ul>
+      <li><strong>New name, same library</strong> — TerraFluent.Pdf.Reporting 2.x is the direct continuation of TerraPDF 1.x: swap the package reference, update the namespaces, and replace <code>Document.Create</code> with <code>PdfDocument.Create</code>.</li>
+      <li><strong>AES-256 encryption by default</strong> — Revision 6 security handler, with AES-128 compatibility mode.</li>
+      <li><strong>Images from bytes and streams</strong> — <code>Image(byte[])</code> / <code>Image(Stream)</code> with transparency and deduplication.</li>
+      <li><strong>Anchor-based bookmarks</strong> — bookmarks bound to rendered elements keep destinations accurate.</li>
+    </ul>
+    <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.pdf }}/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
+  </div>
+
+  <!-- Docs -->
+  <section aria-labelledby="docs-title" style="padding-top: 0">
+    <div class="section-head">
+      <span class="eyebrow">Documentation</span>
+      <h2 id="docs-title">Guides for every feature</h2>
+      <p>From your first page to encrypted, bookmarked, barcode-laden documents — each guide is versioned with the code.</p>
+    </div>
+    <div class="docs-grid">
+      <a href="{{ '/docs/pdf/getting-started/' | relative_url }}">Getting Started<span>Your first PDF</span></a>
+      <a href="{{ '/docs/pdf/layout/' | relative_url }}">Layout<span>Column, Row, and Table</span></a>
+      <a href="{{ '/docs/pdf/text-and-spans/' | relative_url }}">Text &amp; Spans<span>Styling and page numbers</span></a>
+      <a href="{{ '/docs/pdf/decorators/' | relative_url }}">Decorators<span>Padding, borders, backgrounds</span></a>
+      <a href="{{ '/docs/pdf/encryption/' | relative_url }}">Encryption<span>AES-256, permissions</span></a>
+      <a href="{{ '/docs/pdf/vector-graphics/' | relative_url }}">Vector Graphics<span>Canvas, shapes, charts</span></a>
+      <a href="{{ '/docs/pdf/table-of-contents/' | relative_url }}">Table of Contents<span>Auto-generated from headings</span></a>
+      <a href="{{ '/docs/pdf/bookmarks/' | relative_url }}">Bookmarks<span>Hierarchical PDF outlines</span></a>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band" aria-labelledby="pdf-cta">
+    <h2 id="pdf-cta">Ships anywhere modern .NET runs</h2>
+    <p>
+      Targets <code>.NET 8</code>, <code>.NET 9</code>, and <code>.NET 10</code> —
+      Windows, Linux, macOS, Docker, Azure Functions, and AWS Lambda, with nothing
+      native to install. MIT licensed.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" style="background: var(--accent-pdf)" href="{{ '/getting-started/' | relative_url }}">Get started</a>
+      <a class="btn btn-ghost" href="{{ site.repos.pdf }}/tree/main/samples" target="_blank" rel="noopener">Browse samples</a>
+    </div>
+  </section>
+</div>
