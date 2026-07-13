@@ -15,32 +15,32 @@
   --radius-md: 12px;
   --radius-lg: 18px;
 
-  --shadow-1: 0 1px 2px rgb(15 23 32 / 0.06), 0 1px 3px rgb(15 23 32 / 0.08);
-  --shadow-2: 0 8px 28px rgb(15 23 32 / 0.12);
+  --shadow-1: 0 1px 2px rgb(23 43 77 / 0.06), 0 1px 3px rgb(23 43 77 / 0.08);
+  --shadow-2: 0 8px 28px rgb(23 43 77 / 0.12);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #faf9f7;
+  --bg: #f7f9fc;
   --bg-raised: #ffffff;
-  --bg-inset: #f1efeb;
-  --text: #1c2733;
-  --text-muted: #5b6b7a;
-  --text-faint: #61707f;
-  --border: #e4e1da;
-  --border-strong: #d2cec5;
+  --bg-inset: #edf1f7;
+  --text: #17222e;
+  --text-muted: #55677b;
+  --text-faint: #5e7188;
+  --border: #e2e8f0;
+  --border-strong: #c9d4e2;
 
   --brand: #6e1566;
   --accent-html: #0c6b6a;
-  --accent-html-soft: #e3f2f1;
+  --accent-html-soft: #d7f3ef;
   --accent-docx: #8a1b80;
-  --accent-docx-soft: #f8e7f5;
+  --accent-docx-soft: #f9e3f4;
   --accent-pdf: #b02e2e;
-  --accent-pdf-soft: #fbe9e6;
+  --accent-pdf-soft: #fde7e2;
   --link: #0c6b6a;
 
-  --code-bg: #f3f1ea;
-  --code-titlebar-bg: #e7e3d7;
+  --code-bg: #f1f5fa;
+  --code-titlebar-bg: #e4eaf3;
   --code-text: #24313d;
   --code-keyword: #0c7069;
   --code-string: #a4581e;
@@ -52,26 +52,26 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f151c;
-  --bg-raised: #161e27;
-  --bg-inset: #0b1016;
-  --text: #e7ebef;
-  --text-muted: #9aa9b7;
-  --text-faint: #6f7f8e;
-  --border: #253141;
-  --border-strong: #33445a;
+  --bg: #0b1120;
+  --bg-raised: #121a2c;
+  --bg-inset: #070d1a;
+  --text: #e8edf5;
+  --text-muted: #97a7bd;
+  --text-faint: #6d7f97;
+  --border: #223049;
+  --border-strong: #324563;
 
   --brand: #d98fd0;
-  --accent-html: #3fc6bd;
-  --accent-html-soft: #12332f;
-  --accent-docx: #d783cc;
-  --accent-docx-soft: #381330;
-  --accent-pdf: #f08a7e;
-  --accent-pdf-soft: #3b1512;
-  --link: #3fc6bd;
+  --accent-html: #45d0c6;
+  --accent-html-soft: #0f3438;
+  --accent-docx: #dd8bd2;
+  --accent-docx-soft: #391540;
+  --accent-pdf: #f5928a;
+  --accent-pdf-soft: #401713;
+  --link: #45d0c6;
 
-  --code-bg: #0b1016;
-  --code-titlebar-bg: #121a24;
+  --code-bg: #0a101f;
+  --code-titlebar-bg: #101a2f;
   --code-text: #dce7f0;
   --code-keyword: #7fd6d0;
   --code-string: #f0b878;
@@ -191,6 +191,8 @@ section { padding-block: 72px; }
 .btn-primary {
   background: var(--accent-html);
   color: #fff;
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--accent-html) 55%, transparent),
+              inset 0 1px 0 rgb(255 255 255 / 0.18);
 }
 .btn-primary:hover { filter: brightness(1.08); }
 
@@ -318,9 +320,10 @@ body.nav-open .nav-toggle .icon-close { display: block; }
 .hero {
   padding-block: 88px 56px;
   background:
-    radial-gradient(900px 420px at 12% -10%, var(--accent-html-soft), transparent 65%),
-    radial-gradient(700px 380px at 50% -25%, var(--accent-pdf-soft), transparent 60%),
-    radial-gradient(900px 420px at 95% -20%, var(--accent-docx-soft), transparent 65%);
+    radial-gradient(1100px 560px at 8% -12%, color-mix(in srgb, var(--accent-html) 13%, transparent), transparent 62%),
+    radial-gradient(900px 500px at 50% -28%, color-mix(in srgb, var(--accent-pdf) 10%, transparent), transparent 58%),
+    radial-gradient(1100px 560px at 96% -18%, color-mix(in srgb, var(--accent-docx) 12%, transparent), transparent 62%);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 .hero-badge {
@@ -605,13 +608,20 @@ div.highlighter-rouge {
 .product-card {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: var(--bg-raised);
+  background:
+    radial-gradient(340px 150px at 85% -10%, color-mix(in srgb, var(--card-accent-soft, var(--accent-html-soft)) 65%, transparent), transparent 70%),
+    var(--bg-raised);
   padding: 30px 28px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   box-shadow: var(--shadow-1);
   border-top: 3px solid var(--card-accent, var(--accent-html));
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--card-accent, var(--accent-html)) 28%, rgb(23 43 77 / 0.18));
 }
 .product-card.accent-html { --card-accent: var(--accent-html); --card-accent-soft: var(--accent-html-soft); }
 .product-card.accent-docx { --card-accent: var(--accent-docx); --card-accent-soft: var(--accent-docx-soft); }
@@ -674,13 +684,18 @@ div.highlighter-rouge {
 }
 .install-row code {
   flex: 1;
+  min-width: 0;
   border: 0;
   border-radius: 0;
   background: none;
   padding: 11px 14px;
   white-space: nowrap;
   overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
 }
+.install-row code::-webkit-scrollbar { display: none; }
 .copy-btn {
   flex: none;
   border: 0;
@@ -723,6 +738,12 @@ div.highlighter-rouge {
   border-radius: var(--radius-md);
   background: var(--bg-raised);
   padding: 22px 20px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.cap-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-2);
 }
 .cap-card .cap-icon {
   display: inline-flex;
@@ -764,7 +785,13 @@ div.highlighter-rouge {
 
 /* ---------- CTA band ---------- */
 
-.cta-band { text-align: center; }
+.cta-band {
+  text-align: center;
+  background:
+    radial-gradient(720px 300px at 15% 135%, var(--accent-html-soft), transparent 70%),
+    radial-gradient(600px 280px at 50% 150%, var(--accent-pdf-soft), transparent 65%),
+    radial-gradient(720px 300px at 85% 135%, var(--accent-docx-soft), transparent 70%);
+}
 .cta-band h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
 .cta-band p {
   color: var(--text-muted);
@@ -850,6 +877,11 @@ div.highlighter-rouge {
   box-shadow: var(--shadow-1);
   display: flex;
   flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sample-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
 }
 
 /* Reports are print documents: thumbnails stay paper-white in both themes. */
