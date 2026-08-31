@@ -130,6 +130,9 @@ Key points:
   `CssFormat.Encode`, i.e. `WebUtility.HtmlEncode`) - the one exception is
   `RawHtml`, which is emitted verbatim by design (see
   [Content Elements: Raw HTML](/docs/html/content-elements/#raw-html)).
+- **`<title>` defaults to `Report`**, or the document's own title
+  (HTML-encoded) when `ReportDocumentBuilder.Title(...)` was called - a custom
+  `IHtmlReportRenderer` can read it via `LayoutResult.Title`.
 
 `RenderFragmentTo` emits the page styles and page `<div>`s without the
 `<html>`/`<head>`/`<body>` wrapper. Its stylesheet omits the document-level
@@ -145,6 +148,22 @@ viewing the HTML directly - there's no separate PDF-specific code path in
 this library. If you need exact pixel-perfect text wrapping in that PDF, see
 [Text Measurement](/docs/html/text-measurement/) for why the bundled measurer alone
 may not guarantee that.
+
+## Tested against real browsers
+
+The pagination and rendering logic isn't only checked with plain unit tests -
+CI also runs [`PrintLayoutBrowserTests`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/tests/TerraFluent.Html.Reporting.BrowserTests/PrintLayoutBrowserTests.cs)
+against **real, headless Chromium, Firefox, and WebKit** via
+[Playwright](https://playwright.dev/dotnet/), rendering a generated report and
+asserting - under `@media print`, the same media browsers use for "Print to
+PDF" - that every page's `getBoundingClientRect()` matches the requested
+`PageSize` exactly and that no element's box overflows its page's bounds. See
+[`.github/workflows/ci.yml`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/.github/workflows/ci.yml) for the CI job that
+installs and runs all three engines on every push and pull request. This is in
+addition to, not instead of, the unit tests that exercise the pagination math
+itself (see [Pagination and Layout](/docs/html/pagination-and-layout/)) - the
+browser tests specifically guard the *rendered HTML/CSS* against real
+browsers' print-layout behavior, which a markup-only assertion cannot.
 
 ## Where to go next
 

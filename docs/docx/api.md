@@ -158,6 +158,7 @@ doc.Page(page =>
 | `Chart` | Adds a chart. |
 | `Image` overloads | Adds an image from path, bytes, or stream. |
 | `Barcode(string value, ...)` | Adds a Code 128 barcode. |
+| `QrCode(string value, ...)` | Adds a QR code. |
 | `Line()` | Adds a horizontal rule. |
 | `PageBreak()` | Adds a page break. |
 | `Component(IComponent component)` | Composes reusable content. |
@@ -271,6 +272,21 @@ Barcodes are rendered as vector shapes (grouped rectangles), not raster images, 
 | `BarColor(string hexColor)` | Sets the bar color. |
 | `AlignLeft`, `AlignCenter`, `AlignRight` | Aligns the barcode's paragraph. |
 | `Caption` | Adds a caption paragraph below the barcode. |
+
+## QR Codes
+
+QR codes are rendered as vector shapes (grouped rectangles, run-length-encoded per row), not raster images. Any UTF-8 text is accepted; the smallest of the 40 QR versions that fits the payload at the requested error correction level is chosen automatically. A payload too long for even the largest version at that level throws `ArgumentException` at the fluent-call site, not at publish time. A 4-module quiet zone is always included, so the default output scans reliably without extra margin from the caller.
+
+| API | Purpose |
+| --- | --- |
+| `Size(float points)` | Sets the rendered width/height (QR codes are square), including the quiet zone. Defaults to 100pt. |
+| `MaxSize(float points)` | Caps the rendered size, scaling down if it would otherwise be larger. |
+| `ErrorCorrection(QrErrorCorrectionLevel level)` | Sets damage tolerance vs. symbol size: `Low` (~7%), `Medium` (~15%, default), `Quartile` (~25%), `High` (~30%). |
+| `AltText` | Adds accessibility text. |
+| `ForegroundColor(string hexColor)` | Sets the dark-module color. Defaults to black. |
+| `BackgroundColor(string hexColor)` | Sets a fill behind the code and its quiet zone. Transparent (page background shows through) unless set. |
+| `AlignLeft`, `AlignCenter`, `AlignRight` | Aligns the QR code's paragraph. |
+| `Caption` | Adds a caption paragraph below the QR code. |
 
 ## Charts
 

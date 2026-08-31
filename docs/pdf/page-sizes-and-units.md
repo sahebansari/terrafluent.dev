@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Page Sizes & Units — C# PDF Docs"
-description: "Built-in page sizes (A4, Letter, Legal, and more), portrait and landscape orientation, and unit conversions for margins and dimensions."
+description: "---"
 permalink: /docs/pdf/page-sizes-and-units/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

@@ -618,6 +618,7 @@ used when an element doesn't specify one:
 | `Color` | `"#222222"` | Any CSS color string. |
 | `LineHeightMultiplier` | `1.4` | Resolved line height = `FontSizePx * LineHeightMultiplier`; see `LineHeightPx`. |
 | `Alignment` | `TextAlignment.Left` | `Left`, `Center`, `Right`, or `Justify`. |
+| `Direction` | `TextDirection.Ltr` | `Ltr` or `Rtl` - see [Text direction](#text-direction) below. |
 | `MarginTopPx`/`MarginRightPx`/`MarginBottomPx`/`MarginLeftPx` | `0`/`0`/`8`/`0` | See [Margin vs. padding](#margin-vs-padding) below. |
 | `PaddingTopPx`/`PaddingRightPx`/`PaddingBottomPx`/`PaddingLeftPx` | `0` each | See [Margin vs. padding](#margin-vs-padding) below. |
 
@@ -765,10 +766,10 @@ how column width and vertical alignment interact with these.
 
 Every color in this library is a plain CSS color string passed straight
 through to inline styles - there's no validation, palette, or theme system.
-Likewise, `FontFamily` is an opaque CSS font-family list: the library doesn't
-ship or embed any fonts, so whatever you specify must be available in
-whichever browser/engine ultimately renders the HTML (or it falls back per
-normal CSS font-family rules).
+Likewise, `FontFamily` is an opaque CSS font-family list: unless you embed
+one yourself (see below), the library doesn't ship any fonts, so whatever
+you specify must be available in whichever browser/engine ultimately
+renders the HTML (or it falls back per normal CSS font-family rules).
 
 This also matters for *pagination accuracy*: the bundled `ApproximateTextMeasurer`
 estimates wrapping using a single generic sans-serif metrics table regardless
@@ -776,6 +777,48 @@ of which `FontFamily` you set - changing fonts changes how the text looks but
 not how the engine predicts it wraps. See
 [Text Measurement](/docs/html/text-measurement/) for what this means in practice
 and how to get pixel-exact pagination if you need it.
+
+## Embedding custom fonts
+
+`ReportDocumentBuilder.EmbedFont(fontFamily, fontBytesOrFilePath, weight, style, mimeType)`
+embeds a font file directly into the generated HTML as a base64 data URI
+`@font-face` rule, so the report no longer depends on that font being
+installed wherever the HTML is opened or printed:
+
+```csharp
+ReportDocument.Create(PageSize.A4)
+    .EmbedFont("Brand Sans", "fonts/brand-sans.woff2")
+    .EmbedFont("Brand Sans", "fonts/brand-sans-bold.woff2", weight: FontWeight.Bold)
+    .Content(c => c.AddParagraph("Styled text", TextStyle.Default.With(fontFamily: "Brand Sans")))
+    .Build();
+```
+
+Call it once per weight/style combination you actually use (a normal
+weight and a bold weight are two separate font files, so two separate
+`EmbedFont` calls) - `TextStyle.FontFamily`/`FontWeight`/`FontStyle` don't
+know which embedded fonts exist, they just emit the matching CSS, and the
+browser resolves which `@font-face` rule (if any) applies the same way it
+always resolves font matching. Embedding adds the font's full file size
+(base64-encoded, so ~33% larger) to every generated report - reasonable for
+a small brand font, worth measuring for a large font family with many
+weights.
+
+## Text direction
+
+`TextStyle.Direction` (`TextDirection.Ltr`, the default, or `.Rtl`) sets
+both the HTML `dir` attribute and the CSS `direction` property on
+paragraphs, headings, lists, and table cells:
+
+```csharp
+var rtl = TextStyle.Default.With(direction: TextDirection.Rtl);
+content.AddParagraph("مرحبا بالعالم", rtl);
+```
+
+**This is independent of `Alignment`.** Setting `Rtl` does not itself
+change `TextAlignment.Left`/`.Right` to a "logical" start/end - margin,
+padding, and alignment on `TextStyle` remain physical properties (plain CSS
+`left`/`right`, not logical `start`/`end`). For a fully mirrored right-to-left
+block, set `Alignment: TextAlignment.Right` explicitly alongside `Direction: TextDirection.Rtl`.
 
 ## Where to go next
 
@@ -1066,7 +1109,12 @@ fixed-width columns get exactly what you specified; whatever's left after
 subtracting fixed widths *and* the gaps between columns
 (`columnGapPx * (columnCount - 1)`) is divided equally among the auto-width
 columns. If fixed widths and gaps alone exceed the available width, auto
-columns are pinned to `0` rather than going negative.
+columns are pinned to `0` (their content isn't visible) - this now records
+a `LayoutWarning` with `LayoutWarningReason.ColumnWidthCollapsed` rather
+than failing silently, and you can opt into throwing instead via
+`RowStyle.ColumnWidthOverflowMode` or document-wide via
+`ReportDocumentBuilder.UseStrictLayoutValidation()` - see
+[Pagination and Layout: Warnings](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit).
 
 ## Vertical alignment
 
@@ -1156,12 +1204,62 @@ Left/right margin shrinks the width available to the row's columns from that
 edge (and shifts the row right, for left margin); top/bottom margin adds
 vertical space exactly like a text element's margin does.
 
+## Multi-column sections (`AddColumns`)
+
+`AddColumns` is a different, opt-in kind of side-by-side layout from `Row`:
+instead of a fixed set of independently-sized columns holding whatever
+content you put in each one, it packs one **flat** list of content into a
+fixed number of **equal-width** columns automatically, filling one
+completely before moving to the next:
+
+```csharp
+c.AddColumns(3, columns =>
+{
+    columns.AddHeading("Section One", HeadingLevel.H3);
+    columns.AddParagraph("...");
+    columns.AddRule();
+    columns.AddHeading("Section Two", HeadingLevel.H3);
+    columns.AddParagraph("...");
+    // as much content as you like - it flows into column 2, then column 3,
+    // then wraps to a fresh multi-column section on the next page.
+}, columnGapPx: 20);
+```
+
+This is the library's "newspaper column" layout, and it behaves
+differently from `Row` in ways that matter:
+
+- **Content flows and paginates**, unlike a `Row` (which is always placed
+  whole or force-placed with a warning). A paragraph or table that doesn't
+  fit in the remaining space of one column splits across the column
+  boundary exactly the way it already splits across a page boundary - see
+  [Pagination and Layout](/docs/html/pagination-and-layout/) for the underlying
+  `Measure`/`Split` contract every element (including columns' contents)
+  implements.
+- **Columns are always equal width** - the same "share what's left after
+  gaps" math `Row`/`Table` auto-columns already use, just applied to every
+  column rather than only the auto-width ones.
+- **`ColumnsBuilder` supports most of `ContentBuilder`'s method set** -
+  paragraphs, headings, images, barcodes, QR codes, tables, lists, rules,
+  spacers, and raw HTML - except `AddRow` (a row can't span a column) and
+  `AddPageBreak`/`AddColumns` (a page break and nested multi-column
+  sections aren't supported inside a column's content in this version).
+- **An oversized, unsplittable child** (e.g. an image taller than a whole
+  empty column) is force-placed in its own column and recorded as a
+  `LayoutWarning`, mirroring how the page-level engine handles the same
+  situation - see
+  [Pagination and Layout: Warnings](/docs/html/pagination-and-layout/#layoutwarning-when-content-doesnt-fit).
+
+See [Supported Composition Patterns](/docs/html/composition-patterns/) for what
+can and can't go inside a column, and why.
+
 ## Where to go next
 
 - [Content Elements](/docs/html/content-elements/) for how `Row` compares to the
   library's other elements.
 - [Styling](/docs/html/styling/) for the full list of `RowHandle`/`RowColumnHandle`
   modifiers.
+- [Supported Composition Patterns](/docs/html/composition-patterns/) for what
+  can nest inside what, across `Row`, `Table`, and `AddColumns`.
 - [Cookbook: Row layouts](/docs/html/cookbook/#a-header-and-footer-with-a-logo-row)
   for a complete invoice-style header/footer built from rows.
 
@@ -1513,6 +1611,9 @@ Key points:
   `CssFormat.Encode`, i.e. `WebUtility.HtmlEncode`) - the one exception is
   `RawHtml`, which is emitted verbatim by design (see
   [Content Elements: Raw HTML](/docs/html/content-elements/#raw-html)).
+- **`<title>` defaults to `Report`**, or the document's own title
+  (HTML-encoded) when `ReportDocumentBuilder.Title(...)` was called - a custom
+  `IHtmlReportRenderer` can read it via `LayoutResult.Title`.
 
 `RenderFragmentTo` emits the page styles and page `<div>`s without the
 `<html>`/`<head>`/`<body>` wrapper. Its stylesheet omits the document-level
@@ -1528,6 +1629,22 @@ viewing the HTML directly - there's no separate PDF-specific code path in
 this library. If you need exact pixel-perfect text wrapping in that PDF, see
 [Text Measurement](/docs/html/text-measurement/) for why the bundled measurer alone
 may not guarantee that.
+
+## Tested against real browsers
+
+The pagination and rendering logic isn't only checked with plain unit tests -
+CI also runs [`PrintLayoutBrowserTests`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/tests/TerraFluent.Html.Reporting.BrowserTests/PrintLayoutBrowserTests.cs)
+against **real, headless Chromium, Firefox, and WebKit** via
+[Playwright](https://playwright.dev/dotnet/), rendering a generated report and
+asserting - under `@media print`, the same media browsers use for "Print to
+PDF" - that every page's `getBoundingClientRect()` matches the requested
+`PageSize` exactly and that no element's box overflows its page's bounds. See
+[`.github/workflows/ci.yml`](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/.github/workflows/ci.yml) for the CI job that
+installs and runs all three engines on every push and pull request. This is in
+addition to, not instead of, the unit tests that exercise the pagination math
+itself (see [Pagination and Layout](/docs/html/pagination-and-layout/)) - the
+browser tests specifically guard the *rendered HTML/CSS* against real
+browsers' print-layout behavior, which a markup-only assertion cannot.
 
 ## Where to go next
 
@@ -1635,8 +1752,17 @@ today** - this is a documented extension point, not a plug-in registry. The
 intended pattern is a separate companion package (e.g. a hypothetical
 `TerraFluent.Html.Reporting.Measurement.Playwright`) that depends on the core package
 and supplies one, keeping the core package itself free of native/runtime
-dependencies. See [Extending the Library](/docs/html/extending/#a-custom-itextmeasurer)
-for a sketch of what implementing one looks like.
+dependencies.
+
+A working reference implementation of exactly that pattern lives at
+[samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer) -
+it measures word widths with a real, headless Chromium instance's Canvas 2D
+`measureText` API rather than `ApproximateTextMeasurer`'s static Helvetica
+table. Its README spells out exactly what it improves on and what it still
+doesn't do (it's closer to a real browser, not a full DOM layout pass) - read
+that before assuming it gives you pixel-exact pagination. See
+[Extending the Library](/docs/html/extending/#a-custom-itextmeasurer) for the
+`ITextMeasurer` contract sketch this sample implements.
 
 ## Where to go next
 
@@ -2193,6 +2319,12 @@ completely:
   is a companion NuGet package depending on the core library, keeping the
   core package's own dependency footprint at zero.
 
+A full, working example of this pattern - a headless-Chromium-backed
+measurer using Canvas 2D `measureText` for real font metrics - lives at
+[samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer)
+rather than only as a sketch here; its README documents exactly what it
+improves on versus the default and what it still doesn't capture.
+
 ## A custom `IHtmlReportRenderer`
 
 Implement this when you need different output shape than the bundled
@@ -2421,8 +2553,11 @@ exposes a smaller method set than `ContentBuilder` - no `AddRow`, `AddTable`,
 `AddList`, `AddPageBreak`, or `AddRawHtml`. See the comparison table in
 [Content Elements](/docs/html/content-elements/#three-different-builders-three-different-method-sets).
 If you need a table or list inside what's visually a row-like layout,
-consider `AddRawHtml` with a manually computed height, or restructure the
-content to avoid the nesting.
+consider `AddColumns` instead (a `MultiColumnSection` column *can* hold a
+table or list, unlike a `Row` column), `AddRawHtml` with a manually computed
+height, or restructure the content to avoid the nesting. See
+[Supported Composition Patterns](/docs/html/composition-patterns/) for the full
+picture across `Row`, `Table`, and `AddColumns`.
 
 ## Why does `RawHtml`/`Spacer` need an explicit height?
 
@@ -2447,27 +2582,40 @@ a benign race, not a correctness issue. See
 
 ## Known limitations
 
-As of 1.1.1:
+As of this release:
 
 - **Text measurement is approximate by default.** Exact, pixel-perfect
   pagination requires supplying a custom `ITextMeasurer` (see
-  [Text Measurement](/docs/html/text-measurement/)) - none ships in the core
-  package today.
-- **No custom font embedding.** Fonts are referenced by CSS `font-family`
-  only; the library never embeds font files into the generated HTML.
-- **No multi-column page layout** (newspaper-style columns within a single
-  page) - content flows in a single column per page.
+  [Text Measurement](/docs/html/text-measurement/)) - none ships in the *core*
+  package, though a reference Playwright-backed sample measurer exists at
+  [samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer).
+- **Custom font embedding exists but is a manual data-URI embed, not a font
+  subsystem** - `ReportDocumentBuilder.EmbedFont(...)` embeds a font file as
+  a base64 `@font-face` rule; there's no font discovery, subsetting, or
+  fallback-stack management beyond what you configure yourself.
+- **Multi-column page layout (`AddColumns`) is conservative by design** -
+  equal-width columns only, fill-then-wrap (no balanced/equal-height
+  rebalancing), no column-spanning elements, and it can't nest inside
+  itself or inside a `Row` - see
+  [Rows and Columns: Multi-column sections](/docs/html/rows-and-columns/#multi-column-sections-addcolumns).
 - **A table `RowSpan` group can't split across a page break** - it either
   fits together on a page or moves to the next page as a whole; see
   [Tables: Column and row spans](/docs/html/tables/#column-and-row-spans).
-- **No right-to-left (RTL) text support.**
+- **Right-to-left (RTL) text support covers `dir`/`direction` only** -
+  `TextStyle.Direction` is independent of `TextAlignment`/margin/padding,
+  which stay physical (`Left`/`Right`), not logical (`Start`/`End`) - see
+  [Styling: Text direction](/docs/html/styling/#text-direction) for what to set
+  explicitly for a fully mirrored layout.
 - **Rows don't nest, and row columns can't contain a table, list, nested
   row, page break, or raw HTML** - see
-  [section Can I nest a row inside a row?](#can-i-nest-a-row-inside-a-row-or-a-table-inside-a-row-column)
-  above.
+  [Supported Composition Patterns](/docs/html/composition-patterns/) for the
+  full picture (including what `AddColumns` columns *can* hold instead).
 - **No shrink-to-fit for table/row columns** when fixed-width columns
-  already exceed the available width - auto columns are pinned to `0`
-  rather than the table/row overflowing or warning about it.
+  already exceed the available width - auto columns are pinned to `0`.
+  This is no longer silent: it records a `LayoutWarning`
+  (`LayoutWarningReason.ColumnWidthCollapsed`), and you can opt into
+  throwing instead via `TableStyle`/`RowStyle`'s `ColumnWidthOverflowMode`
+  or document-wide via `ReportDocumentBuilder.UseStrictLayoutValidation()`.
 
 Check [CHANGELOG.md](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/CHANGELOG.md) for what's changed most recently.
 
@@ -2477,6 +2625,106 @@ Check [CHANGELOG.md](https://github.com/sahebansari/TerraFluent.Html.Reporting/b
   algorithm behind most of the answers above.
 - [Extending the Library](/docs/html/extending/) if the built-in elements/measurer/renderer
   genuinely don't cover your case.
+
+
+====================================================================
+TerraFluent.Html.Reporting — Supported Composition Patterns
+URL: https://terrafluent.dev/docs/html/composition-patterns/
+====================================================================
+
+# Supported Composition Patterns
+
+The library has several container-like elements - `Row`/`RowColumn`,
+`Table`, and `MultiColumnSection` (via `AddColumns`) - and each one
+deliberately supports a *narrower* set of nested content than the top-level
+`ContentBuilder` does. This page is the single reference for what's
+supported where, so you don't have to piece it together from each
+container's own doc page or discover a restriction by hitting an exception.
+
+## Quick reference
+
+| Container | Can contain | Cannot contain |
+|---|---|---|
+| `Content`/`Header`/`Footer` (`ContentBuilder`/`PageSectionBuilder`) | Everything: paragraphs, headings, images, barcodes, QR codes, tables, lists, rules, spacers, raw HTML, rows, multi-column sections, page breaks (content only) | - |
+| `Row` column (`RowColumnBuilder`) | Text, headings, page-number text, images, barcodes, QR codes, rules, spacers | Tables, lists, raw HTML, nested rows, page breaks, multi-column sections |
+| `Table` cell | Plain text only (`TableCell`) | Any element - a cell is text, not a container |
+| `MultiColumnSection` column (`ColumnsBuilder`, via `AddColumns`) | Paragraphs, headings, images, barcodes, QR codes, tables, lists, rules, spacers, raw HTML | Rows, nested multi-column sections, page breaks |
+
+Two patterns recur across every restricted container: **no page breaks**
+(a page break is a page-level concept, not a within-container one) and **no
+self-nesting** (`Row` can't contain another `Row`; `MultiColumnSection`
+can't contain another `MultiColumnSection`).
+
+## Why the restrictions exist
+
+Each container's restrictions come from what it needs to guarantee about
+its own layout, not an arbitrary limitation:
+
+- **`Row` never splits across pages** (see
+  [Rows and Columns](/docs/html/rows-and-columns/)) - so it deliberately excludes
+  content that *needs* to split (a long table, a long list) or that only
+  makes sense at the page level (a page break). Nesting a row inside a row
+  would also make "never splits" apply transitively to arbitrarily complex
+  content, which stops being a useful guarantee.
+- **A table cell is text, not a container** - `TableCell`'s whole
+  measurement/splitting model (shared line budgets across a row, see
+  [Tables: Column and row spans](/docs/html/tables/#column-and-row-spans)) assumes
+  plain wrapped text, not arbitrary nested layout.
+- **`MultiColumnSection` fills columns dynamically based on remaining
+  space** (see [Rows and Columns: Multi-column sections](/docs/html/rows-and-columns/#multi-column-sections-addcolumns)) -
+  a nested multi-column section would need to answer "how tall is a
+  column's worth of *columns*," which has no well-defined answer; a `Row`
+  inside a column would need to answer "what happens when a row that never
+  splits doesn't fit in the remaining column space," which is exactly the
+  kind of edge case the "no column-spanning elements" v1 scope avoids.
+
+## Combining containers: what already works well
+
+These are the patterns worth reaching for first, in order of how often
+real reports need them:
+
+- **A `Row` in the header/footer, ordinary content below it.** The
+  most common pattern - a logo next to a company name in the header, plain
+  paragraphs/tables in the body. See
+  [Cookbook: A letterhead with a logo](/docs/html/cookbook/).
+- **A `Table` after a `Row`.** A row for a summary strip (e.g. three
+  centered stat numbers), followed by an ordinary table for the detail
+  data - two independent top-level elements, not nested.
+- **A barcode/QR code inside a `Row` column** (e.g. an invoice number
+  barcode next to the company name) - both are just images once created,
+  so every image modifier (`AlignCenter`, `Margin`, ...) works on them
+  inside a column exactly like it does at the top level. See
+  [Cookbook: A barcode in the header](/docs/html/cookbook/#a-barcode-in-the-header-invoice-number).
+- **A `Table` inside a `MultiColumnSection` column** - a genuinely new
+  capability multi-column sections add: unlike a `Row` column, a
+  `MultiColumnSection` column can hold a table, and that table can even
+  split across the column boundary the same way it splits across a page
+  boundary. Useful for a two-column glossary/reference layout where one
+  column happens to need a small table.
+
+## If you need something not on this list
+
+If your content doesn't fit one of the supported patterns above, two
+escape hatches exist rather than trying to force a nested container to do
+something it wasn't designed for:
+
+- **`AddRawHtml(html, heightPx)`** - inject arbitrary markup at a
+  caller-supplied height when you need a layout the built-in containers
+  don't support. See
+  [FAQ: Why does RawHtml/Spacer need an explicit height?](/docs/html/faq-troubleshooting/#why-does-rawhtmlspacer-need-an-explicit-height).
+- **Restructure as independent top-level elements.** Most "I want to nest
+  X inside Y" needs are actually satisfied by two separate top-level
+  elements placed next to each other in document order (e.g. a `Row` for a
+  header strip, then a `Table` immediately after it) rather than true
+  nesting - see the combining patterns above.
+
+## Where to go next
+
+- [Rows and Columns](/docs/html/rows-and-columns/) for `Row`/`RowColumn` and
+  `MultiColumnSection` in full detail.
+- [Tables](/docs/html/tables/) for what a `TableCell` supports.
+- [FAQ: Can I nest a row inside a row?](/docs/html/faq-troubleshooting/#can-i-nest-a-row-inside-a-row-or-a-table-inside-a-row-column)
+  for the original version of this question, answered inline.
 
 
 ====================================================================
@@ -3000,6 +3248,23 @@ page.Content().Barcode("Internal-Only", bc => bc.ShowText(false));
 
 Barcodes encode text as Code 128 and render as vector bars (not raster images), so they stay crisp at any size. Only ASCII 32-126 (space through `~`) can be encoded; anything else throws `ArgumentException` immediately.
 
+## QR Codes
+
+```csharp
+page.Content().QrCode("https://example.com");
+
+page.Content().QrCode("WIFI:T:WPA;S:MyNetwork;P:secret123;;", qr => qr
+    .Size(140)
+    .ErrorCorrection(QrErrorCorrectionLevel.High)
+    .ForegroundColor(Colors.Blue.L800)
+    .AlignCenter()
+    .Caption("Guest Wi-Fi"));
+```
+
+QR codes encode arbitrary UTF-8 text and, like barcodes, render as vector shapes - no raster image, no media part, crisp at any size - with a built-in quiet zone so they scan reliably by default. The smallest symbol version (1-40) that fits the payload at the requested error correction level is chosen automatically; a payload too long for even the largest version at that level throws `ArgumentException` immediately.
+
+Error correction levels (`QrErrorCorrectionLevel`), from least to most redundant: `Low` (~7% damage tolerance), `Medium` (~15%, the default), `Quartile` (~25%), `High` (~30%). Higher levels produce a larger symbol for the same payload in exchange for more resilience to damage or obstruction (e.g. an overlaid logo, at High or Quartile).
+
 ## Charts
 
 ```csharp
@@ -3300,6 +3565,7 @@ doc.Page(page =>
 | `Chart` | Adds a chart. |
 | `Image` overloads | Adds an image from path, bytes, or stream. |
 | `Barcode(string value, ...)` | Adds a Code 128 barcode. |
+| `QrCode(string value, ...)` | Adds a QR code. |
 | `Line()` | Adds a horizontal rule. |
 | `PageBreak()` | Adds a page break. |
 | `Component(IComponent component)` | Composes reusable content. |
@@ -3413,6 +3679,21 @@ Barcodes are rendered as vector shapes (grouped rectangles), not raster images, 
 | `BarColor(string hexColor)` | Sets the bar color. |
 | `AlignLeft`, `AlignCenter`, `AlignRight` | Aligns the barcode's paragraph. |
 | `Caption` | Adds a caption paragraph below the barcode. |
+
+## QR Codes
+
+QR codes are rendered as vector shapes (grouped rectangles, run-length-encoded per row), not raster images. Any UTF-8 text is accepted; the smallest of the 40 QR versions that fits the payload at the requested error correction level is chosen automatically. A payload too long for even the largest version at that level throws `ArgumentException` at the fluent-call site, not at publish time. A 4-module quiet zone is always included, so the default output scans reliably without extra margin from the caller.
+
+| API | Purpose |
+| --- | --- |
+| `Size(float points)` | Sets the rendered width/height (QR codes are square), including the quiet zone. Defaults to 100pt. |
+| `MaxSize(float points)` | Caps the rendered size, scaling down if it would otherwise be larger. |
+| `ErrorCorrection(QrErrorCorrectionLevel level)` | Sets damage tolerance vs. symbol size: `Low` (~7%), `Medium` (~15%, default), `Quartile` (~25%), `High` (~30%). |
+| `AltText` | Adds accessibility text. |
+| `ForegroundColor(string hexColor)` | Sets the dark-module color. Defaults to black. |
+| `BackgroundColor(string hexColor)` | Sets a fill behind the code and its quiet zone. Transparent (page background shows through) unless set. |
+| `AlignLeft`, `AlignCenter`, `AlignRight` | Aligns the QR code's paragraph. |
+| `Caption` | Adds a caption paragraph below the QR code. |
 
 ## Charts
 
@@ -4182,10 +4463,48 @@ container.Table(table =>
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `Cell()` | `IContainer` | Next cell slot (left to right); supports all decorators |
+| `Cell(columnSpan = 1, rowSpan = 1)` | `IContainer` | Next cell slot (left to right, auto-skipping columns reserved by an earlier `columnSpan` in the same row or a `rowSpan` reaching down from a previous row); supports all decorators |
 
 > **Tip:** Cells support the full decorator chain:
 > `row.Cell().Background(bg).Padding(6).AlignRight().Text("value")`
+
+### Column and row spans
+
+```csharp
+table.Row(row =>
+{
+    // rowSpan: add the cell once, on the first row it covers.
+    row.Cell(rowSpan: 2).Background("#E8F5F0").Padding(8).AlignMiddle()
+       .Text("Laptops").Bold();
+    row.Cell().Padding(6).Text("UltraBook Pro 14\"");
+    row.Cell().Padding(6).AlignRight().Text("$1,299.00");
+});
+table.Row(row =>
+{
+    // Column 1 is already occupied by the rowSpan cell above — Cell()
+    // skips it automatically and lands in column 2.
+    row.Cell().Padding(6).Text("UltraBook Pro 16\"");
+    row.Cell().Padding(6).AlignRight().Text("$1,799.00");
+});
+
+// columnSpan merges cells left to right within a single row.
+table.Row(row => row.Cell(columnSpan: 3).Background("#0F5C4C").Padding(6)
+    .AlignCenter().Text("NEW ARRIVALS").Bold().FontColor(Color.White));
+```
+
+- `columnSpan` merges the cell across that many columns of its own row; the
+  next `Cell()` call in the same row automatically starts after it.
+- `rowSpan` extends the cell down that many rows; call it once, on the first
+  row of the group — every following row's `Cell()` calls automatically skip
+  the column it occupies.
+- Row heights grow to fit a `rowSpan` cell's content when it's taller than
+  the rows it spans (the extra height is split evenly across them).
+- A `rowSpan` group is never split across a page break — if it doesn't fit
+  on the current page, the whole group moves to the next one together.
+
+See `17_TableSpanShowcase.cs` in the samples project for a full worked
+example (category-grouped rows, a banner row, and a `rowSpan` group crossing
+a page break).
 
 ---
 
@@ -5186,6 +5505,412 @@ container.Background("#FFF8E1");
 container.FontColor("#333333");
 container.Border(1, "#DDDDDD");
 ```
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Templates
+URL: https://terrafluent.dev/docs/pdf/templates/
+====================================================================
+
+# Templates
+
+Every PDF starts as a blank page — `PageDescriptor` gives you a solid
+`PageColor()`, and three empty layout slots (`Header()`, `Content()`,
+`Footer()`). Templates are a thin, opt-in layer on top of that: predefined,
+professionally-styled combinations of page background, decorative artwork,
+and header/footer that you apply in one call, so you get a branded-looking
+document instantly and only write the content that's actually unique to your
+document.
+
+Every predefined template treats its color/gradient/pattern as **one
+continuous design covering the whole page** — not a colored rectangle at the
+top with a plain page underneath it. A soft-tinted background, a full-page
+gradient, decorative accent shapes (rounded panels, corner-bleeding circles,
+a frame) all read as a single seamless piece of art, the same way a
+professionally-designed page-background template does; your content is then
+composed on top of it in `page.Content()`.
+
+A template never touches `Content()` — it only configures the page
+background/decoration, `Header()`, `Footer()`, margins, and the default text
+style. Your content always goes into `page.Content()` exactly as it does today.
+
+---
+
+## Quick start
+
+```csharp
+using TerraFluent.Pdf.Reporting.Core;
+using TerraFluent.Pdf.Reporting.Helpers;
+using TerraFluent.Pdf.Reporting.Templating;
+
+PdfDocument.Create(doc =>
+{
+    doc.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.UseTemplate(Templates.Corporate, opts =>
+        {
+            opts.Title       = "Q3 Financial Report";
+            opts.Subtitle    = "Prepared for the Board of Directors";
+            opts.AccentColor = Color.Teal.Darken2;
+            opts.LogoPath    = "logo.png";
+            opts.FooterText  = "Confidential — Acme Inc.";
+        });
+
+        page.Content().Padding(30).Column(col =>
+        {
+            col.Spacing(12);
+            col.Item().Text("Executive summary...").Justify();
+        });
+    });
+})
+.PublishPdf("report.pdf");
+```
+
+`UseTemplate` returns the `PageDescriptor`, so you can keep chaining
+(`.Margin(...)`, etc.) afterward — a template's settings are just a
+starting point a later call can still override.
+
+---
+
+## Predefined templates
+
+| Template | Look | Best for |
+|---|---|---|
+| `Templates.Corporate` | A light brand-tinted page (no plain-white gap), solid accent header band with logo/title/subtitle, a thin accent rule, and a pair of ribbon sweeps bleeding off the bottom edge | Reports, invoices, company profiles |
+| `Templates.Modern` | Near-white page organized by a full-bleed, two-tone accent rail down the left edge with a quiet dot-grid texture in the bottom-right corner; logo, title, subtitle, body, and footer all sit in one column to the rail's right | Product briefs, startup/tech-leaning documents |
+| `Templates.Minimal` | Near-plain white page, small title over a thin top rule, generous margins, and one pale arc grazing the bottom-right corner | Whitepapers, editorial documents |
+| `Templates.Elegant` | Soft page-wide tint of the accent color inside a classic double-rule frame, serif title framed by its own rules | Certificates, formal proposals |
+| `Templates.Cover` | Full-bleed diagonal gradient with ribbon sweeps framing the top and bottom edges, large centered title/subtitle in white | Cover pages, section dividers |
+
+All five are built from the same public fluent API you already use
+(`Background`, `BackgroundGradient`, `DecoratePage`, `Padding`, `Row`,
+`Column`, `Text`, `Image`, `LineHorizontal`, page numbers) — nothing about
+them is special or inaccessible to your own code.
+
+### `Templates.Cover` is a cover-page template, not a body template
+
+`PageDescriptor.Content()` always returns the same underlying container —
+whatever your own `page.Content()...` calls draw there completely replaces
+anything a template could have pre-drawn *inside that container*. A template
+therefore can't reliably wrap `Content()` in a decoration (the very next line
+of your code would overwrite it) — but it *can* reliably reserve the visual
+*space* content will occupy, because margins are geometry, not something
+your `.Content()...` call ever touches. `Templates.Modern` uses exactly this
+trick: it draws a full-height accent rail with `DecoratePage` at a fixed
+position along the left edge and sets `page.Margin(...)` to clear it, so
+whatever you put in `Header()`/`Content()`/`Footer()` always lands to its
+right — see [Page decoration](#page-decoration) below.
+
+`Templates.Cover` deliberately doesn't do this: its full-bleed gradient sits
+directly behind whatever you put in `Content()`, styled for a short,
+large-type cover page (title + subtitle) — not a paragraph of body text. For
+a multi-page document, use a Cover template on the first page and a body
+template (`Corporate`, `Modern`, `Minimal`, `Elegant`) on the rest, in the
+same document:
+
+```csharp
+PdfDocument.Create(doc =>
+{
+    doc.Page(page => // page 1: cover
+    {
+        page.Size(PageSize.A4);
+        page.UseTemplate(Templates.Cover, o =>
+        {
+            o.Title    = "Annual Report 2026";
+            o.Subtitle = "Building for the next decade";
+        });
+    });
+
+    doc.Page(page => // page 2+: body
+    {
+        page.Size(PageSize.A4);
+        page.UseTemplate(Templates.Corporate, o => o.Title = "Annual Report 2026");
+        page.Content().Text("Financial summary...");
+    });
+})
+.PublishPdf("annual-report.pdf");
+```
+
+---
+
+## `TemplateOptions` reference
+
+| Property | Type | Default | Used by |
+|---|---|---|---|
+| `Title` | `string?` | `null` | All templates — main header/cover title |
+| `Subtitle` | `string?` | `null` | All templates — line under `Title` |
+| `AccentColor` | `string` | `Color.Blue.Darken2` | All templates — brand color |
+| `SecondaryColor` | `string?` | darker shade of `AccentColor` | `Modern` — rail's lower tone; `Cover` — gradient end color |
+| `LogoPath` | `string?` | `null` | `Corporate`, `Modern` — header logo (ignored if the file doesn't exist) |
+| `LogoBytes` | `byte[]?` | `null` | Same as `LogoPath`, from in-memory bytes |
+| `ShowPageNumbers` | `bool` | `true` | All templates — footer "Page X of Y" |
+| `FooterText` | `string?` | `null` | Templates with a footer band |
+
+---
+
+## Gradient and image backgrounds
+
+Templates are built on general-purpose primitives you can use directly,
+without going through a template at all.
+
+**Full-page background** (`PageDescriptor`, mutually exclusive — the last
+one you call wins):
+
+```csharp
+page.PageColor("#FFFFFF");                                     // solid
+page.PageBackgroundGradient("#1976D2", "#0D47A1", GradientDirection.TopToBottom);
+page.PageBackgroundImage("background.jpg", ImageFit.Cover);    // or Stretch
+```
+
+**In-layout gradient band** (any container — header, footer, a card):
+
+```csharp
+container.BackgroundGradient("#1976D2", "#0D47A1", GradientDirection.LeftToRight)
+    .Padding(16)
+    .Text("Banner text").FontColor(Color.White);
+```
+
+> This library has no native PDF shading support, so gradients are
+> approximated as ~48 thin solid-color bands rather than a true smooth
+> blend. At normal viewing sizes the banding is not visually distinct — on
+> `Templates.Cover`'s diagonal gradient it even reads as an intentional
+> subtle stripe texture.
+
+## Page decoration
+
+`page.DecoratePage(canvas => ...)` draws arbitrary vector artwork — the same
+`VectorCanvas` API `.Canvas(height, draw)` already gives you inside a layout
+(rectangles, rounded rectangles, circles/ellipses, and arbitrary Bézier
+`Path(...)`s) — as a layer over the page's background and under
+`Header()`/`Content()`/`Footer()`. Coordinates are page-relative, top-left
+origin, spanning the full page (`canvas.AllocatedWidth`/`AllocatedHeight`)
+regardless of margins. This is how the predefined templates build their
+corner-bleeding accent circles, `Elegant`'s frame, and `Modern`'s accent
+rail and dot-grid:
+
+```csharp
+page.DecoratePage(canvas =>
+{
+    double w = canvas.AllocatedWidth, h = canvas.AllocatedHeight;
+
+    // A soft accent circle bleeding off a corner — center it AT the corner
+    // so only a quarter of it is actually visible on the page.
+    canvas.FillCircle(w, h, Math.Min(w, h) * 0.15, "#BBDEFB");
+
+    // A refined frame inset from the page edges.
+    canvas.StrokeRoundedRect(18, 18, w - 36, h - 36, 6, "#1976D2", 1);
+});
+```
+
+### Ribbon sweeps
+
+The sweeping bands the predefined templates use are just a **cubic Bézier
+stroked at a large line width** — the band's two edges are the stroke's own
+offsets, so there's no offset-curve geometry to compute:
+
+```csharp
+page.DecoratePage(canvas =>
+{
+    double w = canvas.AllocatedWidth, h = canvas.AllocatedHeight;
+
+    canvas.Path(p => p
+        .MoveTo(-40, h * 0.26)                                   // start off-page…
+        .CurveTo(w * 0.16, h * 0.02, w * 0.42, -26, w + 40, -40) // …end off-page
+        .Stroke("#1976D2", 30));                                 // thickness = band width
+});
+```
+
+Two details matter: push the end points *past* the page edges (PDF's default
+flat line cap would otherwise show as a blunt edge mid-page), and remember a
+stroke can't be clipped — to make a ribbon stop at a shape, draw the ribbon
+first and paint an opaque shape (e.g. a content panel or card) over it.
+
+**Reserving space for a decorated content panel**: because `DecoratePage`
+runs before `Content()` draws and margins are geometry your later
+`.Content()...` call never overwrites, you can draw a shape (e.g. a rounded
+white panel) and set `page.Margin(...)` to match its bounds so your content
+always lands inside it. `Templates.Modern` uses the same underlying idea in
+its simpler form — a fixed-position accent rail with the left margin set to
+clear it — but the technique generalizes to any shape:
+
+```csharp
+const double top = 50, side = 45, bottom = 50, pad = 20;
+page.Margin(top, side, bottom, side);
+page.DecoratePage(canvas =>
+{
+    double w = canvas.AllocatedWidth, h = canvas.AllocatedHeight;
+    canvas.FillRoundedRect(side - pad, top - pad, w - (side - pad) * 2,
+        h - (top - pad) - (bottom - pad), 20, Color.White);
+});
+```
+
+> Call `page.Size(...)` before `page.DecoratePage(...)`/`page.Margin(...)` in
+> a template: the decoration callback itself always sees the page's final
+> size (it runs at render time), but margin math you compute inline needs
+> the final `page.PageWidth`/`PageHeight` already set.
+
+---
+
+## Custom templates
+
+A template is just a page-configuration callback — build your own with
+`PdfTemplate.Create` using the exact same API the predefined templates use:
+
+```csharp
+var brandTemplate = PdfTemplate.Create((page, opts) =>
+{
+    page.PageColor(Color.White);
+
+    page.Header().Background(opts.AccentColor).Padding(16)
+        .Text(opts.Title ?? string.Empty).Bold().FontSize(20).FontColor(Color.White);
+
+    page.Footer().AlignCenter().Text(t =>
+    {
+        t.Span("Page ");
+        t.CurrentPageNumber();
+    });
+});
+
+page.UseTemplate(brandTemplate, opts => opts.Title = "Custom Report");
+```
+
+Nothing about `PdfTemplate` is special — it's a reusable `Action<PageDescriptor,
+TemplateOptions>`, so anything you could write directly in `doc.Page(page => ...)`
+you can factor into a template and reuse across documents.
+
+
+====================================================================
+TerraFluent.Pdf.Reporting — Custom Fonts & Full Unicode
+URL: https://terrafluent.dev/docs/pdf/custom-fonts/
+====================================================================
+
+# Custom Fonts & Full Unicode
+
+TerraFluent.Pdf.Reporting ships with the three PDF standard-14 families (Helvetica, Times,
+Courier), rendered via `WinAnsiEncoding` — this covers Western European
+languages but not brand typefaces, and not scripts outside Windows-1252
+(Cyrillic, Greek, and beyond). `FontFamily.Register` embeds a real TrueType
+font so you can use any typeface, with full Unicode text support wherever
+that font has glyphs.
+
+No external packages are required. Font parsing, embedding, and CID-keyed
+text encoding are implemented entirely in `System`-namespace code.
+
+---
+
+## Quick start
+
+```csharp
+using TerraFluent.Pdf.Reporting.Helpers;
+
+// Register once (e.g. at application startup) — parsing is cached, so this
+// is safe to call from a long-lived server process and reused by every
+// document rendered afterwards, including concurrently.
+FontFamily.Register("Brand", "fonts/Brand-Regular.ttf");
+FontFamily.Register("Brand", "fonts/Brand-Bold.ttf", bold: true);
+
+PdfDocument.Create(container =>
+{
+    container.Page(page =>
+    {
+        page.Size(PageSize.A4);
+        page.DefaultTextStyle(s => s.FontFamily("Brand"));
+
+        page.Content().Column(col =>
+        {
+            col.Item().Text("Héllo, Привет, Γειά σου").FontSize(18);
+            col.Item().Text("Now in bold.").Bold();
+        });
+    });
+})
+.PublishPdf("branded.pdf");
+```
+
+`TextStyle.FontFamily("Brand")` and `.Bold()`/`.Italic()` are the same API
+you already use for the built-in families — nothing else changes.
+
+---
+
+## `FontFamily.Register` overloads
+
+| Overload | Use when |
+|----------|----------|
+| `Register(string familyName, string fontFilePath, bool bold = false, bool italic = false)` | Loading directly from a `.ttf`/`.otf` file on disk. |
+| `Register(string familyName, byte[] fontFileBytes, bool bold = false, bool italic = false)` | The font data is already in memory (embedded resource, downloaded, etc.). |
+| `Register(string familyName, Stream fontFileStream, bool bold = false, bool italic = false)` | Reading from a stream (read to completion; the stream is not disposed). |
+
+A family can have up to four registered variants — regular, bold, italic,
+and bold-italic — registered independently under the same `familyName`.
+Requesting a style that wasn't registered falls back to the closest
+available variant instead of throwing (e.g. calling `.Bold()` on a family
+that only registered a regular file renders with the regular outlines).
+
+---
+
+## What gets embedded
+
+Each registered variant is embedded as a `Type0`/`CIDFontType2` composite
+font with `Identity-H` encoding: text is addressed by glyph ID, not by a
+fixed 256-slot encoding, so any glyph the font contains can be shown —
+not just Windows-1252. A `ToUnicode` CMap is included so copy/paste and
+text extraction recover the correct Unicode text.
+
+The font is embedded **once per document**, even when used across many
+pages or many times per page — a registered font used throughout a
+200-page report still costs one embedded copy.
+
+Characters the font has no glyph for render as the font's `.notdef` glyph
+(usually a blank box) rather than throwing — the same graceful-fallback
+behaviour as the standard fonts substituting `?` for unmappable characters.
+
+---
+
+## Known limitations
+
+- **TrueType outlines only.** `.ttf` files, and `.otf` files that still
+  carry a `glyf`/`loca` table, are supported. CFF-flavoured OpenType
+  (`OTTO`) and TrueType Collections (`.ttc`) throw
+  `NotSupportedException` — a different embedding path
+  (`/FontFile3`, `CIDFontType0`) would be needed for those. Future versions
+  may add it.
+- **No glyph subsetting.** The whole font file is embedded, so a large
+  font increases the output PDF's size accordingly. Future versions may
+  add subsetting to embed only the glyphs actually used.
+- **No synthetic bold/italic.** If a style wasn't registered, TerraFluent.Pdf.Reporting
+  falls back to the closest registered variant rather than skewing or
+  thickening glyphs to approximate it.
+- **Partial OpenType shaping for Devanagari — no full GSUB/GPOS engine.**
+  Codepoints map through the font's `cmap` to a glyph ID as usual, but
+  TerraFluent.Pdf.Reporting applies two pure-C# corrections automatically for any text drawn
+  through a registered custom font (no dependency, no public API — this is
+  transparent):
+  - **Matra reordering**: the vowel sign ि (`U+093F`) is stored after its
+    consonant in Unicode but must render before it; TerraFluent.Pdf.Reporting moves it to the
+    correct position before the cluster it attaches to.
+  - **Conjunct ligatures**: TerraFluent.Pdf.Reporting reads the font's own `GSUB` table for
+    the `half`/`akhn`/`cjct` features and substitutes the ligature glyphs
+    the font itself defines — e.g. स्व, स्थ, क्ष, ज्ञ render as proper
+    joined forms, not separate glyphs with a visible ् mark, whenever the
+    font provides those substitution rules (most well-designed Devanagari
+    fonts define them for nearly every consonant).
+  - **र-conjuncts**: reph (र् at the start of a cluster, e.g. धर्म, वर्तमान)
+    is corrected by moving the र् pair to the end of the cluster it
+    attaches to, then substituting it for the font's reph glyph via GSUB's
+    `rphf` feature. Below-base/post-base 'ra' forms (प्र, क्र, त्र, ष्ट्र, …)
+    are substituted via GSUB's `rkrf` feature — no reordering needed there,
+    since the codepoints are already in the right order. Both use the same
+    substitution mechanism as the other conjunct ligatures above, applied
+    automatically whenever the font provides those GSUB rules.
+  - **Not covered**: `blwf` — below-base forms for consonants *other* than
+    र (used by some fonts for other subjoined forms) — uses contextual GSUB
+    lookups TerraFluent.Pdf.Reporting's reader doesn't parse, so those specific cases may
+    still draw as separate glyphs.
+  - This is intentional: `src/TerraFluent.Pdf.Reporting` stays pure managed C# with no
+    native dependency and will never bundle a full shaping engine (no
+    GPOS mark positioning, no general Indic reordering beyond the ि
+    matra and reph cases above) — this is a scoped, font-data-driven
+    substitution, not a shaping engine.
 
 
 ====================================================================

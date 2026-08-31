@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Colors — C# PDF Docs"
-description: "TerraFluent.Pdf.Reporting ships a full Material Design-inspired colour palette as static string constants in the"
+description: "TerraFluent.Pdf.Reporting ships a full Material Design-inspired colour palette as static string constants in the TerraFluent.Pdf.Reporting.Helpers.Color"
 permalink: /docs/pdf/colors/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

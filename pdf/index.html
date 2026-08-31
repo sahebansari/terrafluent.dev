@@ -39,6 +39,18 @@ faq:
       Yes. Documents can be encrypted with AES-256 (the default) or AES-128 for legacy
       viewers, with user and owner passwords plus fine-grained permission flags for
       printing, copying, and editing.
+  - q: Can I brand a PDF without designing a page from scratch?
+    a: >-
+      Yes. Five predefined page templates (Corporate, Modern, Minimal, Elegant, Cover)
+      give a full-page branded background, header, and footer in one
+      page.UseTemplate(...) call — fully customizable via TemplateOptions, or build an
+      entirely custom template with the same public fluent API.
+  - q: Does it support custom fonts and non-Latin scripts?
+    a: >-
+      Yes. FontFamily.Register embeds a TrueType font as a Unicode composite font, so
+      any typeface and any script the font covers — Cyrillic, Greek, Devanagari with
+      full shaping and reordering — renders correctly, beyond the built-in fonts'
+      Windows-1252 range.
 ---
 
 <section class="hero page-hero">
@@ -51,7 +63,7 @@ faq:
       headless browser, no third-party packages.
     </p>
     <div class="hero-ctas" style="margin-top: 28px">
-      <a class="btn btn-primary" style="background: var(--accent-pdf)" href="{{ site.repos.pdf }}" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-primary" style="--btn-bg: linear-gradient(135deg, var(--accent-pdf), color-mix(in srgb, var(--accent-pdf) 65%, var(--brand) 35%)); --btn-glow: var(--accent-pdf)" href="{{ site.repos.pdf }}" target="_blank" rel="noopener">View on GitHub</a>
       <a class="btn btn-ghost" href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">NuGet</a>
       <a class="btn btn-ghost" href="{{ '/docs/pdf/getting-started/' | relative_url }}">Getting started</a>
     </div>
@@ -323,17 +335,86 @@ container.Canvas(120, c =>
         </div>
       </div>
     </div>
+
+    <!-- Templates -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Templates</span>
+        <h3>Branded pages in one call</h3>
+        <p>
+          Five predefined templates — Corporate, Modern, Minimal, Elegant, and Cover —
+          give a full-page background, decorative artwork, header, and footer in a
+          single <code>UseTemplate(...)</code> call, so a document looks designed
+          instead of default. Built from the same public fluent API, so a custom
+          template is just as reachable.
+        </p>
+        <ul>
+          <li>Gradients, background images, and vector page decoration</li>
+          <li>Customizable via <code>TemplateOptions</code> — title, accent color, logo, footer</li>
+          <li><code>PdfTemplate.Create(...)</code> for a fully custom, reusable template</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+page.UseTemplate(Templates.Corporate, opts =>
+{
+    opts.Title       = "Q3 Financial Report";
+    opts.Subtitle    = "Prepared for the Board of Directors";
+    opts.AccentColor = Color.Teal.Darken2;
+    opts.LogoPath    = "logo.png";
+    opts.FooterText  = "Confidential — Acme Inc.";
+});
+
+page.Content().Padding(30).Column(col =>
+{
+    col.Item().Text("Executive summary...").Justify();
+});
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom fonts -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Fonts &amp; Unicode</span>
+        <h3>Any typeface, any script</h3>
+        <p>
+          <code>FontFamily.Register</code> embeds a TrueType font as a Unicode composite
+          font — full glyph coverage beyond the built-in fonts' Windows-1252 range,
+          with pure-C# Devanagari shaping (matra reordering, conjunct ligatures, reph)
+          for text set in a registered Indic font.
+        </p>
+        <ul>
+          <li>Regular, bold, italic, and bold-italic variants per family</li>
+          <li>From a file path, <code>byte[]</code>, or <code>Stream</code></li>
+          <li>No external packages — parsing and embedding are pure C#</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+FontFamily.Register("Brand", "fonts/Brand-Regular.ttf");
+FontFamily.Register("Brand", "fonts/Brand-Bold.ttf", bold: true);
+
+page.DefaultTextStyle(s => s.FontFamily("Brand"));
+page.Content().Text("Héllo, Привет, Γειά σου, नमस्ते").FontSize(18);
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- What's new -->
   <div class="whatsnew">
-    <span class="version-chip">v2.0.2</span>
+    <span class="version-chip">v2.2.1</span>
     <h2>What's new</h2>
     <ul>
-      <li><strong>New name, same library</strong> — TerraFluent.Pdf.Reporting 2.x is the direct continuation of TerraPDF 1.x: swap the package reference, update the namespaces, and replace <code>Document.Create</code> with <code>PdfDocument.Create</code>.</li>
-      <li><strong>AES-256 encryption by default</strong> — Revision 6 security handler, with AES-128 compatibility mode.</li>
-      <li><strong>Images from bytes and streams</strong> — <code>Image(byte[])</code> / <code>Image(Stream)</code> with transparency and deduplication.</li>
-      <li><strong>Anchor-based bookmarks</strong> — bookmarks bound to rendered elements keep destinations accurate.</li>
+      <li><strong>Predefined page templates</strong> — Corporate, Modern, Minimal, Elegant, and Cover, applied with <code>page.UseTemplate(...)</code>, plus gradients, background images, and vector page decoration to build your own.</li>
+      <li><strong>Custom font embedding</strong> — <code>FontFamily.Register</code> for any TrueType font, with pure-C# Devanagari shaping for Indic scripts.</li>
+      <li><strong><code>columnSpan</code>/<code>rowSpan</code> table fixes</strong> — spanned cells no longer get overlapped, tall spanned rows now grow to fit, and a <code>rowSpan</code> group stays intact across a page break.</li>
+      <li><strong><code>Templates.Modern</code> redesigned</strong> — a full-bleed accent rail replaces the previous gradient-and-ribbon treatment.</li>
     </ul>
     <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.pdf }}/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
   </div>
@@ -350,6 +431,8 @@ container.Canvas(120, c =>
       <a href="{{ '/docs/pdf/layout/' | relative_url }}">Layout<span>Column, Row, and Table</span></a>
       <a href="{{ '/docs/pdf/text-and-spans/' | relative_url }}">Text &amp; Spans<span>Styling and page numbers</span></a>
       <a href="{{ '/docs/pdf/decorators/' | relative_url }}">Decorators<span>Padding, borders, backgrounds</span></a>
+      <a href="{{ '/docs/pdf/templates/' | relative_url }}">Templates<span>Branded pages in one call</span></a>
+      <a href="{{ '/docs/pdf/custom-fonts/' | relative_url }}">Custom Fonts<span>Any typeface, full Unicode</span></a>
       <a href="{{ '/docs/pdf/encryption/' | relative_url }}">Encryption<span>AES-256, permissions</span></a>
       <a href="{{ '/docs/pdf/vector-graphics/' | relative_url }}">Vector Graphics<span>Canvas, shapes, charts</span></a>
       <a href="{{ '/docs/pdf/table-of-contents/' | relative_url }}">Table of Contents<span>Auto-generated from headings</span></a>
@@ -369,7 +452,7 @@ container.Canvas(120, c =>
       native to install. MIT licensed.
     </p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" style="background: var(--accent-pdf)" href="{{ '/getting-started/' | relative_url }}">Get started</a>
+      <a class="btn btn-primary" style="--btn-bg: linear-gradient(135deg, var(--accent-pdf), color-mix(in srgb, var(--accent-pdf) 65%, var(--brand) 35%)); --btn-glow: var(--accent-pdf)" href="{{ '/getting-started/' | relative_url }}">Get started</a>
       <a class="btn btn-ghost" href="{{ site.repos.pdf }}/tree/main/samples" target="_blank" rel="noopener">Browse samples</a>
     </div>
   </section>

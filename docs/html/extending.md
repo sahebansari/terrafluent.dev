@@ -76,6 +76,12 @@ completely:
   is a companion NuGet package depending on the core library, keeping the
   core package's own dependency footprint at zero.
 
+A full, working example of this pattern - a headless-Chromium-backed
+measurer using Canvas 2D `measureText` for real font metrics - lives at
+[samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer](https://github.com/sahebansari/TerraFluent.Html.Reporting/blob/master/samples/TerraFluent.Html.Reporting.Sample.PlaywrightMeasurer)
+rather than only as a sketch here; its README documents exactly what it
+improves on versus the default and what it still doesn't capture.
+
 ## A custom `IHtmlReportRenderer`
 
 Implement this when you need different output shape than the bundled

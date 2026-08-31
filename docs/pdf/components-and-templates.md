@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Components & Templates — C# PDF Docs"
-description: "Reuse document content with IComponent and IDocument — build component libraries and document templates with conditional rendering via ShowIf."
+description: "TerraFluent.Pdf.Reporting provides two interfaces for structuring and reusing document content:"
 permalink: /docs/pdf/components-and-templates/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

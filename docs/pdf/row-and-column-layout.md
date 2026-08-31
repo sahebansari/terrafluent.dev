@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Row & Column Layout — C# PDF Docs"
-description: "How Row and Column arrange children horizontally and vertically — item sizing, spacing, alignment, and nesting patterns with visual examples."
+description: "The name describes how children are arranged, not the shape of the container itself."
 permalink: /docs/pdf/row-and-column-layout/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

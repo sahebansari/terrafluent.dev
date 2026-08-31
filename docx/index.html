@@ -30,6 +30,11 @@ faq:
     a: >-
       It targets netstandard2.0 and net10.0, so it runs on .NET Framework 4.6.1+,
       .NET Core 2.0+, and every modern .NET release.
+  - q: Can it generate QR codes?
+    a: >-
+      Yes. IContainer.QrCode(...) encodes arbitrary UTF-8 text as a QR code and renders
+      it as a vector DrawingML shape, not a raster image — sizing, four error
+      correction levels, colors, alignment, and captions are all supported.
 ---
 
 <section class="hero page-hero">
@@ -41,7 +46,7 @@ faq:
       proposals, and branded templates from any .NET runtime on Windows, Linux, or macOS.
     </p>
     <div class="hero-ctas" style="margin-top: 28px">
-      <a class="btn btn-primary" style="background: var(--accent-docx)" href="{{ site.repos.docx }}" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-primary" style="--btn-bg: linear-gradient(135deg, var(--accent-docx), color-mix(in srgb, var(--accent-docx) 65%, var(--brand) 35%)); --btn-glow: var(--accent-docx)" href="{{ site.repos.docx }}" target="_blank" rel="noopener">View on GitHub</a>
       <a class="btn btn-ghost" href="{{ site.nuget.docx }}" target="_blank" rel="noopener">NuGet</a>
       <a class="btn btn-ghost" href="{{ '/docs/docx/features/' | relative_url }}">Feature guide</a>
     </div>
@@ -229,6 +234,38 @@ page.Content().Barcode("ACME-99887766", bc => bc
       </div>
     </div>
 
+    <!-- QR codes -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">QR codes</span>
+        <h3>Native QR codes, rendered as vectors</h3>
+        <p>
+          <code>IContainer.QrCode(...)</code> encodes arbitrary UTF-8 text as a QR code
+          and renders it as a vector DrawingML shape — no raster image, no media part —
+          with a built-in quiet zone and a symbol version chosen automatically.
+        </p>
+        <ul>
+          <li>Four error correction levels — <code>Low</code> through <code>High</code></li>
+          <li>Custom foreground/background colors and alignment</li>
+          <li>Usable anywhere an image can go, with the same caption support</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+page.Content().QrCode("https://example.com");
+
+page.Content().QrCode("WIFI:T:WPA;S:MyNetwork;P:secret123;;", qr => qr
+    .Size(140)
+    .ErrorCorrection(QrErrorCorrectionLevel.High)
+    .ForegroundColor(Colors.Blue.L800)
+    .AlignCenter()
+    .Caption("Guest Wi-Fi"));
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
     <!-- Templates -->
     <div class="feature">
       <div class="feature-text">
@@ -289,13 +326,13 @@ Document.Create(doc =>
 
   <!-- What's new -->
   <div class="whatsnew">
-    <span class="version-chip">v1.3.0</span>
+    <span class="version-chip">v1.4.0</span>
     <h2>What's new</h2>
     <ul>
-      <li><strong>Code 128 barcodes</strong> rendered as crisp vector shapes.</li>
-      <li><strong>Auto-numbered figure/table captions</strong> with a table of figures.</li>
-      <li><strong>Document protection</strong> — Word's "Restrict Editing", with password.</li>
-      <li><strong>Richer charts</strong> — legend placement, axis titles, data labels, stacked bars, sizing and alignment.</li>
+      <li><strong>QR codes</strong> — <code>IContainer.QrCode(...)</code>, rendered as vector shapes with four error correction levels.</li>
+      <li><strong><code>RestrictEditing</code> password fix</strong> — the verifier hash now matches what Word itself computes, so removing protection with the correct password works.</li>
+      <li><strong>Fixed-plus-relative column sizing fix</strong> — a <code>ConstantItem()</code> mixed with <code>RelativeItem()</code>/<code>AutoItem()</code> no longer over-allocates width in <code>Row()</code>/<code>Table()</code>.</li>
+      <li><strong>Fail-fast validation</strong> — several silent-failure paths (null text, blank hyperlink URLs, empty rows, mismatched merge calls) now throw clear exceptions instead of producing a corrupt or data-losing document.</li>
     </ul>
     <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.docx }}/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
   </div>
@@ -328,7 +365,7 @@ Document.Create(doc =>
       dedicated <code>net10.0</code> build. Windows, Linux, macOS. MIT licensed.
     </p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" style="background: var(--accent-docx)" href="{{ '/getting-started/' | relative_url }}">Get started</a>
+      <a class="btn btn-primary" style="--btn-bg: linear-gradient(135deg, var(--accent-docx), color-mix(in srgb, var(--accent-docx) 65%, var(--brand) 35%)); --btn-glow: var(--accent-docx)" href="{{ '/getting-started/' | relative_url }}">Get started</a>
       <a class="btn btn-ghost" href="{{ '/docs/docx/samples/' | relative_url }}">Browse samples</a>
     </div>
   </section>

@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Images — C# PDF Docs"
-description: "TerraFluent.Pdf.Reporting supports PNG and JPEG image embedding with automatic aspect-ratio preservation. The format is detected from the data"
+description: "TerraFluent.Pdf.Reporting supports PNG and JPEG image embedding with automatic aspect-ratio preservation. The format is detected from the data itself"
 permalink: /docs/pdf/images/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

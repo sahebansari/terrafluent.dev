@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Layout — C# PDF Docs"
-description: "TerraFluent.Pdf.Reporting provides three layout elements: Column, Row, and Table. They are all accessed through extension methods on"
+description: "TerraFluent.Pdf.Reporting provides three layout elements: Column, Row, and Table. They are all accessed through extension methods on IContainer."
 permalink: /docs/pdf/layout/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/
@@ -165,10 +165,48 @@ container.Table(table =>
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `Cell()` | `IContainer` | Next cell slot (left to right); supports all decorators |
+| `Cell(columnSpan = 1, rowSpan = 1)` | `IContainer` | Next cell slot (left to right, auto-skipping columns reserved by an earlier `columnSpan` in the same row or a `rowSpan` reaching down from a previous row); supports all decorators |
 
 > **Tip:** Cells support the full decorator chain:
 > `row.Cell().Background(bg).Padding(6).AlignRight().Text("value")`
+
+### Column and row spans
+
+```csharp
+table.Row(row =>
+{
+    // rowSpan: add the cell once, on the first row it covers.
+    row.Cell(rowSpan: 2).Background("#E8F5F0").Padding(8).AlignMiddle()
+       .Text("Laptops").Bold();
+    row.Cell().Padding(6).Text("UltraBook Pro 14\"");
+    row.Cell().Padding(6).AlignRight().Text("$1,299.00");
+});
+table.Row(row =>
+{
+    // Column 1 is already occupied by the rowSpan cell above — Cell()
+    // skips it automatically and lands in column 2.
+    row.Cell().Padding(6).Text("UltraBook Pro 16\"");
+    row.Cell().Padding(6).AlignRight().Text("$1,799.00");
+});
+
+// columnSpan merges cells left to right within a single row.
+table.Row(row => row.Cell(columnSpan: 3).Background("#0F5C4C").Padding(6)
+    .AlignCenter().Text("NEW ARRIVALS").Bold().FontColor(Color.White));
+```
+
+- `columnSpan` merges the cell across that many columns of its own row; the
+  next `Cell()` call in the same row automatically starts after it.
+- `rowSpan` extends the cell down that many rows; call it once, on the first
+  row of the group — every following row's `Cell()` calls automatically skip
+  the column it occupies.
+- Row heights grow to fit a `rowSpan` cell's content when it's taller than
+  the rows it spans (the extra height is split evenly across them).
+- A `rowSpan` group is never split across a page break — if it doesn't fit
+  on the current page, the whole group moves to the next one together.
+
+See `17_TableSpanShowcase.cs` in the samples project for a full worked
+example (category-grouped rows, a banner row, and a `rowSpan` group crossing
+a page break).
 
 ---
 

@@ -61,8 +61,9 @@ declare -A HTML_FILES=(
   [10-cookbook]=cookbook
   [11-extending]=extending
   [12-faq-troubleshooting]=faq-troubleshooting
+  [15-composition-patterns]=composition-patterns
 )
-HTML_ORDER=(01-getting-started 02-core-concepts 03-content-elements 04-styling 05-tables 06-rows-and-columns 07-pagination-and-layout 08-rendering 09-text-measurement 10-cookbook 11-extending 12-faq-troubleshooting)
+HTML_ORDER=(01-getting-started 02-core-concepts 03-content-elements 04-styling 05-tables 06-rows-and-columns 07-pagination-and-layout 08-rendering 09-text-measurement 10-cookbook 11-extending 12-faq-troubleshooting 15-composition-patterns)
 
 for f in "${HTML_ORDER[@]}"; do
   slug="${HTML_FILES[$f]}"
@@ -166,7 +167,7 @@ done
 # ---------- PDF Reporting docs (repo default branch: main; slugs match filenames) ----------
 echo "pdf:" >> "$DATA_YML"
 
-PDF_ORDER=(getting-started text-and-spans layout row-and-column-layout decorators images page-sizes-and-units colors encryption vector-graphics table-of-contents bookmarks components-and-templates metadata unicode-and-encoding)
+PDF_ORDER=(getting-started text-and-spans layout row-and-column-layout decorators images page-sizes-and-units colors templates custom-fonts encryption vector-graphics table-of-contents bookmarks components-and-templates metadata unicode-and-encoding)
 
 for slug in "${PDF_ORDER[@]}"; do
   src="$SCRATCH/docs-pdf/$slug.md"

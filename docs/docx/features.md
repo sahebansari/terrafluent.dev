@@ -243,6 +243,23 @@ page.Content().Barcode("Internal-Only", bc => bc.ShowText(false));
 
 Barcodes encode text as Code 128 and render as vector bars (not raster images), so they stay crisp at any size. Only ASCII 32-126 (space through `~`) can be encoded; anything else throws `ArgumentException` immediately.
 
+## QR Codes
+
+```csharp
+page.Content().QrCode("https://example.com");
+
+page.Content().QrCode("WIFI:T:WPA;S:MyNetwork;P:secret123;;", qr => qr
+    .Size(140)
+    .ErrorCorrection(QrErrorCorrectionLevel.High)
+    .ForegroundColor(Colors.Blue.L800)
+    .AlignCenter()
+    .Caption("Guest Wi-Fi"));
+```
+
+QR codes encode arbitrary UTF-8 text and, like barcodes, render as vector shapes - no raster image, no media part, crisp at any size - with a built-in quiet zone so they scan reliably by default. The smallest symbol version (1-40) that fits the payload at the requested error correction level is chosen automatically; a payload too long for even the largest version at that level throws `ArgumentException` immediately.
+
+Error correction levels (`QrErrorCorrectionLevel`), from least to most redundant: `Low` (~7% damage tolerance), `Medium` (~15%, the default), `Quartile` (~25%), `High` (~30%). Higher levels produce a larger symbol for the same payload in exchange for more resilience to damage or obstruction (e.g. an overlaid logo, at High or Quartile).
+
 ## Charts
 
 ```csharp

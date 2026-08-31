@@ -5,9 +5,9 @@
 Key facts:
 - Install: `dotnet add package TerraFluent.Pdf.Reporting`, `dotnet add package TerraFluent.Html.Reporting`, or `dotnet add package TerraFluent.Docx.Reporting`
 - Free for commercial use (MIT). No page limits, watermarks, or paid tiers.
-- PDF output: true PDF 1.7 bytes from pure managed C# — Column/Row/Table layouts, text styling, PNG/JPEG images, hyperlinks, bookmarks, automatic table of contents, Code 128 barcodes, QR codes (ISO/IEC 18004), vector graphics canvas, headers/footers with page numbers, AES-256 encryption by default (AES-128 compatibility), document metadata. TerraFluent.Pdf.Reporting 2.x is the continuation of TerraPDF 1.x.
-- HTML output: fixed page geometry (A4/Letter/Legal/custom), repeating headers/footers with {page}/{totalPages}, line-level pagination, ColSpan/RowSpan tables, native Code 128 barcodes, async streaming.
-- DOCX output: real Open XML .docx (no Word required), styled tables, native editable charts, images, vector barcodes, template placeholder replacement, document protection.
+- PDF output: true PDF 1.7 bytes from pure managed C# — Column/Row/Table layouts, text styling, PNG/JPEG images, hyperlinks, bookmarks, automatic table of contents, Code 128 barcodes, QR codes (ISO/IEC 18004), vector graphics canvas, five predefined branded page templates (Corporate/Modern/Minimal/Elegant/Cover), custom TrueType font embedding with Devanagari shaping, gradients and background images, headers/footers with page numbers, AES-256 encryption by default (AES-128 compatibility), document metadata. TerraFluent.Pdf.Reporting 2.x is the continuation of TerraPDF 1.x.
+- HTML output: fixed page geometry (A4/Letter/Legal/custom), repeating headers/footers with {page}/{totalPages}, line-level pagination, ColSpan/RowSpan tables, native Code 128 barcodes, native QR codes, multi-column "newspaper" layouts, right-to-left text direction, custom font embedding, async streaming.
+- DOCX output: real Open XML .docx (no Word required), styled tables, native editable charts, images, vector Code 128 barcodes, vector QR codes, auto-numbered figure/table captions, "Restrict Editing" document protection, template placeholder replacement.
 - For server-side PDF bytes use TerraFluent.Pdf.Reporting; the HTML output also prints/saves to PDF from any browser or HTML-to-PDF converter.
 
 ## Docs
@@ -18,6 +18,8 @@ Key facts:
 - [PDF Reporting — Layout](https://terrafluent.dev/docs/pdf/layout/): Column, Row, and Table
 - [PDF Reporting — Text & Spans](https://terrafluent.dev/docs/pdf/text-and-spans/)
 - [PDF Reporting — Decorators](https://terrafluent.dev/docs/pdf/decorators/): padding, borders, backgrounds
+- [PDF Reporting — Templates](https://terrafluent.dev/docs/pdf/templates/): branded page templates in one call
+- [PDF Reporting — Custom Fonts](https://terrafluent.dev/docs/pdf/custom-fonts/): any typeface, full Unicode
 - [PDF Reporting — Encryption](https://terrafluent.dev/docs/pdf/encryption/): AES-256, permissions
 - [PDF Reporting — Vector Graphics](https://terrafluent.dev/docs/pdf/vector-graphics/): canvas, shapes, charts
 - [PDF Reporting — Table of Contents](https://terrafluent.dev/docs/pdf/table-of-contents/)
@@ -26,6 +28,7 @@ Key facts:
 - [HTML Reporting — Core Concepts](https://terrafluent.dev/docs/html/core-concepts/)
 - [HTML Reporting — Content Elements](https://terrafluent.dev/docs/html/content-elements/)
 - [HTML Reporting — Tables](https://terrafluent.dev/docs/html/tables/)
+- [HTML Reporting — Rows and Columns](https://terrafluent.dev/docs/html/rows-and-columns/): side-by-side and multi-column layouts
 - [HTML Reporting — Pagination and Layout](https://terrafluent.dev/docs/html/pagination-and-layout/)
 - [HTML Reporting — Cookbook](https://terrafluent.dev/docs/html/cookbook/): invoices, certificates, barcode labels
 - [HTML Reporting — FAQ / Troubleshooting](https://terrafluent.dev/docs/html/faq-troubleshooting/)

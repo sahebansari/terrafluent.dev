@@ -42,6 +42,26 @@ reports:
     title: Row Layout
     group: Tables & Layout
     description: Side-by-side column layouts within the content flow.
+  - file: 14-multi-column.html
+    title: Multi-Column Layout
+    group: Tables & Layout
+    description: Newspaper-style columns that content flows and paginates across.
+  - file: 18-column-diagnostics.html
+    title: Column Diagnostics
+    group: Tables & Layout
+    description: LayoutWarning's structured Reason/ElementType fields for a collapsed column.
+  - file: 15-shipping-label.html
+    title: Shipping Label
+    group: Documents
+    description: A compact custom page size combining a barcode and a QR code.
+  - file: 16-custom-fonts.html
+    title: Custom Fonts
+    group: Documents
+    description: An embedded, OFL-licensed font via EmbedFont — no install required to render.
+  - file: 17-rtl-text.html
+    title: Right-to-Left Text
+    group: Documents
+    description: TextStyle.Direction for right-to-left paragraphs, headings, and table cells.
   - file: 06-page-breaks.html
     title: Page Breaks
     group: Pagination & Control

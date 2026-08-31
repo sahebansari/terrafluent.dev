@@ -24,6 +24,8 @@ html:
     url: /docs/html/extending/
   - title: "FAQ / Troubleshooting"
     url: /docs/html/faq-troubleshooting/
+  - title: "Supported Composition Patterns"
+    url: /docs/html/composition-patterns/
 docx:
   - title: "Getting Started"
     url: /docs/docx/getting-started/
@@ -54,6 +56,10 @@ pdf:
     url: /docs/pdf/page-sizes-and-units/
   - title: "Colors"
     url: /docs/pdf/colors/
+  - title: "Templates"
+    url: /docs/pdf/templates/
+  - title: "Custom Fonts & Full Unicode"
+    url: /docs/pdf/custom-fonts/
   - title: "Encryption & Password Protection"
     url: /docs/pdf/encryption/
   - title: "Vector Graphics"

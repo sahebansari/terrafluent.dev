@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Text & Spans — C# PDF Docs"
-description: "Single-span and multi-span text blocks — bold, italic, underline, colours, font families, line height, and page-number fields."
+description: "The simplest form — one string, block-level style:"
 permalink: /docs/pdf/text-and-spans/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/

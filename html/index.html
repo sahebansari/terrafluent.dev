@@ -30,6 +30,16 @@ faq:
     a: >-
       Yes. Code 128 barcodes are generated in-library as crisp images — no external
       services or third-party barcode packages required.
+  - q: Can it generate QR codes?
+    a: >-
+      Yes. AddQrCode(...) generates a native ISO/IEC 18004 QR code as a PNG — no
+      external library or web service — available anywhere AddBarcode is, with the
+      same alignment, margin, and padding modifiers.
+  - q: Does it support multi-column layouts and right-to-left text?
+    a: >-
+      Yes. AddColumns(...) lays out newspaper-style columns that content flows across
+      automatically, and TextStyle.Direction sets right-to-left text direction on
+      paragraphs, headings, lists, and table cells.
 ---
 
 <section class="hero page-hero">
@@ -237,15 +247,79 @@ await report.RenderHtmlDocumentAsync(
         </div>
       </div>
     </div>
+
+    <!-- Multi-column & RTL -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Layout</span>
+        <h3>Multi-column sections and RTL text</h3>
+        <p>
+          <code>AddColumns(...)</code> lays out equal-width, newspaper-style columns
+          that content fills and wraps across automatically — a paragraph or table
+          splits across a column boundary the same way it already splits across a
+          page boundary. <code>TextStyle.Direction</code> sets right-to-left text
+          independently of alignment.
+        </p>
+        <ul>
+          <li>An oversized, unsplittable child force-places with a <code>LayoutWarning</code></li>
+          <li><code>TextDirection.Ltr</code> / <code>.Rtl</code> on paragraphs, headings, lists, table cells</li>
+          <li><code>ReportDocumentBuilder.EmbedFont(...)</code> embeds a font as base64 <code>@font-face</code></li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+c.AddColumns(3, columns =>
+{
+    columns.AddHeading("Section One", HeadingLevel.H3);
+    columns.AddParagraph(bodyText);
+    // flows into column 2, then column 3, then wraps to a fresh section
+}, columnGapPx: 20);
+
+var rtl = TextStyle.Default.With(direction: TextDirection.Rtl);
+c.AddParagraph("مرحبا بالعالم", rtl);
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- QR codes -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">QR codes</span>
+        <h3>Native ISO/IEC 18004 QR codes</h3>
+        <p>
+          <code>AddQrCode(...)</code> generates a QR code as a PNG entirely in-library —
+          no external service, no third-party package — matching
+          <code>AddBarcode</code>'s API shape on content, header/footer, and
+          row-column builders.
+        </p>
+        <ul>
+          <li>Byte-mode UTF-8 encoding, error-correction level "M"</li>
+          <li>Automatic version selection (1–40)</li>
+          <li>Same alignment/margin/padding modifiers as any image</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+c.AddQrCode("https://terrafluent.dev/",
+    moduleWidthPx: 4, quietZoneModules: 2);
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- What's new -->
   <div class="whatsnew">
-    <span class="version-chip">v1.1.1 · July 2026</span>
+    <span class="version-chip">v1.2.0</span>
     <h2>What's new</h2>
     <ul>
-      <li><strong>Native Code 128 barcodes</strong> — <code>AddBarcode(...)</code> on content, header/footer, and row-column builders; returns the same builder as <code>AddImage</code>.</li>
-      <li><strong>Table cell <code>ColSpan</code>/<code>RowSpan</code></strong> — merged header/summary cells and category groups, atomic during pagination.</li>
+      <li><strong>Multi-column sections</strong> — <code>AddColumns(...)</code> for newspaper-style layouts that content flows and paginates across, just like a page.</li>
+      <li><strong>Right-to-left text</strong> — <code>TextStyle.Direction</code> on paragraphs, headings, lists, and table cells.</li>
+      <li><strong>Custom font embedding</strong> — <code>EmbedFont(...)</code> bundles a font as base64 <code>@font-face</code>, no install required to render or print.</li>
+      <li><strong>Native QR codes</strong> — <code>AddQrCode(...)</code>, generated in-library, no external service.</li>
     </ul>
     <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.html }}/blob/master/CHANGELOG.md" target="_blank" rel="noopener">Full changelog →</a></p>
   </div>
@@ -263,6 +337,7 @@ await report.RenderHtmlDocumentAsync(
       <a href="{{ '/docs/html/content-elements/' | relative_url }}">Content Elements<span>Paragraphs to barcodes</span></a>
       <a href="{{ '/docs/html/styling/' | relative_url }}">Styling<span>Text, margins, alignment</span></a>
       <a href="{{ '/docs/html/tables/' | relative_url }}">Tables<span>Spans, splitting, headers</span></a>
+      <a href="{{ '/docs/html/rows-and-columns/' | relative_url }}">Rows &amp; Columns<span>Side-by-side and multi-column</span></a>
       <a href="{{ '/docs/html/pagination-and-layout/' | relative_url }}">Pagination &amp; Layout<span>How pages break</span></a>
       <a href="{{ '/docs/html/rendering/' | relative_url }}">Rendering<span>Strings, files, streaming</span></a>
       <a href="{{ '/docs/html/cookbook/' | relative_url }}">Cookbook<span>Invoices, certificates, labels</span></a>
@@ -275,9 +350,9 @@ await report.RenderHtmlDocumentAsync(
 
   <!-- Quality -->
   <section class="cta-band" aria-labelledby="html-cta">
-    <h2 id="html-cta">Thirteen runnable samples included</h2>
+    <h2 id="html-cta">Eighteen runnable samples included</h2>
     <p>
-      Invoices, certificates, barcoded labels, row layouts, span tables — run
+      Invoices, certificates, barcoded labels, multi-column layouts, RTL text — run
       <code>dotnet run --project samples/TerraFluent.Html.Reporting.Sample</code> or browse the rendered output online.
     </p>
     <div class="hero-ctas">

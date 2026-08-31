@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Encryption & Password Protection — C# PDF Docs"
-description: "TerraFluent.Pdf.Reporting encrypts documents with AES-256 using the PDF Standard Security Handler Revision 6 (ISO 32000-2 / PDF 2.0) by default"
+description: "TerraFluent.Pdf.Reporting encrypts documents with AES-256 using the PDF Standard Security Handler Revision 6 (ISO 32000-2 / PDF 2.0) by default — SHA-2"
 permalink: /docs/pdf/encryption/
 doc_section: PDF Reporting docs
 doc_section_url: /docs/
