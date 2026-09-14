@@ -1,10 +1,11 @@
 ---
 layout: default
-title: C# Report Examples — PDF, Invoices, Barcodes, Word
+title: C# Report & Chart Examples — PDF, HTML, Word, SVG
 nav_title: Samples
 description: >-
-  C# report examples with rendered output — PDF invoices and barcodes, live
-  paginated HTML reports, and Word documents with native, editable charts.
+  C# report and chart examples with rendered output — PDF invoices and
+  barcodes, live paginated HTML reports, Word documents with native charts,
+  and SVG chart source code.
 ---
 
 <section class="hero page-hero">
@@ -279,6 +280,25 @@ description: >-
   </div>
 </section>
 
+<section aria-labelledby="chart-samples-title">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--accent-chart)">TerraFluent.Chart.Reporting</span>
+      <h2 id="chart-samples-title">102 live chart examples</h2>
+      <p>
+        Every one of the 26 chart types, themes, and features, rendered as real SVG on
+        one page — hosted right here, no build step required. For the code behind each
+        one, see the <a href="{{ '/docs/chart/chart-types/' | relative_url }}">Chart Types guide</a>,
+        or clone the <a href="{{ site.repos.chart }}/tree/master/samples" target="_blank" rel="noopener">sample project</a>
+        and run <code>dotnet run --project samples/TerraFluent.Chart.Reporting.Samples</code> locally.
+      </p>
+      <div class="hero-ctas" style="margin-top: 18px">
+        <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">View live chart showcase</a>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="cta-band" aria-labelledby="samples-cta">
   <div class="container">
     <h2 id="samples-cta">Every sample is runnable</h2>
@@ -288,6 +308,7 @@ description: >-
       <a class="btn btn-ghost" href="{{ site.repos.pdf }}/tree/main/samples" target="_blank" rel="noopener">PDF sample source</a>
       <a class="btn btn-ghost" href="{{ site.repos.html }}/tree/main/samples" target="_blank" rel="noopener">HTML sample source</a>
       <a class="btn btn-ghost" href="{{ site.repos.docx }}/tree/master/samples" target="_blank" rel="noopener">DOCX sample source</a>
+      <a class="btn btn-ghost" href="{{ site.repos.chart }}/tree/master/samples" target="_blank" rel="noopener">Chart sample source</a>
     </div>
   </div>
 </section>

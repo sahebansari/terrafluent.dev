@@ -74,3 +74,18 @@ pdf:
     url: /docs/pdf/metadata/
   - title: "Unicode & Character Encoding"
     url: /docs/pdf/unicode-and-encoding/
+chart:
+  - title: "Getting Started"
+    url: /docs/chart/getting-started/
+  - title: "Chart Showcase"
+    url: /docs/chart/showcase/
+  - title: "Chart Types"
+    url: /docs/chart/chart-types/
+  - title: "Themes & Styling"
+    url: /docs/chart/themes-and-styling/
+  - title: "Advanced Features"
+    url: /docs/chart/advanced/
+  - title: "API Reference"
+    url: /docs/chart/api-reference/
+  - title: "Troubleshooting & FAQ"
+    url: /docs/chart/troubleshooting/

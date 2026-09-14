@@ -1,14 +1,15 @@
 # TerraFluent
 
-> Open-source fluent .NET report generation libraries, MIT licensed. TerraFluent.Pdf.Reporting creates true PDF 1.7 files in C# with zero dependencies — no native binaries, no headless browser. TerraFluent.Html.Reporting creates paginated, print-ready HTML reports in C# without a PDF engine. TerraFluent.Docx.Reporting creates native Word (.docx) documents without Microsoft Office or COM interop. Html and Docx target netstandard2.0 and net10.0; Pdf targets .NET 8/9/10. All run on Windows, Linux, macOS, Docker, and serverless.
+> Open-source fluent .NET libraries for reports and charts, MIT licensed. TerraFluent.Pdf.Reporting creates true PDF 1.7 files in C# with zero dependencies — no native binaries, no headless browser. TerraFluent.Html.Reporting creates paginated, print-ready HTML reports in C# without a PDF engine. TerraFluent.Docx.Reporting creates native Word (.docx) documents without Microsoft Office or COM interop. TerraFluent.Chart.Reporting renders 26 chart types as self-contained SVG server-side with zero JavaScript dependency. Html, Docx, and Chart target netstandard2.0 and up; Pdf targets .NET 8/9/10. All run on Windows, Linux, macOS, Docker, and serverless.
 
 Key facts:
-- Install: `dotnet add package TerraFluent.Pdf.Reporting`, `dotnet add package TerraFluent.Html.Reporting`, or `dotnet add package TerraFluent.Docx.Reporting`
+- Install: `dotnet add package TerraFluent.Pdf.Reporting`, `dotnet add package TerraFluent.Html.Reporting`, `dotnet add package TerraFluent.Docx.Reporting`, or `dotnet add package TerraFluent.Chart.Reporting`
 - Free for commercial use (MIT). No page limits, watermarks, or paid tiers.
 - PDF output: true PDF 1.7 bytes from pure managed C# — Column/Row/Table layouts, text styling, PNG/JPEG images, hyperlinks, bookmarks, automatic table of contents, Code 128 barcodes, QR codes (ISO/IEC 18004), vector graphics canvas, five predefined branded page templates (Corporate/Modern/Minimal/Elegant/Cover), custom TrueType font embedding with Devanagari shaping, gradients and background images, headers/footers with page numbers, AES-256 encryption by default (AES-128 compatibility), document metadata. TerraFluent.Pdf.Reporting 2.x is the continuation of TerraPDF 1.x.
 - HTML output: fixed page geometry (A4/Letter/Legal/custom), repeating headers/footers with {page}/{totalPages}, line-level pagination, ColSpan/RowSpan tables, native Code 128 barcodes, native QR codes, multi-column "newspaper" layouts, right-to-left text direction, custom font embedding, async streaming.
 - DOCX output: real Open XML .docx (no Word required), styled tables, native editable charts, images, vector Code 128 barcodes, vector QR codes, auto-numbered figure/table captions, "Restrict Editing" document protection, template placeholder replacement.
-- For server-side PDF bytes use TerraFluent.Pdf.Reporting; the HTML output also prints/saves to PDF from any browser or HTML-to-PDF converter.
+- Chart output: 26 chart types (line, spline, area, column, bar, pie/donut, scatter, bubble, waterfall, gauge, candlestick, OHLC, Sankey, treemap, funnel, Gantt, radar, heatmap, and more) as self-contained SVG, 18 built-in themes plus custom palettes, Static/Animated/Interactive render modes, data-quality analysis, zero third-party dependencies.
+- For server-side PDF bytes use TerraFluent.Pdf.Reporting; the HTML output also prints/saves to PDF from any browser or HTML-to-PDF converter. Chart output is SVG that embeds into any of the other three.
 
 ## Docs
 
@@ -36,12 +37,22 @@ Key facts:
 - [DOCX Reporting — Feature Guide](https://terrafluent.dev/docs/docx/features/)
 - [DOCX Reporting — API Reference](https://terrafluent.dev/docs/docx/api/)
 - [DOCX Reporting — Troubleshooting](https://terrafluent.dev/docs/docx/troubleshooting/)
+- [Chart Reporting — Getting Started](https://terrafluent.dev/docs/chart/getting-started/)
+- [Chart Reporting — Chart Showcase](https://terrafluent.dev/docs/chart/showcase/)
+- [Chart Reporting — Chart Types](https://terrafluent.dev/docs/chart/chart-types/): all 26 chart types
+- [Chart Reporting — Themes & Styling](https://terrafluent.dev/docs/chart/themes-and-styling/)
+- [Chart Reporting — Advanced Features](https://terrafluent.dev/docs/chart/advanced/): render modes, axes, stacking, DI
+- [Chart Reporting — API Reference](https://terrafluent.dev/docs/chart/api-reference/)
+- [Chart Reporting — Troubleshooting & FAQ](https://terrafluent.dev/docs/chart/troubleshooting/)
 
-## Product pages
+## Solution pages
 
+- [All solutions](https://terrafluent.dev/solutions/): overview of all four packages
 - [TerraFluent.Pdf.Reporting](https://terrafluent.dev/pdf/): free C# PDF library, zero dependencies
 - [TerraFluent.Html.Reporting](https://terrafluent.dev/html/): C# HTML report generator, no PDF engine
 - [TerraFluent.Docx.Reporting](https://terrafluent.dev/docx/): C# Word document library, no Office interop
+- [TerraFluent.Chart.Reporting](https://terrafluent.dev/chart/): C# SVG chart library, zero JavaScript required
+- [Live chart showcase](https://terrafluent.dev/chart/showcase/): 102 live chart examples, every type and theme, rendered as real SVG
 - [Which package do I need?](https://terrafluent.dev/compare/): PDF vs HTML vs DOCX decision guide
 - [Sample output](https://terrafluent.dev/samples/): live rendered reports, Word documents, and runnable PDF samples
 
@@ -50,9 +61,11 @@ Key facts:
 - [TerraFluent.Pdf.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Pdf.Reporting)
 - [TerraFluent.Html.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Html.Reporting)
 - [TerraFluent.Docx.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Docx.Reporting)
+- [TerraFluent.Chart.Reporting on GitHub](https://github.com/sahebansari/TerraFluent.Chart.Reporting)
 - [TerraFluent.Pdf.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Pdf.Reporting)
 - [TerraFluent.Html.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Html.Reporting)
 - [TerraFluent.Docx.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Docx.Reporting)
+- [TerraFluent.Chart.Reporting on NuGet](https://www.nuget.org/packages/TerraFluent.Chart.Reporting)
 
 ## Optional
 

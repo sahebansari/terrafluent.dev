@@ -1,0 +1,161 @@
+---
+layout: default
+title: Solutions — .NET Reporting & Data Visualization
+nav_title: Solutions
+description: >-
+  Four open-source .NET libraries, one fluent API family — true PDF files,
+  print-ready HTML, native Word documents, and server-side SVG charts. MIT
+  licensed, zero heavyweight dependencies.
+permalink: /solutions/
+---
+
+<section class="hero page-hero">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> Solutions</span>
+    <h1>Four solutions, <span class="grad">one fluent API family</span></h1>
+    <p class="hero-lede">
+      TerraFluent builds open-source .NET libraries for the documents and charts your
+      applications generate — reports, contracts, invoices, and dashboards. Pick the
+      output you need; the fluent mental model carries over to every package.
+    </p>
+  </div>
+</section>
+
+<section aria-labelledby="solutions-grid-title">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Pick your output</span>
+      <h2 id="solutions-grid-title">Documents and charts, generated server-side</h2>
+      <p>Independent NuGet packages with no shared dependency — add one, or add all four.</p>
+    </div>
+
+    <div class="product-grid">
+      <article class="product-card accent-pdf">
+        <div class="product-head">
+          <span class="product-kicker">True PDF</span>
+        </div>
+        <h3>TerraFluent.Pdf.<wbr>Reporting</h3>
+        <p>Real PDF 1.7 files written by a pure managed C# engine — invoices, reports,
+           and labels with zero dependencies and no native binaries.</p>
+        <ul class="product-points">
+          <li>Branded page templates, custom fonts, full Unicode</li>
+          <li>Code 128 barcodes, QR codes, vector graphics canvas</li>
+          <li>AES-256 encryption, bookmarks, automatic table of contents</li>
+        </ul>
+        {% include install-row.html package="TerraFluent.Pdf.Reporting" %}
+        <div class="product-links">
+          <a href="{{ '/pdf/' | relative_url }}">Learn more →</a>
+          <a href="{{ site.repos.pdf }}" target="_blank" rel="noopener">GitHub</a>
+          <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">NuGet</a>
+        </div>
+      </article>
+
+      <article class="product-card accent-html">
+        <div class="product-head">
+          <span class="product-kicker">Print-ready HTML</span>
+        </div>
+        <h3>TerraFluent.Html.<wbr>Reporting</h3>
+        <p>Paginated, fixed-page HTML reports that view in any browser and print to PDF —
+           PDF-style layout with no PDF engine dependency.</p>
+        <ul class="product-points">
+          <li>Fixed page geometry: A4, Letter, Legal, landscape, custom sizes</li>
+          <li>Multi-column layouts, right-to-left text, custom font embedding</li>
+          <li>Native Code 128 barcodes, QR codes, streaming APIs</li>
+        </ul>
+        {% include install-row.html package="TerraFluent.Html.Reporting" %}
+        <div class="product-links">
+          <a href="{{ '/html/' | relative_url }}">Learn more →</a>
+          <a href="{{ site.repos.html }}" target="_blank" rel="noopener">GitHub</a>
+          <a href="{{ site.nuget.html }}" target="_blank" rel="noopener">NuGet</a>
+        </div>
+      </article>
+
+      <article class="product-card accent-docx">
+        <div class="product-head">
+          <span class="product-kicker">Native Word</span>
+        </div>
+        <h3>TerraFluent.Docx.<wbr>Reporting</h3>
+        <p>Real <code>.docx</code> files written directly as Open XML — no Word installation,
+           no COM automation, validated against the Open XML SDK.</p>
+        <ul class="product-points">
+          <li>Invoices, proposals, policy docs, company-branded templates</li>
+          <li>Charts with legends, axis titles, data labels, stacked bars</li>
+          <li>Template placeholder replacement &amp; document protection</li>
+        </ul>
+        {% include install-row.html package="TerraFluent.Docx.Reporting" %}
+        <div class="product-links">
+          <a href="{{ '/docx/' | relative_url }}">Learn more →</a>
+          <a href="{{ site.repos.docx }}" target="_blank" rel="noopener">GitHub</a>
+          <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">NuGet</a>
+        </div>
+      </article>
+
+      <article class="product-card accent-chart">
+        <div class="product-head">
+          <span class="product-kicker">SVG charts</span>
+        </div>
+        <h3>TerraFluent.Chart.<wbr>Reporting</h3>
+        <p>26 chart types rendered as self-contained SVG server-side — zero JavaScript
+           dependency, zero external NuGet packages.</p>
+        <ul class="product-points">
+          <li>Line, bar, pie, financial, flow, and statistical chart types</li>
+          <li>18 built-in themes, plus fully custom palettes</li>
+          <li>Static, Animated, and Interactive render modes</li>
+        </ul>
+        {% include install-row.html package="TerraFluent.Chart.Reporting" %}
+        <div class="product-links">
+          <a href="{{ '/chart/' | relative_url }}">Learn more →</a>
+          <a href="{{ site.repos.chart }}" target="_blank" rel="noopener">GitHub</a>
+          <a href="{{ site.nuget.chart }}" target="_blank" rel="noopener">NuGet</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="solutions-why-title" class="section-tint">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Why one family</span>
+      <h2 id="solutions-why-title">Learn the pattern once, ship four outputs</h2>
+      <p>Every library shares the same fluent-builder shape and quality bar — pick the output your users open, or combine several in one pipeline.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-item">
+        <h3>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+          Independent packages
+        </h3>
+        <p>No shared dependency between libraries — add the one you need, or all four,
+           at no extra cost to your dependency graph.</p>
+      </div>
+      <div class="why-item">
+        <h3>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+          Combine them in one pipeline
+        </h3>
+        <p>Render a chart as Static SVG, then draw it in a PDF, place it in an HTML
+           report, or embed it in a Word document — the same output feeds all three.</p>
+      </div>
+      <div class="why-item">
+        <h3>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          MIT licensed, every one
+        </h3>
+        <p>No page limits, watermarks, or paid tiers on any package — free for personal,
+           commercial, and open-source use.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band" aria-labelledby="solutions-cta">
+  <div class="container">
+    <h2 id="solutions-cta">Not sure which output you need?</h2>
+    <p>The comparison guide picks by what your users actually open.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="{{ '/compare/' | relative_url }}">Compare packages</a>
+      <a class="btn btn-ghost" href="{{ '/getting-started/' | relative_url }}">Getting started</a>
+    </div>
+  </div>
+</section>

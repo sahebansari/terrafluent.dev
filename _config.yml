@@ -1,9 +1,10 @@
 title: TerraFluent
-tagline: Fluent report generation for .NET
+tagline: Fluent .NET solutions for reporting and data visualization
 description: >-
-  Open-source fluent .NET libraries for generating print-ready HTML reports,
-  native Word documents, and true PDF files — no PDF engine dependencies,
-  no Word automation, zero external packages.
+  TerraFluent builds open-source, MIT-licensed .NET libraries for reports and
+  charts — true PDF files, print-ready HTML, native Word documents, and
+  server-side SVG charts — one fluent API family, zero heavyweight
+  dependencies.
 url: "https://terrafluent.dev"
 baseurl: ""
 lang: en
@@ -13,10 +14,12 @@ repos:
   html: https://github.com/sahebansari/TerraFluent.Html.Reporting
   docx: https://github.com/sahebansari/TerraFluent.Docx.Reporting
   pdf: https://github.com/sahebansari/TerraFluent.Pdf.Reporting
+  chart: https://github.com/sahebansari/TerraFluent.Chart.Reporting
 nuget:
   html: https://www.nuget.org/packages/TerraFluent.Html.Reporting
   docx: https://www.nuget.org/packages/TerraFluent.Docx.Reporting
   pdf: https://www.nuget.org/packages/TerraFluent.Pdf.Reporting
+  chart: https://www.nuget.org/packages/TerraFluent.Chart.Reporting
 
 plugins:
   - jekyll-sitemap

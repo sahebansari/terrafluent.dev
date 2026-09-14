@@ -21,6 +21,35 @@
     }
   });
 
+  // --- Solutions dropdown: grace period so crossing the gap to the panel
+  // doesn't instantly close it (plain CSS :hover has no forgiveness here) ---
+  document.querySelectorAll(".nav-dropdown").forEach(function (dd) {
+    var closeTimer = null;
+
+    function open() {
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      dd.classList.add("open");
+    }
+
+    function scheduleClose() {
+      if (closeTimer) clearTimeout(closeTimer);
+      closeTimer = setTimeout(function () {
+        dd.classList.remove("open");
+        closeTimer = null;
+      }, 400);
+    }
+
+    dd.addEventListener("mouseenter", open);
+    dd.addEventListener("mouseleave", scheduleClose);
+    dd.addEventListener("focusin", open);
+    dd.addEventListener("focusout", function (e) {
+      if (!dd.contains(e.relatedTarget)) scheduleClose();
+    });
+  });
+
   // --- Mobile nav ---
   var navToggle = document.querySelector(".nav-toggle");
   if (navToggle) {

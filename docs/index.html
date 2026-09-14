@@ -1,17 +1,18 @@
 ---
 layout: default
-title: Documentation — .NET Report Generation Guides
+title: Documentation — .NET Reporting & Chart Guides
 nav_title: Docs
 description: >-
   TerraFluent documentation — guides to true PDF files, paginated HTML reports,
-  and native Word .docx in C#, from getting started to troubleshooting.
+  native Word .docx, and server-side SVG charts in C#, from getting started to
+  troubleshooting.
 permalink: /docs/
 ---
 
 <section class="hero page-hero">
   <div class="container">
     <span class="hero-badge"><span class="dot"></span> Documentation</span>
-    <h1>Guides for all three libraries, <span class="grad">first report to custom renderers</span></h1>
+    <h1>Guides for every solution, <span class="grad">first report to custom renderers</span></h1>
     <p class="hero-lede">
       Everything here is versioned with the code — each page links back to its
       source in the repository.
@@ -58,6 +59,21 @@ permalink: /docs/
     </div>
     <div class="docs-grid">
       {% for item in site.data.docs.docx %}
+      <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="docs-chart-title">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--accent-chart)">TerraFluent.Chart.Reporting</span>
+      <h2 id="docs-chart-title">Server-side SVG charts in C#</h2>
+      <p>Twenty-six chart types, eighteen themes, and three render modes — zero JavaScript required.</p>
+    </div>
+    <div class="docs-grid">
+      {% for item in site.data.docs.chart %}
       <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
       {% endfor %}
     </div>

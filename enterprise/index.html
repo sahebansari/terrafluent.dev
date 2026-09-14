@@ -9,17 +9,17 @@ description: >-
 faq:
   - q: Is TerraFluent safe to approve as a dependency in a commercial product?
     a: >-
-      All three packages are plain MIT — no dual licensing, no revenue caps, no
+      All four packages are plain MIT — no dual licensing, no revenue caps, no
       commercial tier. They declare zero runtime dependencies in their NuGet metadata,
       so approving them adds no transitive packages to your dependency audit.
   - q: Does TerraFluent make network calls or collect telemetry?
     a: >-
-      No. The libraries are pure document writers — they take your data and write
-      PDF, HTML, or DOCX bytes. They make no network calls, collect no telemetry,
-      spawn no processes, and load no native binaries.
+      No. The libraries are pure document and chart writers — they take your data and
+      write PDF, HTML, DOCX, or SVG bytes. They make no network calls, collect no
+      telemetry, spawn no processes, and load no native binaries.
   - q: What happens if the maintainer disappears?
     a: >-
-      The MIT license means you can fork, patch, and redistribute all three libraries
+      The MIT license means you can fork, patch, and redistribute all four libraries
       with no legal exposure. The code, tests, CI workflows, changelogs, and
       documentation are all public on GitHub, so a fork keeps the full engineering
       history — a materially better position than an abandoned proprietary vendor.
@@ -50,14 +50,14 @@ faq:
 <div class="container prose">
   <h2>Licensing</h2>
   <ul>
-    <li>All three packages are <strong>MIT licensed</strong>, declared as an SPDX license expression in the NuGet package metadata — not a license file you have to lawyer over.</li>
+    <li>All four packages are <strong>MIT licensed</strong>, declared as an SPDX license expression in the NuGet package metadata — not a license file you have to lawyer over.</li>
     <li>No dual licensing, no community/commercial split, no revenue thresholds, no page limits, no watermarks. Commercial and closed-source use is unrestricted.</li>
-    <li>License texts: <a href="{{ site.repos.pdf }}/blob/main/LICENSE" target="_blank" rel="noopener">Pdf</a> · <a href="{{ site.repos.html }}/blob/master/LICENSE" target="_blank" rel="noopener">Html</a> · <a href="{{ site.repos.docx }}/blob/master/LICENSE.txt" target="_blank" rel="noopener">Docx</a>.</li>
+    <li>License texts: <a href="{{ site.repos.pdf }}/blob/main/LICENSE" target="_blank" rel="noopener">Pdf</a> · <a href="{{ site.repos.html }}/blob/master/LICENSE" target="_blank" rel="noopener">Html</a> · <a href="{{ site.repos.docx }}/blob/master/LICENSE.txt" target="_blank" rel="noopener">Docx</a> · <a href="{{ site.repos.chart }}/blob/master/LICENSE" target="_blank" rel="noopener">Chart</a>.</li>
   </ul>
 
   <h2>Supply chain</h2>
   <ul>
-    <li><strong>Zero runtime dependencies.</strong> Each package's nuspec declares empty dependency groups — nothing transitive enters your build. Check for yourself on the NuGet pages: <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">Pdf</a> · <a href="{{ site.nuget.html }}" target="_blank" rel="noopener">Html</a> · <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">Docx</a>.</li>
+    <li><strong>Zero runtime dependencies.</strong> Each package's nuspec declares empty dependency groups — nothing transitive enters your build. Check for yourself on the NuGet pages: <a href="{{ site.nuget.pdf }}" target="_blank" rel="noopener">Pdf</a> · <a href="{{ site.nuget.html }}" target="_blank" rel="noopener">Html</a> · <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">Docx</a> · <a href="{{ site.nuget.chart }}" target="_blank" rel="noopener">Chart</a>.</li>
     <li><strong>100% managed code.</strong> No native binaries, no headless browser, no Office automation — nothing platform-specific to scan or approve.</li>
     <li><strong>Public source with repository metadata.</strong> Every package embeds its GitHub repository URL in the NuGet metadata; the Html and Docx packages also embed the exact source commit each version was built from.</li>
     <li><strong>CI on every repository.</strong> Each repo builds and tests on GitHub Actions before release — the PDF engine runs its test suite across .NET 8, 9, and 10.</li>
@@ -65,8 +65,8 @@ faq:
 
   <h2>Security posture</h2>
   <ul>
-    <li>The libraries make <strong>no network calls and collect no telemetry</strong> — data goes in as C# objects, documents come out as bytes.</li>
-    <li>Private vulnerability reporting is enabled on all three repositories via GitHub Security Advisories — see the <a href="{{ '/security/' | relative_url }}">security policy</a> for scope and supported versions.</li>
+    <li>The libraries make <strong>no network calls and collect no telemetry</strong> — data goes in as C# objects, documents or charts come out as bytes.</li>
+    <li>Private vulnerability reporting is enabled on all four repositories via GitHub Security Advisories — see the <a href="{{ '/security/' | relative_url }}">security policy</a> for scope and supported versions.</li>
     <li>PDF output supports <strong>AES-256 encryption</strong> (default) with user/owner passwords and permission flags — <a href="{{ '/docs/pdf/encryption/' | relative_url }}">documented here</a>, including what PDF permissions can and cannot enforce.</li>
   </ul>
 
@@ -80,7 +80,7 @@ faq:
         <tr>
           <td>TerraFluent.Pdf.Reporting {{ site.data.versions.pdf }}</td>
           <td><code>net8.0</code> · <code>net9.0</code> · <code>net10.0</code></td>
-          <td rowspan="3">Windows, Linux, macOS — including Docker (Alpine images work: no native dependencies), Azure Functions, and AWS Lambda</td>
+          <td rowspan="4">Windows, Linux, macOS — including Docker (Alpine images work: no native dependencies), Azure Functions, and AWS Lambda</td>
         </tr>
         <tr>
           <td>TerraFluent.Html.Reporting {{ site.data.versions.html }}</td>
@@ -90,13 +90,17 @@ faq:
           <td>TerraFluent.Docx.Reporting {{ site.data.versions.docx }}</td>
           <td><code>netstandard2.0</code> · <code>net10.0</code></td>
         </tr>
+        <tr>
+          <td>TerraFluent.Chart.Reporting {{ site.data.versions.chart }}</td>
+          <td><code>netstandard2.0</code> · <code>netstandard2.1</code> · <code>net6.0</code> · <code>net8.0</code> · <code>net10.0</code></td>
+        </tr>
       </tbody>
     </table>
   </div>
   <p>
-    The <code>netstandard2.0</code> targets mean Html and Docx Reporting also run on
-    .NET Framework 4.6.1+ — relevant if you're generating documents from a legacy
-    ASP.NET application.
+    The <code>netstandard2.0</code> targets mean Html, Docx, and Chart Reporting also
+    run on .NET Framework 4.6.1+ — relevant if you're generating documents or charts
+    from a legacy ASP.NET application.
   </p>
 
   <h2>Versioning &amp; releases</h2>

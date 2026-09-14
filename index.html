@@ -1,15 +1,17 @@
 ---
 layout: default
-title: Open-Source .NET Reports — PDF, HTML & Word
+title: Open-Source .NET Reporting & Chart Solutions — PDF, HTML, Word, SVG
 description: >-
-  Open-source C# libraries for report generation: true PDF files with zero
-  dependencies, paginated print-ready HTML, and native Word .docx. MIT licensed.
+  TerraFluent builds open-source C# solutions for reports and charts: true PDF
+  files with zero dependencies, paginated print-ready HTML, native Word .docx,
+  and server-side SVG charts. MIT licensed.
 faq:
   - q: Is TerraFluent free for commercial use?
     a: >-
-      Yes. TerraFluent.Pdf.Reporting, TerraFluent.Html.Reporting, and
-      TerraFluent.Docx.Reporting are all MIT licensed — free for personal, commercial,
-      and open-source projects with no page limits, watermarks, or paid tiers.
+      Yes. TerraFluent.Pdf.Reporting, TerraFluent.Html.Reporting,
+      TerraFluent.Docx.Reporting, and TerraFluent.Chart.Reporting are all MIT
+      licensed — free for personal, commercial, and open-source projects with no
+      page limits, watermarks, or paid tiers.
   - q: Can TerraFluent generate PDF files?
     a: >-
       Yes. TerraFluent.Pdf.Reporting writes true PDF 1.7 files directly from fluent C#
@@ -22,6 +24,11 @@ faq:
       No. TerraFluent.Docx.Reporting writes Open XML packages directly, so it creates
       real Word documents without Microsoft Office, Word automation, or COM interop —
       on Windows, Linux, and macOS, including Docker containers and serverless.
+  - q: Can TerraFluent generate charts without a JavaScript charting library?
+    a: >-
+      Yes. TerraFluent.Chart.Reporting renders 26 chart types as self-contained SVG
+      entirely server-side — Static and Animated modes need no JavaScript at all, and
+      the same SVG drops into a PDF, an HTML report, or a Word document.
   - q: How is TerraFluent.Pdf.Reporting different from iText or QuestPDF?
     a: >-
       iText (iTextSharp) is AGPL licensed, which requires a commercial license for most
@@ -30,12 +37,13 @@ faq:
       any commercial use with a fluent, composable, code-first API.
   - q: Which .NET versions does TerraFluent support?
     a: >-
-      TerraFluent.Html.Reporting and TerraFluent.Docx.Reporting target netstandard2.0
-      and net10.0, so they run on .NET Framework 4.6.1+, .NET Core 2.0+, and every
-      modern .NET release. TerraFluent.Pdf.Reporting targets .NET 8, .NET 9, and .NET 10.
+      TerraFluent.Html.Reporting, TerraFluent.Docx.Reporting, and
+      TerraFluent.Chart.Reporting target netstandard2.0 and up, so they run on .NET
+      Framework 4.6.1+, .NET Core 2.0+, and every modern .NET release.
+      TerraFluent.Pdf.Reporting targets .NET 8, .NET 9, and .NET 10.
   - q: Does TerraFluent run on Linux and in Docker?
     a: >-
-      Yes. All three libraries are pure managed code with no native binaries, no headless
+      Yes. All four libraries are pure managed code with no native binaries, no headless
       browser, and no Office dependency, so they deploy cleanly to Linux, macOS,
       containers, Azure Functions, AWS Lambda, and locked-down servers.
   - q: How is TerraFluent different from the Open XML SDK?
@@ -49,40 +57,38 @@ faq:
 <!-- ============ Hero ============ -->
 <section class="hero">
   <div class="container">
-    <span class="hero-badge"><span class="dot"></span> Open source · MIT licensed</span>
-    <h1 id="hero-headline">Generate <span class="grad">PDF, HTML, and DOCX</span> Reports in C# and .NET with a Fluent API.</h1>
+    <span class="hero-badge"><span class="dot"></span> Open source · MIT licensed · Four solutions</span>
+    <h1 id="hero-headline">Four .NET libraries. <span class="grad">One fluent API.</span></h1>
     <script>
       (function () {
         var lines = [
-          'Generate <span class="grad">PDF, HTML, and DOCX</span> Reports in C# and .NET with a Fluent API.',
-          'Fluent Document Generation for .NET &ndash; Create <span class="grad">PDF, Print-Ready HTML, and Native DOCX</span> Reports.',
-          'Build Professional <span class="grad">PDF, HTML, and DOCX</span> Reports in C# with a Fluent .NET API.',
-          'One Fluent API for <span class="grad">PDF, HTML, and DOCX</span> Report Generation in .NET.',
-          'Modern Report Generation for .NET &ndash; <span class="grad">PDF, HTML, and DOCX</span> Made Simple.',
-          'Create Beautiful <span class="grad">PDF, HTML, and Word</span> Documents in C# Using a Fluent API.',
-          'Fast, Fluent Report Generation for C#/.NET &ndash; <span class="grad">PDF, HTML, and Native DOCX</span>.',
-          'Powerful C# Report Generation Library for <span class="grad">PDF, Print-Ready HTML, and DOCX</span>.'
+          'Four .NET libraries. <span class="grad">One fluent API.</span>',
+          '<span class="grad">PDF, HTML, DOCX</span> and charts, generated in C#.',
+          'Reports and charts for .NET, <span class="grad">without the heavy engines.</span>',
+          'One fluent API for <span class="grad">every .NET report.</span>',
+          'C# report generation, <span class="grad">zero dependencies.</span>',
+          'Documents and charts, <span class="grad">written in fluent C#.</span>',
+          'Generate <span class="grad">PDF, Word and SVG</span> from .NET.',
+          'The .NET reporting stack, <span class="grad">MIT licensed.</span>'
         ];
         document.getElementById('hero-headline').innerHTML =
           lines[Math.floor(Math.random() * lines.length)];
       })();
     </script>
     <p class="hero-lede">
-      One fluent API family, three professional outputs. Generate real PDF files with zero
-      dependencies, paginated printable HTML without a browser engine — and real Word
-      documents without Word automation.
+      One fluent API family, four professional solutions. Real PDF files with zero
+      dependencies, paginated printable HTML without a browser engine, real Word
+      documents without Word automation — and server-side SVG charts without a
+      JavaScript charting library.
     </p>
     <div class="hero-ctas">
       <a class="btn btn-primary" href="{{ '/getting-started/' | relative_url }}">Get started</a>
-      <a class="btn btn-ghost" href="{{ site.repos.html }}" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-ghost" href="{{ '/solutions/' | relative_url }}">Explore solutions</a>
     </div>
     <ul class="trust-chips">
       {% assign chips = "MIT license|Zero-dependency core|netstandard2.0 → .NET 10|Windows · Linux · macOS" | split: "|" %}
       {% for chip in chips %}
-      <li>
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-        {{ chip }}
-      </li>
+      <li>{{ chip }}</li>
       {% endfor %}
     </ul>
   </div>
@@ -143,15 +149,17 @@ report.RenderHtmlDocument("monthly-sales.html");
 <section aria-labelledby="products-title">
   <div class="container">
     <div class="section-head">
-      <span class="eyebrow">Three packages, one mental model</span>
+      <span class="eyebrow">Four solutions, one mental model</span>
       <h2 id="products-title">Pick your output. Keep your API.</h2>
-      <p>All three libraries share the same fluent design, so a team that learns one already knows the others.</p>
+      <p>All four libraries share the same fluent design, so a team that learns one already knows the others.</p>
     </div>
 
     <div class="product-grid">
       <article class="product-card accent-pdf">
-        <span class="product-kicker">True PDF</span>
-        <h3>TerraFluent.Pdf.Reporting</h3>
+        <div class="product-head">
+          <span class="product-kicker">True PDF</span>
+        </div>
+        <h3>TerraFluent.Pdf.<wbr>Reporting</h3>
         <p>Real PDF 1.7 files written by a pure managed C# engine — invoices, reports,
            and labels with zero dependencies and no native binaries.</p>
         <ul class="product-points">
@@ -169,8 +177,10 @@ report.RenderHtmlDocument("monthly-sales.html");
       </article>
 
       <article class="product-card accent-html">
-        <span class="product-kicker">Print-ready HTML</span>
-        <h3>TerraFluent.Html.Reporting</h3>
+        <div class="product-head">
+          <span class="product-kicker">Print-ready HTML</span>
+        </div>
+        <h3>TerraFluent.Html.<wbr>Reporting</h3>
         <p>Paginated, fixed-page HTML reports that view in any browser and print to PDF —
            PDF-style layout with no PDF engine dependency.</p>
         <ul class="product-points">
@@ -188,8 +198,10 @@ report.RenderHtmlDocument("monthly-sales.html");
       </article>
 
       <article class="product-card accent-docx">
-        <span class="product-kicker">Native Word</span>
-        <h3>TerraFluent.Docx.Reporting</h3>
+        <div class="product-head">
+          <span class="product-kicker">Native Word</span>
+        </div>
+        <h3>TerraFluent.Docx.<wbr>Reporting</h3>
         <p>Real <code>.docx</code> files written directly as Open XML — no Word installation,
            no COM automation, validated against the Open XML SDK.</p>
         <ul class="product-points">
@@ -203,6 +215,27 @@ report.RenderHtmlDocument("monthly-sales.html");
           <a href="{{ '/docx/' | relative_url }}">Learn more →</a>
           <a href="{{ site.repos.docx }}" target="_blank" rel="noopener">GitHub</a>
           <a href="{{ site.nuget.docx }}" target="_blank" rel="noopener">NuGet</a>
+        </div>
+      </article>
+
+      <article class="product-card accent-chart">
+        <div class="product-head">
+          <span class="product-kicker">SVG charts</span>
+        </div>
+        <h3>TerraFluent.Chart.<wbr>Reporting</h3>
+        <p>26 chart types rendered as self-contained SVG, entirely server-side —
+           zero JavaScript dependency, zero external NuGet packages.</p>
+        <ul class="product-points">
+          <li>Line, bar, pie, financial, flow, and statistical chart types</li>
+          <li>18 built-in themes, plus a fully custom theme factory</li>
+          <li>Static, Animated, and Interactive render modes</li>
+          <li>Drops straight into PDF, HTML, and DOCX output</li>
+        </ul>
+        {% include install-row.html package="TerraFluent.Chart.Reporting" %}
+        <div class="product-links">
+          <a href="{{ '/chart/' | relative_url }}">Learn more →</a>
+          <a href="{{ site.repos.chart }}" target="_blank" rel="noopener">GitHub</a>
+          <a href="{{ site.nuget.chart }}" target="_blank" rel="noopener">NuGet</a>
         </div>
       </article>
     </div>
@@ -247,7 +280,7 @@ report.RenderHtmlDocument("monthly-sales.html");
       <div class="cap-card">
         <span class="cap-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 4 5-8 4 6"/><path d="M3 21h18"/></svg></span>
         <h3>Charts &amp; images</h3>
-        <p>Editable Word charts in DOCX, a vector canvas in PDF, images with wrapping and cropping.</p>
+        <p>26 SVG chart types in Chart.Reporting, editable Word charts in DOCX, a vector canvas in PDF, images with wrapping and cropping.</p>
       </div>
       <div class="cap-card">
         <span class="cap-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 4 14h6l-1 7 9-11h-6l1-7z"/></svg></span>

@@ -1,16 +1,30 @@
 # Site navigation — the single source of truth for the header menu.
-# Adding/removing a menu item is a change to this file only.
-- title: PDF Reporting
-  url: /pdf/
-- title: HTML Reporting
-  url: /html/
-- title: DOCX Reporting
-  url: /docx/
+# An item with `children` renders as a dropdown; its own `url` is used only
+# to decide whether the trigger should show as "current" on a child page.
+- title: Solutions
+  url: /solutions/
+  children:
+    - title: PDF Reporting
+      url: /pdf/
+      tagline: True PDF files, zero dependencies
+      accent: pdf
+    - title: HTML Reporting
+      url: /html/
+      tagline: Print-ready HTML, no PDF engine
+      accent: html
+    - title: DOCX Reporting
+      url: /docx/
+      tagline: Native Word documents
+      accent: docx
+    - title: Chart Reporting
+      url: /chart/
+      tagline: Server-side SVG charts
+      accent: chart
 - title: Docs
   url: /docs/
 - title: Samples
   url: /samples/
 - title: Compare
   url: /compare/
-- title: Getting Started
-  url: /getting-started/
+- title: Enterprise
+  url: /enterprise/

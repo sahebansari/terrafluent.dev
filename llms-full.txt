@@ -7586,3 +7586,3140 @@ cd samples/TerraFluent.Pdf.Reporting.Sample
 dotnet run
 # Output: 11_unicode_showcase.pdf
 ```
+
+
+====================================================================
+TerraFluent.Chart.Reporting — Getting Started
+URL: https://terrafluent.dev/docs/chart/getting-started/
+====================================================================
+
+# Getting Started
+
+## 1. Reference the Library
+
+**Project reference (before NuGet publishing):**
+
+Add to your `.csproj`:
+```xml
+<ItemGroup>
+  <ProjectReference Include="..\src\TerraFluent.Chart.Reporting\TerraFluent.Chart.Reporting.csproj" />
+</ItemGroup>
+```
+
+**After NuGet publishing:**
+```bash
+dotnet add package TerraFluent.Chart.Reporting
+```
+
+---
+
+## 2. Your First Chart
+
+All charts start with `ChartBuilder.Create()`. Every method returns `this`, so you chain them freely:
+
+```csharp
+using TerraFluent.Chart.Reporting.Builder;
+
+string svg = ChartBuilder.Create()
+    .Title("Monthly Website Visitors")
+    .Subtitle("Jan – Jun 2025")
+    .Size(700, 400)
+    .XAxis("Month", "Jan", "Feb", "Mar", "Apr", "May", "Jun")
+    .YAxis("Visitors", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddLine("Visitors", new double[] { 12400, 14800, 16200, 18500, 21000, 19800 }))
+    .RenderToSvg();
+```
+
+**Output** — self-contained SVG (excerpt):
+```xml
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="400" viewBox="0 0 700 400">
+  <rect width="700" height="400" fill="#ffffff"/>
+  <text x="350" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#333333">
+    Monthly Website Visitors
+  </text>
+  <text x="350" y="46" text-anchor="middle" font-size="11" fill="#666666">Jan – Jun 2025</text>
+  <!-- grid lines, axis labels, SMIL-animated line path … -->
+  <path d="M … L … L …" fill="none" stroke="#7CB5EC" stroke-width="2">
+    <animate attributeName="stroke-dashoffset" from="…" to="0" dur="0.8s" fill="freeze"/>
+  </path>
+</svg>
+```
+
+---
+
+## 3. Save to a File
+
+```csharp
+// Save as SVG
+ChartBuilder.Create()
+    .Title("Sales Report")
+    .Size(800, 500)
+    .Series(s => s.AddColumn("Q1", new double[] { 320, 410, 390, 480 }))
+    .RenderToFile("output/sales.svg");
+
+// Save as HTML fragment (SVG wrapped in <figure>)
+ChartBuilder.Create()
+    .Title("Sales Report")
+    .Size(800, 500)
+    .Series(s => s.AddColumn("Q1", new double[] { 320, 410, 390, 480 }))
+    .RenderToHtmlFile("output/sales.html", caption: "FY 2025 Sales");
+```
+
+---
+
+## 4. ASP.NET Core — Return as HTTP Response
+
+```csharp
+// Minimal API
+app.MapGet("/charts/revenue", () =>
+{
+    string svg = ChartBuilder.Create()
+        .Title("Revenue")
+        .Size(700, 400)
+        .XAxis("Q", "Q1", "Q2", "Q3", "Q4")
+        .YAxis("$k", min: 0)
+        .AsStatic()                          // no JS — safe for any client
+        .Series(s => s.AddColumn("Revenue", new double[] { 310, 390, 420, 510 }))
+        .RenderToSvg();
+
+    return Results.Content(svg, "image/svg+xml");
+});
+
+// Controller
+[HttpGet("chart")]
+public IActionResult GetChart()
+{
+    string svg = ChartBuilder.Create()
+        .Title("Revenue")
+        .Size(700, 400)
+        .AsStatic()
+        .Series(s => s.AddColumn("Revenue", new double[] { 310, 390, 420, 510 }))
+        .RenderToSvg();
+
+    return Content(svg, "image/svg+xml");
+}
+```
+
+---
+
+## 5. Blazor — Render Inline SVG
+
+```razor
+@using TerraFluent.Chart.Reporting.Builder
+
+<div class="chart-container">
+    @((MarkupString)ChartSvg)
+</div>
+
+@code {
+    private string ChartSvg = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        ChartSvg = ChartBuilder.Create()
+            .Title("Active Users")
+            .Size(700, 380)
+            .XAxis("Day", "Mon", "Tue", "Wed", "Thu", "Fri")
+            .YAxis("Users", min: 0)
+            .AsAnimated()                    // SMIL animations work in Blazor WASM
+            .Series(s => s
+                .AddArea("DAU", new double[] { 4200, 5100, 4800, 6300, 7200 }))
+            .RenderToSvg();
+    }
+}
+```
+
+> **Render Mode Tip:** Use `.AsAnimated()` in Blazor. Use `.AsStatic()` for PDF / email. Use `.AsInteractive()` only for plain HTML browser pages.
+
+---
+
+## 6. Dependency Injection
+
+Register via the `IChartBuilder` interface for testable, decoupled code:
+
+```csharp
+// Program.cs — register
+builder.Services.AddScoped<IChartBuilder>(_ => ChartBuilder.Create());
+
+// Service — inject and use
+public class ReportService
+{
+    private readonly IChartBuilder _charts;
+
+    public ReportService(IChartBuilder charts) => _charts = charts;
+
+    public string BuildRevenueSvg(double[] data)
+    {
+        return _charts
+            .Title("Revenue")
+            .Size(700, 400)
+            .Series(s => s.AddColumn("Revenue", data))
+            .RenderToSvg();
+    }
+}
+```
+
+---
+
+## 7. Core Pattern — How the Builder Works
+
+```
+ChartBuilder.Create()           ← creates a fresh builder
+  .Title(…)                     ← chart-level settings
+  .Size(…)
+  .Theme(…)
+  .XAxis(…) / .YAxis(…)
+  .AsAnimated()                 ← render mode
+  .Series(s => s                ← open the series scope
+      .AddLine(…)               ← add first series
+      .AddColumn(…))            ← add second series (chain inside lambda)
+  .RenderToSvg()                ← terminate and get the SVG string
+```
+
+All methods are null-safe and throw `ArgumentException` / `ArgumentNullException` on invalid input. Every `double?[]` parameter supports `null` gaps (the line or column is skipped at that index).
+
+---
+
+## 8. Choosing a Render Mode
+
+| Mode | Method | CSS hover? | JS? | SMIL? | Use for |
+|---|---|---|---|---|---|
+| **Static** | `.AsStatic()` | No | No | No | PDF, email, server-side image |
+| **Animated** | `.AsAnimated()` | Yes | No | Yes | Blazor, browser embedding |
+| **Interactive** | `.AsInteractive()` | Yes | Yes | Yes | Browser-only dashboards |
+
+See [Advanced Features](/docs/chart/advanced/#render-modes) for full details.
+
+
+====================================================================
+TerraFluent.Chart.Reporting — Chart Showcase
+URL: https://terrafluent.dev/docs/chart/showcase/
+====================================================================
+
+# Chart Showcase
+
+A live visual catalogue of every chart type and feature in TerraFluent.Chart.Reporting — each entry is a self-contained SVG rendered entirely server-side, with zero JavaScript dependency.
+
+> **[▶ Open the interactive showcase (showcase.html)](/chart/showcase/)** — a single browsable page with all charts rendered inline. Best viewed in a browser.
+
+For copy-paste code behind each chart type, see **[Chart Types](/docs/chart/chart-types/)**.
+
+_Catalogue of 102 charts · generated 2026-09-06 UTC._
+
+| # | Chart | What it demonstrates |
+|---|---|---|
+| 01 | Line Chart | Single-series animated line chart with monthly visitors data. |
+| 02 | Multi-Series Line | Three lines (Revenue, Cost, Profit). |
+| 03 | Area Chart | Filled area chart showing daily active users over 10 days. |
+| 04 | Column Chart | Single-series column chart — product sales by category. |
+| 05 | Grouped Columns | Two column series side-by-side for Budget vs Actual spend. |
+| 06 | Pie Chart | Pie chart with legend showing market share by vendor. |
+| 07 | Spline Chart | Smooth spline curves — temperature trends for three cities. |
+| 08 | Mixed Line + Area | Area series (Volume) combined with a Line series (Price). |
+| 09 | Static Mode (PDF / Email) | SvgMode.Static — no CSS hover rules, no embedded JS. |
+| 10 | Interactive Mode (Browser) | SvgMode.Interactive — CSS hover tooltips + embedded JS. |
+| 11 | True Spline (Bézier) | Catmull-Rom cubic Bézier curves. |
+| 12 | Horizontal Bar Chart | ChartType.Bar — bars grow left-to-right. |
+| 13 | Scatter Chart | ChartType.Scatter — dots only, no connecting line. |
+| 14 | Animated Column (SMIL) | Bars grow from baseline on load via SMIL. |
+| 15 | Dark Theme | ChartTheme.Dark — navy background, light text. |
+| 16 | Pastel Theme | ChartTheme.Pastel — soft off-white background. |
+| 17 | Data Labels | ShowDataLabels — values rendered on bars and line points. |
+| 18 | Donut Chart | Pie chart with DonutHolePercent = 0.55 creating a donut hole. |
+| 19 | Stacked Columns (Normal) | Stacking.Normal — bars are stacked so totals are visible. |
+| 20 | Stacked Columns (100 %) | Stacking.Percent — each column normalised to 100 %. |
+| 21 | Stacked Area | Stacking.Normal on Area series. |
+| 22 | Secondary Y-Axis | WithYAxis2() — columns on left axis, line on right axis. |
+| 23 | Plot Bands & Reference Lines | YAxis.PlotBands and YAxis.PlotLines. |
+| 24 | Waterfall Chart | ChartType.Waterfall — incremental running-total chart. |
+| 25 | Gauge / Radial Chart | ChartType.Gauge — semi-circular dial. |
+| 26 | X-Axis Label Rotation | Axis.LabelRotation = -45 — diagonal labels. |
+| 27 | Data Label Showcase | DataLabel: FontSize · Format — three distinct styles on one chart. |
+| 28 | Pie — Label Placement | DataLabelRadius: inside, at edge, and outside with connector. |
+| 29 | Legend — Vertical Right | LegendBuilder: Vertical() · AlignRight() · SymbolRadius. |
+| 30 | Legend — Top Center | LegendBuilder: AtTop() · AlignCenter() · Horizontal() · Padding. |
+| 31 | Legend — Bottom Left | LegendBuilder: AtBottom() · AlignLeft() · SymbolSize · Offset. |
+| 32 | Column — Border & Corner Radius | Series.BorderWidth · BorderRadius per column series. |
+| 33 | Scatter — Marker Borders | Series.BorderWidth on scatter dot markers. |
+| 34 | Area — Fill Opacity | Series.FillOpacity: 0.15 · 0.40 · 0.70 — three overlapping area series. |
+| 35 | Tooltip — Custom Style | TooltipBuilder: FontSize · Padding · Format · TransitionDuration. |
+| 36 | Tooltip — No Arrow | TooltipBuilder: HideArrow() · custom Format template. |
+| 37 | Donut — Center Label | DonutCenter: auto total · title caption · font size. |
+| 38 | Monthly Sales — USD Donut | Donut chart with USD data labels and DonutCenter total. |
+| 39 | Data Ring — KPI | ChartType.DataRing — full 360° progress ring. |
+| 40 | Data Ring — Dashboard Trio | Three DataRing charts side-by-side as a KPI dashboard. |
+| 41 | Fluent API Showcase | Size · AsInteractive · Animate · StackNormal · YAxisFormat · ShowDataLabels · SeriesBuilder. |
+| 42 | Fixed Width Chart | Width(600) — pins the SVG to exactly 600 px wide. |
+| 43 | Responsive Width Chart | ResponsiveWidth() — SVG fills its container. |
+| 44 | X-Axis Numeric Tick Interval | XAxisTickInterval — numeric X-axis with explicit tick spacing. |
+| 45 | Fork — Chart Variants | Fork() — produce a Static and an Animated variant. |
+| 46 | Bubble Chart | AddBubble() — scatter with a third dimension (Z). |
+| 47 | Heatmap | AddHeatmap() — colour-coded matrix. |
+| 48 | Column Range | AddColumnRange() — each category spans from low to high. |
+| 49 | Area Range | AddAreaRange() — filled band between a lower and upper line. |
+| 50 | Funnel Chart | AddFunnel() — stacked trapezoid stages. |
+| 51 | Treemap | AddTreemap() — nested rectangles sized proportionally. |
+| 52 | Data Point Click — Line Chart | OnPointClick() — click any data point to see its details. |
+| 53 | Data Point Click — Column Chart | OnPointClick() — two column series; click any bar. |
+| 54 | Data Point Click — Shared Tooltip | OnPointClick() combined with shared tooltip. |
+| 55 | Legend Series Toggle | SvgMode.Interactive — click any legend item to hide/show that series. |
+| 56 | SVG Export Button | ShowExportButton() — download button appears top-right. |
+| 57 | Multi-Format Export Menu | ShowExportMenu() — SVG, PNG, JPEG, and PDF options. |
+| 58 | AutoInsight — Line Chart | AnomalyBands · TrendLine · MovingAverage · HighlightPeaks · NarrativeSummary. |
+| 59 | AutoInsight — Area Chart | AutoInsight on an Area series — pure SVG, no JavaScript. |
+| 60 | Parliament Chart | AddParliament() — semicircular hemicycle seating diagram. |
+| 61 | Logarithmic Y Axis | YAxisLogarithmic() — base-10 log scale. |
+| 62 | Date/Time X Axis | XAxisDateTime() — auto-formatted by span. |
+| 63 | Radar / Spider Chart | AddRadar() — closed polygon, great for multivariate comparisons. |
+| 64 | Box-and-Whisker Plot | AddBoxPlot() — five-number summary per category. |
+| 65 | Column + Error Bars | AddErrorBar() — I-beam uncertainty whiskers. |
+| 66 | Gradient-Filled Area | LinearGradientFill() — vertical gradient via SVG <linearGradient>. |
+| 67 | Pattern-Filled Columns | PatternFill() — diagonal lines, dots, grid via SVG <pattern>. |
+| 68 | Marker Symbol Shapes | MarkerSymbol() — circle, square, diamond, and triangle. |
+| 69 | Threshold Zones | Zones() — recolour a line by value band. |
+| 70 | Candlestick | AddCandlestick() — OHLC bodies with wicks. |
+| 71 | OHLC Bars | AddOhlc() — high-low bar with open/close ticks. |
+| 72 | Annotations | Annotations() — labels, lines, rectangles and circles. |
+| 73 | Vivid Theme | ChartTheme.Vivid — full-spectrum palette. |
+| 74 | Label Layout Builder | LabelLayout() — rotation, wrap, stagger, font scaling, collision detection. |
+| 75 | High-Contrast Theme | ChartTheme.HighContrast — WCAG AA palette, all colours ≥ 4.5:1 on white. |
+| 76 | Null-Gap Policy | NullGap() — Break (gap), Connect (bridge), Zero (baseline) for missing values. |
+| 77 | Per-Series Target Lines | TargetLine() — horizontal reference lines scoped to a single series. |
+| 78 | RenderToDataUri() | Embeds the chart as a Base64 data: URI inside an HTML img tag. |
+| 79 | 100% Stacked Columns | StackPercent() — Y-axis automatically labels 0% … 100%. |
+| 80 | Dual-Axis Combo Chart | Column (primary Y) + Line (secondary Y) on one chart. |
+| 81 | Mixed-Type Combo Chart | Column + Line + Area series rendered together. |
+| 82 | Inverted Y-Axis | YAxisInverted() — minimum at the top, ranking style. |
+| 83 | Linear Regression Overlay | AddLinearRegression() — least-squares trend line over raw data. |
+| 84 | Moving Average Overlay | AddMovingAverage() — simple 3-period moving average over a line series. |
+| 85 | Exponential Smoothing Overlay | AddExponentialSmoothing() — EMA overlay (α = 0.4) for noisy data. |
+| 86 | Data Table Toggle | ShowDataTable() — appends a per-category value grid below the chart. |
+| 87 | Custom ARIA Labels | AriaLabel() + AriaDescription() — custom accessible title and description. |
+| 88 | German Culture (de-DE) | Culture("de-DE") — number formatting uses comma decimal separator. |
+| 89 | Right-to-Left Chart | RightToLeft() — dir="rtl" on SVG root, direction:rtl CSS on all text. |
+| 90 | Template: Revenue | ChartTemplate.Revenue — column chart with N0-formatted Y-axis. |
+| 91 | Template: KPI Dashboard | ChartTemplate.KpiDashboard — dark theme, interactive, no grid/legend. |
+| 92 | Template: Time Series | ChartTemplate.TimeSeries — spline, animated, 1 s entry. |
+| 93 | Template: Executive Summary | ChartTemplate.ExecutiveSummary — pastel bar chart, static/PDF-safe. |
+| 94 | JSON Round-Trip | ChartOptions.ToJson() / ChartBuilder.FromJson() — persist and restore a chart. |
+| 95 | Dumbbell / Dot-Plot | AddDumbbell() — two dots per category connected by a vertical line. |
+| 96 | Stream Graph (ThemeRiver) | AddStream() — stacked areas with a centered wiggle baseline. |
+| 97 | Gantt / Timeline | AddGantt() — horizontal task bars on a numeric time axis. |
+| 98 | Sankey Flow Diagram | AddSankey() — node-link flow diagram with cubic-bezier links. |
+| 99 | Range Selector (Navigator) | RangeSelector() — interactive brush strip below the chart fires tf:rangechange. |
+| 100 | Synchronized Tooltips | SyncGroup() — two charts share the same hover group so tooltips mirror each other. |
+| 101 | Drill-Down Chart | WithDrilldown() — click a column to open a child detail chart; Back returns to overview. |
+| 102 | Grid Lines Toggle | GridLines(false) / HideGridLines() — show or hide the background plot grid. |
+
+
+====================================================================
+TerraFluent.Chart.Reporting — Chart Types
+URL: https://terrafluent.dev/docs/chart/chart-types/
+====================================================================
+
+# Chart Types
+
+All 26 chart types available in TerraFluent.Chart.Reporting, each with a complete code example and description of the rendered output.
+
+---
+
+## Quick Reference
+
+| Chart type | Builder method | Data input | Best for |
+|---|---|---|---|
+| [Line](#1-line) | `AddLine` | `double[]` | Trends over time |
+| [Spline](#2-spline) | `AddSpline` | `double[]` | Smooth trend curves |
+| [Area](#3-area) | `AddArea` | `double[]` | Volume under a trend |
+| [Column](#4-column) | `AddColumn` | `double[]` | Category comparison |
+| [Bar (horizontal)](#5-bar-horizontal) | `AddBar` | `double[]` | Ranked categories |
+| [Pie / Donut](#6-pie--donut) | `Add` + `.AsPie()` | `double[]` | Part-of-whole |
+| [Scatter](#7-scatter) | `AddScatter` | `double[]` | Correlation / distribution |
+| [Waterfall](#8-waterfall) | `AddWaterfall` | `double?[]` + `bool[]` | Cumulative P&L |
+| [Gauge](#9-gauge) | `AddGauge` | single `double` | Single KPI dial |
+| [DataRing](#10-dataring) | `AddDataRing` | single `double` | Full-circle KPI ring |
+| [Bubble](#11-bubble) | `AddBubble` | `BubblePoint[]` | 3D scatter (X, Y, size) |
+| [Heatmap](#12-heatmap) | `AddHeatmap` | `HeatmapPoint[]` | Matrix / correlation |
+| [ColumnRange](#13-columnrange) | `AddColumnRange` | `RangePoint[]` | Low–high bars (temperature etc.) |
+| [AreaRange](#14-arearange) | `AddAreaRange` | `RangePoint[]` | Confidence bands |
+| [Funnel](#15-funnel) | `AddFunnel` | `double[]` | Pipeline / conversion |
+| [Treemap](#16-treemap) | `AddTreemap` | `double[]` | Hierarchical proportions |
+| [Radar](#17-radar) | `AddRadar` | `double[]` | Multivariate comparison |
+| [BoxPlot](#18-boxplot) | `AddBoxPlot` | `BoxPlotPoint[]` | Statistical distribution |
+| [ErrorBar](#19-errorbar) | `AddErrorBar` | `RangePoint[]` | Uncertainty / variance |
+| [Candlestick](#20-candlestick) | `AddCandlestick` | `OhlcPoint[]` | OHLC price candles |
+| [OHLC](#21-ohlc) | `AddOhlc` | `OhlcPoint[]` | OHLC price bars |
+| [Dumbbell](#22-dumbbell) | `AddDumbbell` | `RangePoint[]` | Before/after comparison |
+| [Stream](#23-stream) | `AddStream` | `double[]` | ThemeRiver flow over time |
+| [Gantt](#24-gantt) | `AddGantt` | `GanttTask[]` | Project timeline |
+| [Sankey](#25-sankey) | `AddSankey` | `SankeyNode[]` + `SankeyLink[]` | Flow between stages |
+| [Parliament](#26-parliament) | `AddParliament` | `ParliamentGroup[]` | Seat / composition layout |
+
+> **Computed overlays** — you can also derive series from existing data with `AddLinearRegression`, `AddMovingAverage`, and `AddExponentialSmoothing`. See the [API Reference](/docs/chart/api-reference/#computed-overlays).
+
+---
+
+## 1. Line
+
+Connects data points with straight segments. Multi-series lines are automatically coloured from the theme palette.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Monthly Website Visitors")
+    .Subtitle("Jan – Dec 2025")
+    .Size(700, 420)
+    .XAxis("Month",
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec")
+    .YAxis("Visitors", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddLine("Visitors", new double[]
+            { 12400, 14800, 16200, 18500, 21000, 19800,
+              22300, 25100, 23700, 20400, 17900, 15600 }))
+    .RenderToSvg();
+```
+
+**Rendered output:** 700 × 420 px SVG. A single blue line is drawn across 12 months, animating in left-to-right on load. Y-axis starts at 0 and auto-scales to ~25 000. Grid lines are drawn from the theme.
+
+**Multi-series line:**
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Revenue vs Cost vs Profit")
+    .Size(700, 420)
+    .XAxis("Quarter", "Q1", "Q2", "Q3", "Q4")
+    .YAxis("USD (thousands)", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddLine("Revenue", new double[] { 320, 410, 390, 480 })
+        .AddLine("Cost",    new double[] { 210, 260, 245, 290 })
+        .AddLine("Profit",  new double[] { 110, 150, 145, 190 }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Three coloured lines (blue/orange/green from palette). The legend shows each series name. All three lines animate sequentially on load.
+
+---
+
+## 2. Spline
+
+Same as Line but uses Catmull-Rom cubic Bézier curves for smooth interpolation between points.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Temperature Trends — Smooth Spline")
+    .Size(700, 400)
+    .XAxis("Week", "W1","W2","W3","W4","W5","W6","W7","W8")
+    .YAxis("Temperature (°C)")
+    .AsAnimated()
+    .Series(s => s
+        .AddSpline("London", new double[] { 18, 20, 22, 25, 27, 24, 21, 19 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        .AddSpline("Madrid", new double[] { 28, 31, 34, 38, 40, 37, 33, 30 },
+            cfg => cfg.Color(ChartColor.ChartOrange)))
+    .RenderToSvg();
+```
+
+**Rendered output:** Two smooth curves with no sharp corners at each data point. London's curve (blue) sits below Madrid's (orange). The curves are rendered as cubic Bézier SVG paths.
+
+> **Tip:** Use `AddSpline` instead of `AddLine` whenever the data represents a naturally continuous signal (temperature, heart rate, sensor readings).
+
+---
+
+## 3. Area
+
+A line chart where the region between the line and the X-axis baseline is filled with a semi-transparent colour.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Daily Active Users")
+    .Size(700, 420)
+    .XAxis("Day", "Mon","Tue","Wed","Thu","Fri","Sat","Sun")
+    .YAxis("Users", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddArea("Active Users",
+            new double[] { 4200, 5100, 4800, 6300, 7200, 3800, 2900 },
+            cfg => cfg.Color(ChartColor.ChartBlue).FillOpacity(0.3)))
+    .RenderToSvg();
+```
+
+**Rendered output:** A blue-filled area sweeps up from the baseline. The fill is 30 % opaque, so grid lines are visible through it.
+
+**Stacked Area:**
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Traffic by Channel")
+    .Size(720, 420)
+    .StackNormal()                              // stack areas cumulatively
+    .XAxis("Month", "Jan","Feb","Mar","Apr","May","Jun")
+    .YAxis("Sessions", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddArea("Organic",  new double[] { 1200, 1350, 1500, 1700, 1900, 2100 })
+        .AddArea("Direct",   new double[] {  800,  850,  900,  950, 1000, 1100 })
+        .AddArea("Referral", new double[] {  400,  420,  440,  480,  520,  560 }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Three colour-filled bands stack on top of each other. The top edge of the topmost band shows total sessions across all channels for each month.
+
+---
+
+## 4. Column
+
+Vertical bars — the most common chart for category comparisons. Supports grouped (side-by-side) and stacked layouts.
+
+```csharp
+// Single series
+string svg = ChartBuilder.Create()
+    .Title("Product Sales by Category")
+    .Size(700, 420)
+    .XAxis("Category", "Electronics","Clothing","Books","Home","Sports","Toys")
+    .YAxis("Units Sold", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddColumn("Units Sold",
+            new double[] { 8400, 5200, 3100, 6700, 4300, 2800 }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Six blue columns of varying heights. Each column grows from the baseline via SMIL animation on page load.
+
+```csharp
+// Grouped columns (two series side-by-side)
+string svg = ChartBuilder.Create()
+    .Title("Budget vs Actual Spend")
+    .Size(750, 420)
+    .XAxis("Department", "Engineering","Marketing","Sales","Operations","HR")
+    .YAxis("USD (thousands)", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddColumn("Budget", new double[] { 500, 200, 350, 280, 120 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        .AddColumn("Actual", new double[] { 470, 230, 310, 295, 108 },
+            cfg => cfg.Color(ChartColor.ChartOrange)))
+    .RenderToSvg();
+```
+
+**Rendered output:** For each department, two bars appear side-by-side — blue (Budget) and orange (Actual). The legend labels both series at the bottom.
+
+```csharp
+// Stacked columns (100 % normalised)
+string svg = ChartBuilder.Create()
+    .Title("Revenue Mix — 100 % Stacked")
+    .Size(700, 420)
+    .StackPercent()                             // normalise to 100 %
+    .XAxis("Quarter", "Q1","Q2","Q3","Q4")
+    .YAxis("%", min: 0, max: 100)
+    .YAxisFormat("{value}%")
+    .Series(s => s
+        .AddColumn("Product A", new double[] { 180, 220, 240, 280 },
+            cfg => cfg.DataLabel.Show().Format("{value}%"))
+        .AddColumn("Product B", new double[] { 140, 160, 175, 200 },
+            cfg => cfg.DataLabel.Show().Format("{value}%"))
+        .AddColumn("Product C", new double[] {  90, 110, 130, 150 },
+            cfg => cfg.DataLabel.Show().Format("{value}%")))
+    .RenderToSvg();
+```
+
+**Rendered output:** Each column fills the full chart height (100 %). Three colour segments per column show the proportional contribution of each product. Data labels show percentages inside each segment.
+
+---
+
+## 5. Bar (Horizontal)
+
+Horizontal bars — ideal for ranked or labelled categories where the labels are long.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Population by City")
+    .Size(700, 420)
+    .XAxis(x => x.Categories.AddRange(
+        new[] { "Tokyo","Delhi","Shanghai","São Paulo","Mexico City","Cairo" }))
+    .YAxis(y => { y.Title = "Population (M)"; y.Min = 0; y.Max = 40; })
+    .AsAnimated()
+    .Series(s => s
+        .AddBar("Population (M)",
+            new double[] { 37.4, 32.9, 27.1, 22.4, 21.9, 21.3 },
+            cfg => cfg.Color(ChartColor.ChartBlue)))
+    .RenderToSvg();
+```
+
+**Rendered output:** Six horizontal blue bars grow left-to-right from the Y-axis. Tokyo's bar is the longest. City names appear on the vertical axis.
+
+---
+
+## 6. Pie / Donut
+
+A circular chart divided into slices proportional to each value. Add a donut hole with `.DonutHole(fraction)`.
+
+```csharp
+// Pie
+string svg = ChartBuilder.Create()
+    .AsPie()
+    .Title("Market Share by Vendor")
+    .Size(600, 440)
+    .Labels("TerraFluent","Competitor A","Competitor B","Others")
+    .Legend(l => l.AtBottom())
+    .AsAnimated()
+    .Series(s => s
+        .Add("Market Share", new double[] { 38, 27, 21, 14 },
+            cfg => cfg.DataLabel.Show().Radius(1.2).Format("{value}%")))
+    .RenderToSvg();
+```
+
+**Rendered output:** A circular pie with four coloured slices. Labels are placed outside each slice (radius > 1) with spline connector lines. The legend lists the four vendors at the bottom.
+
+```csharp
+// Donut with center label
+string svg = ChartBuilder.Create()
+    .AsPie()
+    .Title("Revenue by Region")
+    .Size(620, 460)
+    .Labels("North America","Europe","Asia-Pacific","Rest of World")
+    .Legend(l => l.AtBottom())
+    .AsAnimated()
+    .Series(s => s
+        .Add("Revenue %", new double[] { 42, 28, 22, 8 },
+            cfg =>
+            {
+                cfg.DonutHole(0.55);                // 55 % hole radius
+                cfg.DataLabel.Show().Radius(1.0).Format("{value}%");
+                cfg.DonutCenter.Show().Title("Total");
+            }))
+    .RenderToSvg();
+```
+
+**Rendered output:** A donut ring with a hollow center. The summed total (100) is shown large in the center with "Total" as a caption above it. Labels sit at the edge of each slice.
+
+---
+
+## 7. Scatter
+
+Dots only — no connecting line. Use when the relationship between two variables matters more than a sequence.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Sales Rep Performance")
+    .Size(700, 420)
+    .XAxis(x => x.Title = "Calls Made")
+    .YAxis(y => { y.Title = "Deals Closed"; y.Min = 0; })
+    .AsAnimated()
+    .Series(s => s
+        .AddScatter("Team A", new double[] { 62, 58, 74, 55, 80, 67, 71 },
+            cfg => cfg.Color(ChartColor.ChartBlue).MarkerSize(8))
+        .AddScatter("Team B", new double[] { 45, 52, 61, 48, 57, 70, 43 },
+            cfg => cfg.Color(ChartColor.ChartOrange).MarkerSize(8)))
+    .RenderToSvg();
+```
+
+**Rendered output:** Two sets of coloured dots plotted at their respective Y-values. No lines connect the dots. A legend distinguishes Team A (blue) from Team B (orange).
+
+---
+
+## 8. Waterfall
+
+Shows incremental gains and losses leading to a running total. Positive changes are green, negative are red, totals use the series colour.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Annual Cash Flow Analysis")
+    .Size(720, 440)
+    .XAxis(x => x.Categories.AddRange(new[]
+        { "Opening","Revenue","COGS","Gross Profit","OpEx","EBITDA","Tax","Net Profit" }))
+    .YAxis(y => y.Title = "USD ($k)")
+    .AsAnimated()
+    .Series(s => s
+        .AddWaterfall(
+            name:   "P&L",
+            data:   new double?[] { 500, 800, -320, 980, -450, 530, -120, 410 },
+            totals: new[] { true, false, false, true, false, true, false, true }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Eight bars. "Opening", "Gross Profit", "EBITDA", and "Net Profit" are full-height bars (totals). "Revenue" and "EBITDA" increases are green floating bars. "COGS", "OpEx", and "Tax" decreases are red bars hanging from the running total. Each bar starts where the last left off.
+
+**Data rules:**
+- `data` values with `totals[i] = true` reset the running total — they draw from zero.
+- `data` values with `totals[i] = false` are incremental (positive = up, negative = down).
+- Pass `null` in `data` to skip a column while keeping the running total intact.
+
+---
+
+## 9. Gauge
+
+A semi-circular dial showing a single value between a configurable min and max.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Server CPU Utilisation")
+    .Size(460, 360)
+    .YAxis(y => { y.Min = 0; y.Max = 100; })
+    .AsAnimated()
+    .Series(s => s
+        .AddGauge("CPU %", 67, cfg => cfg.Color(ChartColor.ChartBlue)))
+    .RenderToSvg();
+```
+
+**Rendered output:** A 180° arc (top half of a circle). A coloured filled arc spans from the left baseline to the 67 % mark. The numeric value "67" is displayed below the arc center. The needle animates in on load.
+
+---
+
+## 10. DataRing
+
+A full 360° progress ring (like a circular progress bar) centered on a large value display.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Q2 2025 — Customer Satisfaction")
+    .Size(400, 400)
+    .YAxis(y => { y.Min = 0; y.Max = 100; })
+    .AsAnimated()
+    .Series(s => s
+        .AddDataRing("CSAT Score", 87, cfg =>
+        {
+            cfg.Color(ChartColor.ChartBlue);
+            cfg.DonutCenter
+               .Title("CSAT")
+               .Color("#1a202c")
+               .TitleColor("#718096")
+               .FontSize(42)
+               .TitleFontSize(14);
+        }))
+    .RenderToSvg();
+```
+
+**Rendered output:** A thick circular ring fills 87 % of its circumference (clockwise from top). The value "87" is displayed large in the center with "CSAT" as a subtitle below. The ring sweeps in with a clockwise animation on load.
+
+**KPI Dashboard — three rings side-by-side:**
+
+```csharp
+// Render three separate SVGs and combine in your layout
+string cpu  = ChartBuilder.Create().Title("CPU") .Size(300,300).YAxis(y=>{y.Min=0;y.Max=100;}).AsAnimated()
+    .Series(s => s.AddDataRing("CPU",  67, cfg => cfg.Color(ChartColor.ChartOrange).DonutCenter.FontSize(32)))
+    .RenderToSvg();
+
+string ram  = ChartBuilder.Create().Title("RAM") .Size(300,300).YAxis(y=>{y.Min=0;y.Max=100;}).AsAnimated()
+    .Series(s => s.AddDataRing("RAM",  82, cfg => cfg.Color(ChartColor.ChartRose).DonutCenter.FontSize(32)))
+    .RenderToSvg();
+
+string disk = ChartBuilder.Create().Title("Disk").Size(300,300).YAxis(y=>{y.Min=0;y.Max=100;}).AsAnimated()
+    .Series(s => s.AddDataRing("Disk", 34, cfg => cfg.Color(ChartColor.ChartGreen).DonutCenter.FontSize(32)))
+    .RenderToSvg();
+
+// Embed in a flex container in your HTML/Blazor:
+// <div style="display:flex;gap:1rem">
+//   @((MarkupString)cpu)  @((MarkupString)ram)  @((MarkupString)disk)
+// </div>
+```
+
+---
+
+## 11. Bubble
+
+A scatter chart with a third dimension (Z) encoded as the bubble radius. Ideal for showing three correlated business metrics simultaneously.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Market Share vs. Growth — Bubble Size = Revenue")
+    .Size(700, 400)
+    .XAxis(x => { x.Title = "Market Share (%)"; x.Min = 0; x.Max = 40; })
+    .YAxis(y => { y.Title = "YoY Growth (%)"; y.Min = -10; y.Max = 50; })
+    .AsAnimated()
+    .Legend(l => l.TopRight())
+    .Series(s => s
+        .AddBubble("Product A", new[]
+        {
+            new BubblePoint(12, 28, 85),    // (X=market share, Y=growth, Z=revenue $M)
+            new BubblePoint(22, 15, 120),
+            new BubblePoint( 8, 42, 60),
+        })
+        .AddBubble("Product B", new[]
+        {
+            new BubblePoint(30,  5, 200),
+            new BubblePoint(18, 22,  95),
+            new BubblePoint(35, -5, 140),
+        }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Circles plotted at (X, Y) coordinates. The radius of each circle is proportional to its Z value — Product B's 200-unit bubble is visibly larger than the 60-unit one. Two series are coloured differently and shown in the legend.
+
+**`BubblePoint` struct:**
+
+| Property | Description |
+|---|---|
+| `X` | Horizontal axis position |
+| `Y` | Vertical axis position |
+| `Z` | Bubble size (proportional to area) |
+
+---
+
+## 12. Heatmap
+
+A colour-coded grid matrix. Cell colour interpolates between a cold colour and the series colour based on value intensity.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Weekly Sales by Region & Day")
+    .Size(700, 380)
+    .XAxis("Day", "Mon","Tue","Wed","Thu","Fri")   // column labels
+    .Series(s => s
+        .AddHeatmap("Sales",
+            new[]
+            {
+                // HeatmapPoint(col, row, value)
+                new HeatmapPoint(0,0,42), new HeatmapPoint(1,0,58), new HeatmapPoint(2,0,73),
+                new HeatmapPoint(3,0,61), new HeatmapPoint(4,0,88),
+                new HeatmapPoint(0,1,31), new HeatmapPoint(1,1,45), new HeatmapPoint(2,1,52),
+                new HeatmapPoint(3,1,78), new HeatmapPoint(4,1,65),
+                new HeatmapPoint(0,2,67), new HeatmapPoint(1,2,83), new HeatmapPoint(2,2,91),
+                new HeatmapPoint(3,2,55), new HeatmapPoint(4,2,48),
+            },
+            cfg =>
+            {
+                cfg.DataLabel.Show().Format("{value}");     // show value in each cell
+                cfg.HeatmapRowLabels.AddRange(new[] { "North","South","East" });
+            }))
+    .RenderToSvg();
+```
+
+**Rendered output:** A 5 × 3 grid of coloured rectangles. Low values appear in a cold blue-grey; high values (like 91) appear in a saturated series colour. Row labels "North / South / East" are on the left; column labels "Mon – Fri" are on the bottom. Each cell shows its numeric value.
+
+**`HeatmapPoint` struct:**
+
+| Property | Description |
+|---|---|
+| `Col` | Zero-based column index (maps to `XAxis.Categories`) |
+| `Row` | Zero-based row index (maps to `HeatmapRowLabels`) |
+| `Value` | Numeric intensity controlling cell colour |
+
+---
+
+## 13. ColumnRange
+
+A vertical bar spanning from a low to a high value per category. Perfect for temperature ranges, confidence intervals, or scheduling spans.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Monthly Temperature Range (°C)")
+    .Size(700, 400)
+    .XAxis("Month",
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec")
+    .YAxis(y => { y.Title = "Temperature (°C)"; y.Min = -10; y.Max = 40; y.LabelFormat = "{value}°"; })
+    .AsAnimated()
+    .Series(s => s
+        .AddColumnRange("London",
+            new[]
+            {
+                new RangePoint( 2,  8), new RangePoint( 2,  9), new RangePoint( 4, 13),
+                new RangePoint( 6, 16), new RangePoint( 9, 20), new RangePoint(12, 23),
+                new RangePoint(14, 26), new RangePoint(14, 25), new RangePoint(11, 21),
+                new RangePoint( 8, 17), new RangePoint( 5, 12), new RangePoint( 3,  9),
+            },
+            cfg => cfg.Color(ChartColor.ChartBlue)))
+    .RenderToSvg();
+```
+
+**Rendered output:** 12 blue bars — one per month — each floating between its low (bottom) and high (top) temperature. July's bar is the tallest and highest; January's is the lowest.
+
+**`RangePoint` struct:**
+
+| Property | Description |
+|---|---|
+| `Low` | Bottom of the bar / band |
+| `High` | Top of the bar / band |
+
+---
+
+## 14. AreaRange
+
+A filled band drawn between two lines (low and high). Typically used to visualise forecast confidence intervals or min/max ranges alongside a mean line.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Revenue Forecast — Confidence Band")
+    .Size(700, 380)
+    .XAxis("Week", "W1","W2","W3","W4","W5","W6","W7","W8")
+    .YAxis(y => { y.Title = "Revenue ($k)"; y.Min = 80; y.Max = 280; })
+    .AsAnimated()
+    .Series(s => s
+        // Mean forecast line on top
+        .AddLine("Forecast",
+            new double[] { 140, 152, 161, 170, 178, 185, 192, 200 },
+            cfg => cfg.Color("#2ecc71").LineWidth(2))
+        // Confidence band underneath
+        .AddAreaRange("Confidence Band",
+            new[]
+            {
+                new RangePoint(120, 160), new RangePoint(130, 172), new RangePoint(138, 184),
+                new RangePoint(148, 192), new RangePoint(155, 200), new RangePoint(160, 210),
+                new RangePoint(167, 217), new RangePoint(174, 226),
+            },
+            cfg => cfg.Color("#2ecc71")))      // same colour, semi-transparent fill
+    .RenderToSvg();
+```
+
+**Rendered output:** A green-tinted band fills the space between the lower and upper confidence bounds. A solid green line (the mean forecast) runs through the middle of the band. The band and line share the same green palette but the fill is semi-transparent.
+
+---
+
+## 15. Funnel
+
+Stacked trapezoid stages that narrow as a value decreases. Ideal for sales pipelines, conversion funnels, and process flow analysis.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Sales Pipeline")
+    .Size(600, 440)
+    .XAxis("Stage", "Leads","Qualified","Proposal","Negotiation","Closed")
+    .AsAnimated()
+    .Series(s => s
+        .AddFunnel("Pipeline",
+            new double[] { 5000, 2800, 1400, 620, 310 },
+            cfg => cfg.Label(dl => dl.Show())))
+    .RenderToSvg();
+```
+
+**Rendered output:** Five trapezoids stacked vertically, each narrower than the one above it. "Leads" (5 000) is the widest; "Closed" (310) is the narrowest. Stage labels ("Leads", "Qualified", etc.) appear on the left side of each trapezoid.
+
+**Proportionality:** Each stage's width is `value / maxValue` of the total funnel width. The library computes the widths automatically.
+
+---
+
+## 16. Treemap
+
+Nested rectangles sized proportionally to their value, using a balanced binary-split layout. Excellent for portfolio allocation, budget breakdown, or disk usage visualisation.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Portfolio Allocation")
+    .Size(700, 420)
+    .XAxis("Asset",
+        "US Equities","EU Equities","EM Equities",
+        "Gov Bonds",  "Corp Bonds",
+        "Real Estate","Commodities","Cash")
+    .AsAnimated()
+    .Series(s => s
+        .AddTreemap("Allocation",
+            new double[] { 3200, 1800, 900, 1500, 1100, 700, 400, 300 }))
+    .RenderToSvg();
+```
+
+**Rendered output:** The chart area is divided into eight coloured rectangles. "US Equities" (3 200) occupies the largest rectangle (roughly half the chart). Each rectangle is labelled with its asset name and value. Colours cycle through the theme palette.
+
+---
+
+## 17. Radar
+
+Plots several axes radiating from a centre, with each series drawn as a closed polygon. Ideal for comparing multiple entities across the same set of metrics.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Skill Assessment")
+    .Size(560, 520)
+    .XAxis("Skill", "Coding","Design","Testing","DevOps","Docs","Comms")
+    .AsAnimated()
+    .Series(s => s
+        .AddRadar("Alice", new double[] { 90, 60, 75, 50, 65, 80 },
+            cfg => cfg.Color(ChartColor.ChartBlue).FillOpacity(0.25))
+        .AddRadar("Bob",   new double[] { 65, 85, 60, 80, 55, 70 },
+            cfg => cfg.Color(ChartColor.ChartOrange).FillOpacity(0.25)))
+    .RenderToSvg();
+```
+
+**Rendered output:** Six spokes labelled with each skill. Two translucent polygons (blue, orange) overlay one another so strengths and gaps are immediately visible. A legend distinguishes the two people.
+
+---
+
+## 18. BoxPlot
+
+A box-and-whisker chart showing the five-number summary (min, Q1, median, Q3, max) per category. Perfect for comparing distributions.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Response Time Distribution by Endpoint (ms)")
+    .Size(700, 420)
+    .XAxis("Endpoint", "/login","/search","/checkout","/report")
+    .YAxis("ms", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddBoxPlot("Latency", new[]
+        {
+            // BoxPlotPoint(low, q1, median, q3, high)
+            new BoxPlotPoint( 40,  70,  95, 130, 210),
+            new BoxPlotPoint( 55,  90, 120, 160, 260),
+            new BoxPlotPoint( 80, 140, 190, 250, 400),
+            new BoxPlotPoint(120, 220, 300, 410, 620),
+        }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Four boxes, one per endpoint. Each box spans Q1–Q3 with a median line inside; whiskers extend to min and max. `/report` sits highest, revealing the slowest and most variable endpoint.
+
+**`BoxPlotPoint` struct:** `Low`, `Q1`, `Median`, `Q3`, `High`.
+
+---
+
+## 19. ErrorBar
+
+Draws a vertical whisker from a low to a high value per category — typically overlaid on a line or column series to show uncertainty.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Measured Mean ± Std. Dev.")
+    .Size(700, 400)
+    .XAxis("Sample", "A","B","C","D","E")
+    .YAxis("Value", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddLine("Mean", new double[] { 30, 42, 38, 55, 48 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        .AddErrorBar("± SD", new[]
+        {
+            new RangePoint(26, 34), new RangePoint(37, 47), new RangePoint(33, 43),
+            new RangePoint(49, 61), new RangePoint(43, 53),
+        }, cfg => cfg.Color(ChartColor.Charcoal)))
+    .RenderToSvg();
+```
+
+**Rendered output:** A blue mean line with a grey error whisker at each point, each capped top and bottom, spanning the low–high uncertainty band.
+
+---
+
+## 20. Candlestick
+
+Financial OHLC candles. Up sessions (close ≥ open) use the theme's positive colour; down sessions use the negative colour.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("ACME — Daily OHLC")
+    .Size(720, 420)
+    .XAxis("Day", "Mon","Tue","Wed","Thu","Fri")
+    .YAxis("Price ($)")
+    .AsAnimated()
+    .Series(s => s
+        .AddCandlestick("ACME", new[]
+        {
+            // OhlcPoint(open, high, low, close)
+            new OhlcPoint(120, 128, 118, 126),
+            new OhlcPoint(126, 130, 122, 123),
+            new OhlcPoint(123, 133, 121, 132),
+            new OhlcPoint(132, 135, 128, 129),
+            new OhlcPoint(129, 140, 127, 138),
+        }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Five candles. Each has a thin high–low wick and a thick open–close body. Green bodies mark up days, red bodies mark down days.
+
+**`OhlcPoint` struct:** `Open`, `High`, `Low`, `Close`.
+
+---
+
+## 21. OHLC
+
+The same open/high/low/close data drawn as bars instead of candles: a high–low vertical bar with a left tick (open) and a right tick (close).
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("ACME — OHLC Bars")
+    .Size(720, 420)
+    .XAxis("Day", "Mon","Tue","Wed","Thu","Fri")
+    .YAxis("Price ($)")
+    .AsAnimated()
+    .Series(s => s
+        .AddOhlc("ACME", new[]
+        {
+            new OhlcPoint(120, 128, 118, 126),
+            new OhlcPoint(126, 130, 122, 123),
+            new OhlcPoint(123, 133, 121, 132),
+            new OhlcPoint(132, 135, 128, 129),
+            new OhlcPoint(129, 140, 127, 138),
+        }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Five vertical bars. A left-pointing tick marks the open price and a right-pointing tick marks the close. Colour follows the same up/down convention as candlesticks.
+
+---
+
+## 22. Dumbbell
+
+A dot-plot connecting a low and a high value per category — great for before/after or start/end comparisons.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Salary Change After Promotion")
+    .Size(700, 420)
+    .XAxis("Role", "Junior","Mid","Senior","Lead","Principal")
+    .YAxis("Salary ($k)", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddDumbbell("Before → After", new[]
+        {
+            new RangePoint( 60,  72), new RangePoint( 85, 100),
+            new RangePoint(110, 132), new RangePoint(140, 168),
+            new RangePoint(175, 210),
+        }, cfg => cfg.Color(ChartColor.ChartBlue)))
+    .RenderToSvg();
+```
+
+**Rendered output:** For each role, two dots connected by a bar — the left/lower dot is the "before" value, the right/upper dot the "after". The connector length shows the size of each raise.
+
+---
+
+## 23. Stream
+
+A ThemeRiver: stacked areas rendered around a centred baseline so the whole silhouette flows organically. Good for showing how a total and its composition evolve over time.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Genre Popularity Over Time")
+    .Size(720, 420)
+    .XAxis("Year", "2019","2020","2021","2022","2023","2024")
+    .AsAnimated()
+    .Series(s => s
+        .AddStream("Pop",     new double[] { 40, 45, 52, 60, 58, 64 })
+        .AddStream("Rock",    new double[] { 55, 50, 48, 44, 42, 40 })
+        .AddStream("Hip-Hop", new double[] { 30, 38, 47, 55, 62, 70 })
+        .AddStream("Jazz",    new double[] { 18, 17, 16, 16, 15, 15 }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Four coloured bands flow left-to-right around a central axis. The thickness of each band at any year is its value; the overall shape widens as total popularity grows.
+
+---
+
+## 24. Gantt
+
+A horizontal project timeline. Each task is a bar spanning its start-to-end position on the X (time) axis.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Release Plan (weeks)")
+    .Size(760, 380)
+    .XAxis(x => { x.Title = "Week"; x.Min = 0; x.Max = 12; })
+    .AsAnimated()
+    .Series(s => s
+        .AddGantt("Schedule", new[]
+        {
+            new GanttTask { Name = "Design",      Start = 0, End = 3 },
+            new GanttTask { Name = "Development",  Start = 2, End = 8, Color = ChartColor.ChartBlue },
+            new GanttTask { Name = "Testing",      Start = 7, End = 10 },
+            new GanttTask { Name = "Launch",       Start = 10, End = 12, Color = ChartColor.ChartGreen },
+        }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Four stacked rows, each with a bar positioned along the week axis. Overlapping bars show parallel work (Design and Development overlap at weeks 2–3). Custom colours highlight key phases.
+
+**`GanttTask` properties:** `Name`, `Start`, `End`, optional `Color`, optional `Label`.
+
+---
+
+## 25. Sankey
+
+A node-link flow diagram. Nodes are stages; links carry a quantity whose thickness is proportional to its value.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Website Conversion Flow")
+    .Size(760, 440)
+    .AsAnimated()
+    .Series(s => s
+        .AddSankey("Flow",
+            nodes: new[]
+            {
+                new SankeyNode { Name = "Visitors" },   // 0
+                new SankeyNode { Name = "Sign-ups" },   // 1
+                new SankeyNode { Name = "Trials" },     // 2
+                new SankeyNode { Name = "Paid" },       // 3
+                new SankeyNode { Name = "Churned" },    // 4
+            },
+            links: new[]
+            {
+                new SankeyLink { From = 0, To = 1, Value = 1000 },
+                new SankeyLink { From = 1, To = 2, Value = 620 },
+                new SankeyLink { From = 2, To = 3, Value = 240 },
+                new SankeyLink { From = 2, To = 4, Value = 380 },
+            }))
+    .RenderToSvg();
+```
+
+**Rendered output:** Five stacked nodes connected by curved ribbons. The Visitors→Sign-ups ribbon is the thickest; the split from Trials shows how many converted to Paid versus Churned. Link thickness encodes each flow's magnitude.
+
+**`SankeyLink.From` / `To`** are zero-based indices into the `nodes` array.
+
+---
+
+## 26. Parliament
+
+A semicircular seating chart — one dot per seat, grouped by party. Standard for election results and any whole-of-assembly composition.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+string svg = ChartBuilder.Create()
+    .Title("Parliament Composition (200 seats)")
+    .Size(640, 400)
+    .AsAnimated()
+    .Series(s => s
+        .AddParliament("Seats", new[]
+        {
+            new ParliamentGroup("Progressive", ChartColor.ChartBlue,   82),
+            new ParliamentGroup("Conservative", ChartColor.ChartRed,   74),
+            new ParliamentGroup("Green",        ChartColor.ChartGreen,  26),
+            new ParliamentGroup("Independent",  ChartColor.Charcoal,    18),
+        }))
+    .RenderToSvg();
+```
+
+**Rendered output:** An arc of 200 coloured dots arranged in concentric rows, grouped left-to-right by party. Each party occupies a contiguous block sized by its seat count. A legend maps colours to parties.
+
+**`ParliamentGroup` constructor:** `(string name, string color, int seats)`.
+
+---
+
+## Combining Chart Types (Mixed Charts)
+
+You can mix any series types within a single chart:
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Revenue & Profit Margin")
+    .Size(720, 420)
+    .XAxis("Quarter", "Q1","Q2","Q3","Q4")
+    .YAxis("Revenue ($k)", min: 0)
+    .YAxis2(y => { y.Title = "Margin (%)"; y.Min = 0; y.Max = 50; })
+    .AsAnimated()
+    .Series(s => s
+        // Columns on the primary (left) Y-axis
+        .AddColumn("Revenue", new double[] { 310, 390, 420, 510 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        // Line on the secondary (right) Y-axis
+        .AddLine("Margin %",  new double[] { 22, 28, 25, 31 },
+            cfg => cfg.Color(ChartColor.ChartRose).LineWidth(3).OnSecondaryAxis()))
+    .RenderToSvg();
+```
+
+**Rendered output:** Blue columns grow from the left axis. A pink line floats independently, scaled against the right axis (0 – 50 %). Both axes are labelled. The legend shows both series.
+
+
+====================================================================
+TerraFluent.Chart.Reporting — Themes & Styling
+URL: https://terrafluent.dev/docs/chart/themes-and-styling/
+====================================================================
+
+# Themes & Styling
+
+Everything you need to control the visual appearance of your charts: themes, colour palettes, series styling, data labels, and tooltips.
+
+---
+
+## Built-in Themes
+
+Apply a theme with `.Theme(ChartTheme.X)`:
+
+```csharp
+ChartBuilder.Create()
+    .Theme(ChartTheme.Dark)
+    // …
+```
+
+| Theme | Background | Text | Palette style | Best for |
+|---|---|---|---|---|
+| `ChartTheme.Default` | `#ffffff` white | `#333333` dark | Blue-orange | General use |
+| `ChartTheme.Dark` | `#1a1a2e` navy | `#f0f0ff` light | Neon-adjacent bright palette | Browser dashboards |
+| `ChartTheme.Pastel` | `#fafafa` off-white | `#555555` grey | Soft muted palette | Presentations, reports |
+| `ChartTheme.Monochrome` | `#ffffff` white | `#000000` black | Greyscale only | Print, greyscale PDFs |
+| `ChartTheme.Ocean` | `#0d1b2a` deep navy | `#c8e6ff` pale blue | Blue-teal palette | Analytics dashboards |
+| `ChartTheme.Sunset` | `#1a0a2e` purple-navy | `#ffe8c8` warm cream | Vivid warm palette | Editorial, marketing |
+| `ChartTheme.Forest` | `#f6f4ee` warm cream | `#2c2a1a` earthy brown | Earthy greens | Nature / ESG reporting |
+| `ChartTheme.Neon` | `#0a0a0a` near-black | `#f0f0ff` light | Electric high-contrast palette | Dark dashboards, streaming overlays |
+| `ChartTheme.Minimal` | `#ffffff` white | `#333333` graphite | Muted professional palette | Clean editorial reports |
+| `ChartTheme.Warm` | `#faf3e0` parchment | `#3e2723` espresso | Amber-brown earth tones | Warm, print-style reports |
+| `ChartTheme.Arctic` | `#f0f8ff` ice blue | `#1c2e4a` polar navy | Cool crisp blues | Clean corporate dashboards |
+| `ChartTheme.Business` | `#ffffff` white | `#333333` graphite | Corporate blue-red palette | Executive summaries |
+| `ChartTheme.Material` | `#ffffff` white | `#444444` charcoal | Material Design 500-level palette | Modern web dashboards |
+| `ChartTheme.TrafficLight` | `#fafafa` off-white | `#333333` graphite | Green/amber/red status palette | KPI / status dashboards |
+| `ChartTheme.Accessible` | `#ffffff` white | `#333333` graphite | Colour-blind-safe (Wong 2011) | Accessibility-critical charts |
+| `ChartTheme.Vivid` | `#ffffff` white | `#2c3e50` slate | Full-spectrum distinct palette | High-impact presentations |
+| `ChartTheme.HighContrast` | `#ffffff` white | `#000000` black | WCAG AA (≥ 4.5:1) palette | Accessibility-critical charts |
+| `ChartTheme.Modern` | `#f8f8ff` ghost white | `#2c3e50` slate | Material palette + `ModernStyle` on | Default recommendation for new dashboards |
+
+See [Modern Styling](#modern-styling) below for what `ModernStyle` changes, and [ChartColor Catalogue](#chartcolor-catalogue) for the exact hex values behind each palette.
+
+### Dark Theme Example
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Theme(ChartTheme.Dark)
+    .Title("Server Throughput")
+    .Size(700, 420)
+    .XAxis("Hour", "00","04","08","12","16","20","24")
+    .YAxis("Req/s", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddArea("API",   new double[] { 820, 430, 1200, 1800, 1650, 1100, 640 })
+        .AddLine("Cache", new double[] { 600, 310,  900, 1300, 1200,  850, 480 }))
+    .RenderToSvg();
+```
+
+**Output:** Navy blue background (`#1a1a2e`), light axis labels, bright palette area/line. Grid lines rendered in muted `#3a3a5e`. Title text is `#f0f0ff`.
+
+### Pastel Theme Example
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Theme(ChartTheme.Pastel)
+    .Title("Monthly Sales")
+    .Size(700, 420)
+    .XAxis(x => x.Categories.AddRange(new[] { "Jan","Feb","Mar","Apr","May","Jun" }))
+    .YAxis("Units", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddColumn("Product A", new double[] { 420, 380, 510, 490, 560, 600 })
+        .AddColumn("Product B", new double[] { 310, 290, 370, 400, 430, 450 }))
+    .RenderToSvg();
+```
+
+**Output:** Off-white `#fafafa` background, very light grid lines, soft muted palette (`#a8d8ea`, `#aa96da`, …). Suitable for presentations and printed reports.
+
+---
+
+## Modern Styling
+
+Every built-in theme — including `Default` — has `ChartTheme.ModernStyle` set to `true`. It applies a consistent set of refinements uniformly across **Static**, **Animated**, and **Interactive** render modes:
+
+- Softly rounded corners on column/bar rectangles.
+- A subtle top-lighter fill gradient with soft elevation shadow on columns, bars, and areas.
+- Hollow-ring line/scatter markers instead of solid dots.
+- Crisper separators between pie/donut slices.
+- Fading (gradient) area-chart fills instead of a flat opacity.
+- Lighter, horizontal-only grid lines.
+- In **Interactive** mode only: a full-height/width **hover band** that highlights the entire category column or row on mouse-over, in addition to the point-level tooltip.
+
+`ChartTheme.Modern` is a dedicated preset (Material palette on a ghost-white background) for teams that want the modern look front-and-centre, but the styling itself is not tied to that one preset — it is on by default for every theme above.
+
+To opt out and get the classic flat look, clone a theme and turn it off:
+
+```csharp
+var classic = ChartTheme.Dark.Clone();
+classic.ModernStyle = false;
+
+string svg = ChartBuilder.Create()
+    .Theme(classic)
+    .AsInteractive()
+    .Series(s => s.AddColumn("Sales", new double[] { 420, 380, 510, 490 }))
+    .RenderToSvg();
+```
+
+With `ModernStyle = false`, columns/bars render with sharp corners and a flat fill, markers render as solid dots, and hover bands are omitted from Interactive output.
+
+---
+
+## Custom Theme
+
+Create a one-off theme with `ChartTheme.Custom(…)`:
+
+```csharp
+var brandTheme = ChartTheme.Custom(
+    backgroundColor:     "#0d1117",    // GitHub-dark background
+    plotBackgroundColor: "none",
+    gridLineColor:       "#21262d",
+    axisLineColor:       "#30363d",
+    textColor:           "#e6edf3",
+    fontFamily:          "'Segoe UI', sans-serif",
+    colors: new[] { "#58a6ff", "#3fb950", "#f78166", "#d29922", "#a371f7" }
+);
+
+string svg = ChartBuilder.Create()
+    .Theme(brandTheme)
+    .Title("Custom Brand Theme")
+    .Size(700, 420)
+    .XAxis("Quarter", "Q1","Q2","Q3","Q4")
+    .YAxis("Revenue ($k)", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddLine("Revenue", new double[] { 310, 420, 380, 510 })
+        .AddLine("Target",  new double[] { 340, 400, 420, 500 }))
+    .RenderToSvg();
+```
+
+**Output:** Dark background styled like GitHub's dark mode. Blue and green lines are drawn against a near-black `#0d1117` background with subtle grid lines.
+
+**`ChartTheme.Custom` parameters** (all optional — unset properties fall back to `Default`):
+
+| Parameter | Description |
+|---|---|
+| `backgroundColor` | SVG/page background colour. |
+| `plotBackgroundColor` | Plot area fill. Use `"none"` for transparent. |
+| `gridLineColor` | Colour of horizontal grid lines. |
+| `axisLineColor` | Colour of axis border lines. |
+| `textColor` | Default text fill colour (title, labels, legend). |
+| `fontFamily` | CSS font-family for all text. |
+| `colors` | Ordered palette array — must have at least one entry when provided. |
+
+---
+
+## Overriding Palette Only
+
+Use `.Colors(…)` to swap the palette without changing the rest of the active theme:
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Theme(ChartTheme.Dark)                           // dark background + text
+    .Colors(ChartColor.ChartRose, ChartColor.ChartYellow, ChartColor.ChartTeal)          // but use a custom 3-colour palette
+    .Title("Sales Channels")
+    .Size(700, 420)
+    .XAxis("Month", "Jan","Feb","Mar","Apr","May","Jun")
+    .YAxis("Units", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddColumn("Online", new double[] { 180, 210, 190, 260, 310, 280 })
+        .AddColumn("Store",  new double[] { 140, 160, 175, 200, 195, 220 })
+        .AddLine("Total",    new double[] { 320, 370, 365, 460, 505, 500 }))
+    .RenderToSvg();
+```
+
+**Output:** Dark theme background and text, but the three series use pink, yellow, and teal instead of the dark theme's default palette.
+
+Colours wrap: if you have 5 series and 3 colours, series 4 and 5 use colours 1 and 2 again.
+
+---
+
+## ChartColor Catalogue
+
+`ChartColor` (namespace `TerraFluent.Chart.Reporting.Models`) provides 400+ named colour constants as `public const string` values. Use them anywhere a colour string is accepted — no hex codes to remember.
+
+```csharp
+using TerraFluent.Chart.Reporting.Models;
+
+// Palette override
+.Colors(ChartColor.ChartBlue, ChartColor.ChartOrange, ChartColor.ChartGreen)
+
+// Per-series colour
+.AddLine("Sales", data, cfg => cfg.Color(ChartColor.ChartRose))
+
+// Plot annotation
+.PlotLine(500, color: ChartColor.Red, width: 2, label: "SLA limit")
+```
+
+### Chart Palette Constants
+
+| Constant | Hex | Default series slot |
+|---|---|---|
+| `ChartColor.ChartBlue` | `#7CB5EC` | 1st |
+| `ChartColor.ChartOrange` | `#F7A35C` | 2nd |
+| `ChartColor.ChartGreen` | `#90ED7D` | 3rd |
+| `ChartColor.ChartYellow` | `#E4D354` | 4th |
+| `ChartColor.ChartIndigo` | `#8085E9` | 5th |
+| `ChartColor.ChartRose` | `#F15C80` | 6th |
+| `ChartColor.ChartTeal` | `#2B908F` | 7th |
+| `ChartColor.ChartRed` | `#F45B5B` | 8th |
+| `ChartColor.Charcoal` | `#434348` | Dark accent |
+
+### Pastel Palette Constants
+
+| Constant | Hex |
+|---|---|
+| `ChartColor.PastelSkyBlue` | `#A8D8EA` |
+| `ChartColor.PastelPurple` | `#AA96DA` |
+| `ChartColor.PastelPink` | `#FCBAD3` |
+| `ChartColor.PastelMint` | `#B5EAD7` |
+| `ChartColor.PastelPeach` | `#FFDAC1` |
+| `ChartColor.PastelPeriwinkle` | `#C7CEEA` |
+| `ChartColor.PastelLime` | `#E2F0CB` |
+| `ChartColor.PastelLemon` | `#FFFFD2` |
+
+### Pre-built Palettes
+
+Apply a complete curated palette in one call:
+
+```csharp
+.Colors(ChartColor.Palette.Default)      // Default palette (same as no override)
+.Colors(ChartColor.Palette.Pastel)       // soft pastels — matches ChartTheme.Pastel
+.Colors(ChartColor.Palette.Material)     // Material Design colours
+.Colors(ChartColor.Palette.Business)     // professional blues / greys
+.Colors(ChartColor.Palette.Accessible)   // WCAG high-contrast
+.Colors(ChartColor.Palette.TrafficLight) // red / amber / green
+.Colors(ChartColor.Palette.Monochrome)   // greyscale range
+```
+
+### Colour Utility Methods
+
+```csharp
+// Semi-transparent variant → "rgba(124,181,236,0.25)"
+string faded   = ChartColor.WithOpacity(ChartColor.ChartBlue, 0.25);
+
+// Tint / shade
+string lighter = ChartColor.Lighten(ChartColor.ChartBlue, 0.20);
+string darker  = ChartColor.Darken(ChartColor.ChartBlue, 0.20);
+
+// From RGB components → "#7CB5EC"
+string custom  = ChartColor.FromRgb(124, 181, 236);
+
+// Blend two colours at equal weight
+string mixed   = ChartColor.Mix(ChartColor.ChartBlue, ChartColor.White, 0.5);
+```
+
+> The full catalogue (400+ constants: CSS named colours, web-safe primaries, chart palette, pastels, theme-specific tokens, and more) is defined in `Models/ChartColor.cs`.
+
+---
+
+## Per-Series Colour
+
+Override a single series colour inside the `cfg =>` lambda:
+
+```csharp
+.Series(s => s
+    .AddLine("Revenue", data, cfg => cfg.Color(ChartColor.ChartBlue))
+    .AddLine("Cost",    data, cfg => cfg.Color(ChartColor.ChartOrange))
+    .AddLine("Profit",  data, cfg => cfg.Color(ChartColor.ChartGreen)))
+```
+
+---
+
+## Line Styling
+
+```csharp
+.AddLine("Target", data, cfg => cfg
+    .Color(ChartColor.ChartRose)
+    .LineWidth(3)        // stroke width (px), default 2
+    .Dashed()            // "Solid" | "Dashed" | "Dotted" | "DashDotted" | "LongDashed"
+    .MarkerEnabled(false))
+```
+
+**`Dashed` variants:**
+
+| Method | SVG stroke-dasharray | Looks like |
+|---|---|---|
+| `Solid()` | (none) | ——————— |
+| `Dashed()` | `8 4` | - - - - - - |
+| `Dotted()` | `2 3` | · · · · · · |
+| `DashDotted()` | `8 4 2 4` | -·-·-·-·- |
+| `LongDashed()` | `16 6` | ——— ——— |
+
+**Example — dashed reference line on a line chart:**
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Actuals vs Target")
+    .Size(700, 400)
+    .XAxis("Q", "Q1","Q2","Q3","Q4")
+    .YAxis("Revenue ($k)", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddColumn("Actuals", new double[] { 310, 390, 420, 510 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        .AddLine("Target", new double[] { 300, 380, 420, 450 },
+            cfg => cfg.Color(ChartColor.ChartRose).LineWidth(2).Dashed()))
+    .RenderToSvg();
+```
+
+**Output:** Blue columns for actuals. A pink dashed horizontal reference line for the target. The dashes distinguish the target clearly without overwhelming the data.
+
+---
+
+## Area Fill Opacity
+
+```csharp
+.AddArea("Organic", data, cfg => cfg.Color(ChartColor.ChartBlue).FillOpacity(0.15))
+.AddArea("Direct",  data, cfg => cfg.Color(ChartColor.ChartGreen).FillOpacity(0.40))
+.AddArea("Paid",    data, cfg => cfg.Color(ChartColor.ChartOrange).FillOpacity(0.70))
+```
+
+**`FillOpacity`** accepts values from `0.0` (fully transparent) to `1.0` (fully opaque). Default is `0.25` for normal area, `0.7` for stacked area.
+
+**Output:** Three overlapping area series, each at a different opacity. The Organic area at 15 % barely tints the background; the Paid area at 70 % is visually dominant.
+
+---
+
+## Column / Bar Borders & Corner Radius
+
+```csharp
+.AddColumn("Revenue", data, cfg => cfg
+    .Color(ChartColor.ChartBlue)
+    .BorderColor("#1a6090")    // contrasting outline
+    .BorderWidth(1)            // border thickness (px)
+    .BorderRadius(6))          // rounded top corners (px)
+```
+
+**Example — three styled column series:**
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Series Formatting — Border & Radius")
+    .Size(760, 440)
+    .XAxis("Q", "Q1","Q2","Q3","Q4")
+    .YAxis("Value ($k)", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddColumn("Revenue", new double[] { 320, 410, 390, 480 }, cfg => cfg
+            .Color(ChartColor.ChartBlue).BorderColor("#1a6090").BorderWidth(1).BorderRadius(6))
+        .AddColumn("Cost",    new double[] { 210, 260, 245, 290 }, cfg => cfg
+            .Color(ChartColor.ChartOrange).BorderColor("#7a3a00").BorderWidth(2).BorderRadius(3))
+        .AddColumn("Profit",  new double[] { 110, 150, 145, 190 }, cfg => cfg
+            .Color(ChartColor.ChartGreen).BorderColor("#1e7a00").BorderWidth(2).BorderRadius(0)))
+    .RenderToSvg();
+```
+
+**Output:** Three grouped column series. Revenue has rounded tops with a blue border; Cost has a dark orange border with subtle corners; Profit has a dark green thick border and sharp square corners.
+
+---
+
+## Scatter Marker Styling
+
+```csharp
+.AddScatter("Group A", data, cfg => cfg
+    .Color(ChartColor.ChartBlue)          // dot fill
+    .BorderColor("#e6b800")    // gold ring around dot
+    .BorderWidth(2)            // ring thickness
+    .MarkerSize(6))            // dot radius (px)
+```
+
+**Output:** Sky-blue dots with a gold ring border. Use this to differentiate overlapping points or to match corporate brand colours.
+
+---
+
+## Data Labels
+
+Show a value label on or near each data point.
+
+```csharp
+// Enable on all series at once:
+ChartBuilder.Create()
+    .ShowDataLabels()
+    .Series(s => s.AddColumn("Sales", data))
+
+// Enable per-series with custom formatting:
+.AddColumn("Budget", data, cfg => cfg
+    .DataLabel
+    .Show()
+    .Format("${value}k")
+    .Color("#1a6090")
+    .FontSize(11)
+    .Background("rgba(124,181,236,0.25)"))
+```
+
+**`DataLabelOptions` quick reference:**
+
+| Method | Example | Result |
+|---|---|---|
+| `.Show()` | — | Enables labels |
+| `.Format("{value}%")` | `38%` | Value with suffix |
+| `.Format("${value}k")` | `$320k` | Currency format |
+| `.Color(ChartColor.White)` | — | White text on coloured background |
+| `.FontSize(11)` | — | Smaller text for dense charts |
+| `.Background(ChartColor.ChartBlue)` | — | Solid pill background |
+| `.Background("rgba(…,0.25)")` | — | Tinted transparent pill |
+| `.Radius(1.25)` | — | Pie: label outside with connector |
+| `.OffsetY(-10)` | — | Nudge label 10 px upward |
+
+**Three label styles on one chart:**
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Data Label Showcase")
+    .Size(760, 460)
+    .XAxis("Quarter", "Q1","Q2","Q3","Q4")
+    .YAxis("Value ($k)", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        // Style 1: solid pill — white text on series colour
+        .AddLine("Revenue", new double[] { 310, 420, 385, 510 }, cfg =>
+        {
+            cfg.Color(ChartColor.ChartBlue).LineWidth(3);
+            cfg.DataLabel.Show().Color("#fff").FontSize(11)
+               .Background(ChartColor.ChartBlue).Format("${value}k");
+        })
+        // Style 2: tinted transparent background
+        .AddColumn("Expenses", new double[] { 180, 210, 195, 240 }, cfg =>
+        {
+            cfg.Color(ChartColor.ChartOrange);
+            cfg.DataLabel.Show().Color("#7a2f00").FontSize(10)
+               .Background("rgba(247,163,92,0.3)").Format("${value}k");
+        })
+        // Style 3: no background, larger font
+        .AddSpline("Profit", new double[] { 130, 210, 190, 270 }, cfg =>
+        {
+            cfg.Color(ChartColor.ChartGreen).LineWidth(2);
+            cfg.DataLabel.Show().Color("#1a5e00").FontSize(13)
+               .Format("+{value}k").Background("#cfffcf");
+        }))
+    .RenderToSvg();
+```
+
+**Output:** Revenue labels appear as solid blue pills. Expense column labels float above each bar with a light orange tint. Profit spline labels use a green-tinted background with larger text.
+
+---
+
+## Pie / Donut Label Placement
+
+Use `DataLabel.Radius(fraction)` to position slice labels:
+
+| Fraction | Placement | Connector |
+|---|---|---|
+| `0.6` | Inside the slice | No |
+| `1.0` | At the slice edge | No |
+| `> 1.0` e.g. `1.25` | Outside the pie | Yes — spline connector |
+
+```csharp
+string svg = ChartBuilder.Create()
+    .AsPie()
+    .Title("Market Share")
+    .Size(680, 480)
+    .Labels("North America","Europe","Asia-Pacific","Lat. America","Rest of World")
+    .Legend(l => l.AtBottom())
+    .AsAnimated()
+    .Series(s => s
+        .Add("Share", new double[] { 38, 24, 20, 11, 7 }, cfg =>
+            cfg.DataLabel.Show()
+               .Radius(1.25)           // outside, with connector lines
+               .Format("{value}%")
+               .FontSize(11)
+               .Color("#333333")
+               .Background("rgba(255,255,255,0.85)")))
+    .RenderToSvg();
+```
+
+**Output:** Each slice has a label outside the pie arc, connected to its slice by a thin curved spline line. Labels show "38%", "24%", etc. on a semi-transparent white pill.
+
+---
+
+## Custom Tooltip Styling
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Tooltip — Dark Style")
+    .Size(760, 440)
+    .XAxis("Quarter", "Q1","Q2","Q3","Q4")
+    .YAxis("USD ($k)", min: 0)
+    .AsAnimated()
+    .Tooltip(t => t
+        .BackgroundColor("rgba(30,30,60,0.92)")
+        .TextColor("#e8f4ff")
+        .FontSize(12)
+        .Border(ChartColor.ChartBlue, width: 1, radius: 6)
+        .Padding(14)
+        .Format("{label}: ${value}k")
+        .TransitionDuration(0.20))
+    .Series(s => s
+        .AddLine("Revenue", new double[] { 320, 410, 390, 480 },
+            cfg => cfg.Color(ChartColor.ChartBlue).LineWidth(3))
+        .AddColumn("Cost", new double[] { 210, 260, 245, 290 },
+            cfg => cfg.Color(ChartColor.ChartOrange)))
+    .RenderToSvg();
+```
+
+**Output (Interactive / Animated mode):** When hovering a data point, a dark navy tooltip appears with a blue border, light text, and shows e.g. "Revenue: $410k". It fades in over 200 ms.
+
+**Light tooltip without arrow:**
+
+```csharp
+.Tooltip(t => t
+    .BackgroundColor("rgba(255,255,255,0.95)")
+    .TextColor("#1a202c")
+    .FontSize(11)
+    .Border("#cbd5e0", width: 1, radius: 4)
+    .Padding(12)
+    .HideArrow()
+    .Format("{label} — {value}k sessions"))
+```
+
+**Output:** White box with no triangular pointer, subtle grey border, dark text. Minimal and clean.
+
+---
+
+## Legend Styling
+
+```csharp
+// Vertical legend on the right side
+.Legend(l => l
+    .Vertical()
+    .AlignRight()
+    .AtMiddle()
+    .Padding(12)
+    .ItemFontSize(13)
+    .ItemFontColor("#2d3748")
+    .SymbolSize(14, 14)
+    .SymbolRadius(7)             // fully circular swatch
+    .Border("#cbd5e0", width: 1, radius: 6)
+    .BackgroundColor("rgba(255,255,255,0.92)"))
+
+// Horizontal legend at the top
+.Legend(l => l
+    .AtTop()
+    .AlignCenter()
+    .Horizontal()
+    .Padding(8)
+    .ItemFontSize(12)
+    .Border("#4a5568", width: 1, radius: 4)
+    .BackgroundColor("rgba(255,255,255,0.85)"))
+```
+
+**Output (vertical right):** A bordered legend box floats on the right side of the chart with circular coloured swatches and slightly larger font than the default.
+
+**Output (top center):** A horizontal legend bar sits above the plot area with a subtle border, centred.
+
+
+====================================================================
+TerraFluent.Chart.Reporting — Advanced Features
+URL: https://terrafluent.dev/docs/chart/advanced/
+====================================================================
+
+# Advanced Features
+
+Covers render modes, all output methods, axis configuration, plot annotations, stacking, the Fork pattern, and Dependency Injection.
+
+---
+
+## Render Modes
+
+TerraFluent generates different SVG variants depending on the target environment.
+
+### Static
+
+Safe for PDF, email, and server-side image generation. No JavaScript, no CSS hover rules, no SMIL animation.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Annual Report — Revenue Summary")
+    .Size(700, 400)
+    .AsStatic()                          // no hover, no JS, no animation
+    .XAxis("Quarter", "Q1","Q2","Q3","Q4")
+    .YAxis("Revenue ($k)", min: 0)
+    .Series(s => s
+        .AddColumn("Revenue", new double[] { 320, 410, 390, 480 },
+            cfg => cfg.Color(ChartColor.Charcoal))
+        .AddLine("Target",   new double[] { 300, 380, 420, 450 },
+            cfg => cfg.Color(ChartColor.ChartRose).Dashed()))
+    .RenderToSvg();
+```
+
+**Output:** A pure SVG with no `<script>` blocks, no CSS `:hover` rules, and no `<animate>` elements. Every charting tool that supports SVG 1.1 can render it — including iTextSharp, PuppeteerSharp, and most email clients.
+
+> **Note:** `AsStatic()` automatically sets `Animation.Enabled = false`. Call `.DisableAnimation()` explicitly if you use `AsAnimated()` but want to suppress animation.
+
+---
+
+### Animated
+
+SMIL/CSS animations only — no JavaScript. Recommended for Blazor, embedded SVG in HTML, and server-rendered pages.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Monthly Sales")
+    .Size(700, 420)
+    .AsAnimated()
+    .Animate(800)                        // optional: custom duration (ms)
+    .Animation(a => a.EaseInOut())       // optional: custom easing
+    .XAxis("Month", "Jan","Feb","Mar","Apr","May","Jun")
+    .YAxis("Units", min: 0)
+    .Series(s => s
+        .AddColumn("Sales", new double[] { 420, 380, 510, 490, 560, 600 }))
+    .RenderToSvg();
+```
+
+**Output:** Each column contains an `<animate>` element that grows the bar from zero height to its target height over 800 ms with an ease-in-out curve. Line and area charts animate with a stroke-dashoffset sweep.
+
+**Easing options:**
+
+```csharp
+.Animation(a => a.EaseOut())      // default — fast then slow
+.Animation(a => a.EaseIn())       // slow then fast
+.Animation(a => a.EaseInOut())    // slow at both ends
+.Animation(a => a.Linear())       // constant speed
+.Animation(a => a.Bounce())       // bounces at the end
+.Animation(a => a.Elastic())      // elastic snap
+```
+
+---
+
+### Interactive
+
+Adds CSS hover highlight effects and embedded JavaScript for click interactions. Browser-only — do not use in PDFs or emails.
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Interactive Sales Dashboard")
+    .Size(750, 440)
+    .AsInteractive()
+    .XAxis("Month", "Jan","Feb","Mar","Apr","May","Jun")
+    .YAxis("USD (thousands)", min: 0)
+    .Series(s => s
+        .AddLine("Online",   new double[] { 180, 210, 190, 260, 310, 280 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        .AddLine("In-Store", new double[] { 140, 160, 175, 200, 195, 220 },
+            cfg => cfg.Color(ChartColor.ChartOrange)))
+    .RenderToSvg();
+```
+
+**Output:** The SVG includes `<style>` blocks with `:hover` transitions and a `<script>` section that highlights the hovered data point and shows a tooltip pop-up. The tooltip is rendered with CSS positioning inside the SVG's foreignObject.
+
+---
+
+### Mode Decision Guide
+
+```
+┌─ Does it go into a PDF or email?
+│  └─ Yes  →  AsStatic()
+│  └─ No
+│     ├─ Is it in a Blazor component / embedded SVG tag?
+│     │  └─ Yes  →  AsAnimated()
+│     └─ Is it a standalone HTML page / dashboard?
+│        └─ Yes  →  AsInteractive() or AsAnimated()
+```
+
+---
+
+## Output Methods
+
+### String (most common)
+
+```csharp
+string svg = builder.RenderToSvg();
+```
+
+Returns the complete SVG markup as a `string`. Embed it directly in HTML, Blazor `MarkupString`, or a response body.
+
+### HTML Fragment
+
+```csharp
+// String
+string html = builder.RenderToHtml(caption: "FY 2025 Sales", cssClass: "chart-card");
+
+// File
+builder.RenderToHtmlFile("output/chart.html", caption: "FY 2025 Sales");
+```
+
+Wraps the SVG in `<figure>` + optional `<figcaption>`. The outer `<figure>` has `display:inline-block; width:100%` so the SVG is responsive within its container.
+
+**Output structure:**
+
+```html
+<figure class="chart-card" style="margin:0;padding:0;display:inline-block;width:100%;">
+  <div style="width:100%;overflow:hidden;">
+    <svg …> … </svg>
+  </div>
+  <figcaption style="text-align:center;font-size:0.85em;color:#666;margin-top:4px;">
+    FY 2025 Sales
+  </figcaption>
+</figure>
+```
+
+### File
+
+```csharp
+builder.RenderToFile("output/chart.svg");
+builder.RenderToHtmlFile("output/chart.html", caption: "My Chart");
+```
+
+The parent directory must exist before calling either method. A `DirectoryNotFoundException` is thrown otherwise.
+
+### Stream
+
+```csharp
+// Synchronous
+using var fs = File.OpenWrite("output/chart.svg");
+builder.RenderToStream(fs);
+
+// Asynchronous (.NET 6+)
+await using var fs = File.OpenWrite("output/chart.svg");
+await builder.RenderToStreamAsync(fs, cancellationToken);
+```
+
+### Byte Array
+
+```csharp
+byte[] bytes = builder.RenderToBytes();
+// Useful for: Response.Body.WriteAsync, Azure Blob upload, etc.
+```
+
+### Async File Methods (.NET 6+)
+
+```csharp
+await builder.RenderToFileAsync("output/chart.svg", cancellationToken);
+await builder.RenderToHtmlFileAsync("output/chart.html", "Caption", cancellationToken: ct);
+```
+
+---
+
+## Axes — Advanced Configuration
+
+### Categorical X-Axis
+
+```csharp
+// Shorthand (title + categories in one call)
+.XAxis("Month", "Jan","Feb","Mar","Apr","May","Jun")
+
+// Lambda (full control)
+.XAxis(x =>
+{
+    x.Title          = "Month";
+    x.LabelRotation  = -45;          // diagonal labels for long names
+    x.GridLineVisible = true;
+    x.Categories.AddRange(new[] { "Jan","Feb","Mar","Apr","May","Jun" });
+})
+```
+
+**Output with rotation:** Category labels are rotated 45° counter-clockwise, preventing overlap on dense charts.
+
+### Numeric X-Axis (no categories)
+
+Use `XAxis.Min`, `XAxis.Max`, and `XAxis.TickInterval` for charts with a numeric X dimension:
+
+```csharp
+.XAxis(x =>
+{
+    x.Title          = "Time (s)";
+    x.Min            = 0;
+    x.Max            = 30;
+    x.TickInterval   = 5;            // ticks at 0, 5, 10, 15, 20, 25, 30
+    x.GridLineVisible = true;
+})
+.YAxis("Amplitude", min: -1.5, max: 1.5)
+.Series(s => s
+    .AddLine("Signal",
+        new double[] { 0.0, 0.87, 1.0, 0.5, -0.5, -1.0, -0.87, 0.0,
+                       0.87, 1.0, 0.5, -0.5, -1.0, -0.87, 0.0, 0.87 }))
+```
+
+**Output:** A numeric axis from 0 to 30, with tick marks every 5 units. The signal values are plotted at their Y positions; the X positions are evenly spaced.
+
+### Y-Axis Format
+
+```csharp
+.YAxisFormat("${value}k")        // → $320k
+.YAxisFormat("{value}%")         // → 42%
+.YAxisFormat("{value:N0}")       // → 12,400
+```
+
+### Secondary Y-Axis
+
+Bind a second, independent Y-axis on the right side:
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Revenue & Profit Margin")
+    .Size(720, 420)
+    .XAxis("Quarter", "Q1 2024","Q2 2024","Q3 2024","Q4 2024")
+    .YAxis(y => { y.Title = "Revenue ($k)"; y.Min = 0; })
+    .YAxis2(y => { y.Title = "Margin (%)"; y.Min = 0; y.Max = 50; })
+    .AsAnimated()
+    .Series(s => s
+        .AddColumn("Revenue", new double[] { 310, 390, 420, 510 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        .AddLine("Margin %",  new double[] { 22, 28, 25, 31 },
+            cfg => cfg.Color(ChartColor.ChartRose).LineWidth(3).OnSecondaryAxis()))
+    .RenderToSvg();
+```
+
+**Output:** Columns scaled against the left axis (0–510+). The margin line floats independently scaled against the right axis (0–50 %). Both axis labels are visible.
+
+---
+
+## Plot Bands & Reference Lines
+
+### Plot Band (shaded region)
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Server Response Time")
+    .Size(720, 420)
+    .XAxis("Hour", "00","02","04","06","08","10","12","14","16","18","20","22")
+    .YAxis(y =>
+    {
+        y.Title = "ms";
+        y.Min   = 0;
+        // Green band: response time is "Good"
+        y.PlotBands.Add(new PlotBand { From = 0,   To = 200, Color = "rgba(144,237,125,0.15)", Label = "Good" });
+        // Orange band: "Acceptable"
+        y.PlotBands.Add(new PlotBand { From = 200, To = 500, Color = "rgba(247,163,92,0.15)",  Label = "Acceptable" });
+    })
+    .AsAnimated()
+    .Series(s => s
+        .AddLine("p50", new double[] { 85, 78, 72, 90, 145, 220, 310, 280, 195, 160, 130, 105 },
+            cfg => cfg.Color(ChartColor.ChartBlue))
+        .AddLine("p99", new double[] { 210, 185, 170, 240, 420, 610, 780, 720, 490, 380, 290, 230 },
+            cfg => cfg.Color(ChartColor.ChartRed).Dashed()))
+    .RenderToSvg();
+```
+
+**Output:** Two semi-transparent coloured bands fill the plot area at `0–200 ms` (green) and `200–500 ms` (orange). Band labels "Good" and "Acceptable" appear at the right edge of each band. The p99 line visibly crosses out of the orange band into the danger zone during peak hours.
+
+### Reference Line (PlotLine)
+
+```csharp
+// Shorthand on ChartBuilder
+.PlotLine(value: 500, color: ChartColor.ChartRed, width: 2, label: "SLA limit", dashStyle: "Dash")
+
+// Via lambda on YAxis
+.YAxis(y => y.PlotLines.Add(new PlotLine
+{
+    Value     = 500,
+    Color     = ChartColor.ChartRed,
+    Width     = 2,
+    DashStyle = "Dash",
+    Label     = "SLA limit"
+}))
+```
+
+**Output:** A red dashed horizontal line drawn at y = 500. The label "SLA limit" floats to the right of the line.
+
+---
+
+## Stacking
+
+### Normal (cumulative)
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Monthly Traffic — Stacked")
+    .Size(720, 420)
+    .StackNormal()
+    .XAxis("Month", "Jan","Feb","Mar","Apr","May","Jun")
+    .YAxis("Sessions", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddArea("Organic",  new double[] { 1200, 1350, 1500, 1700, 1900, 2100 })
+        .AddArea("Direct",   new double[] {  800,  850,  900,  950, 1000, 1100 })
+        .AddArea("Referral", new double[] {  400,  420,  440,  480,  520,  560 }))
+    .RenderToSvg();
+```
+
+**Output:** Three areas stack on top of each other. The top edge of the Referral band shows the combined total for all channels at each month. Users can visually compare both individual channels and the total.
+
+### Percent (100 % normalised)
+
+```csharp
+string svg = ChartBuilder.Create()
+    .Title("Revenue Mix — 100 % Stacked")
+    .Size(700, 420)
+    .StackPercent()
+    .XAxis("Quarter", "Q1","Q2","Q3","Q4")
+    .YAxis(y => { y.Title = "%"; y.Min = 0; y.Max = 100; y.LabelFormat = "{value}%"; })
+    .Series(s => s
+        .AddColumn("Product A", new double[] { 180, 220, 240, 280 },
+            cfg => cfg.DataLabel.Show().Format("{value}%"))
+        .AddColumn("Product B", new double[] { 140, 160, 175, 200 },
+            cfg => cfg.DataLabel.Show().Format("{value}%"))
+        .AddColumn("Product C", new double[] {  90, 110, 130, 150 },
+            cfg => cfg.DataLabel.Show().Format("{value}%")))
+    .RenderToSvg();
+```
+
+**Output:** Each column fills 100 % of the chart height. Segments show each product's proportional share. Data labels inside each segment show the actual percentage values.
+
+---
+
+## Fork — Chart Variants
+
+`Fork()` creates an independent deep copy of the builder state. Use it to produce multiple variations (e.g. Static for PDF + Animated for web) without re-writing the configuration.
+
+```csharp
+// Build the shared base once
+ChartBuilder baseChart = ChartBuilder.Create()
+    .Size(820, 380)
+    .Title("Team Performance Scores")
+    .XAxis("Month", "Jan","Feb","Mar","Apr","May","Jun")
+    .YAxis("Score", min: 0)
+    .Colors("#4a90d9", "#e8734a")
+    .Series(s => s
+        .AddLine("Team A", new double[] { 70, 78, 82, 88, 85, 92 })
+        .AddLine("Team B", new double[] { 60, 65, 74, 71, 80, 85 }));
+
+// Fork 1: static SVG for PDF export
+string pdfSvg = baseChart
+    .Fork()
+    .AsStatic()
+    .Title("Team Performance Scores — Q1/Q2 Report")    // different title on the fork
+    .RenderToSvg();
+
+// Fork 2: animated SVG for the web dashboard
+string webSvg = baseChart
+    .Fork()
+    .AsAnimated()
+    .Animate(600)
+    .RenderToSvg();
+
+// The original baseChart is unchanged — you can fork again as many times as needed.
+```
+
+**Key Fork rules:**
+- Changes on a fork do not affect the original builder or other forks.
+- All series data, colours, axis configuration, titles, and theme are deep-copied.
+- The renderer instance is shared (it is stateless, so this is safe).
+
+---
+
+## Dependency Injection
+
+Register `IChartBuilder` in the DI container to keep services testable:
+
+```csharp
+// Program.cs / Startup.cs
+builder.Services.AddScoped<IChartBuilder>(_ => ChartBuilder.Create());
+
+// Or with a shared theme:
+builder.Services.AddScoped<IChartBuilder>(_ =>
+    ChartBuilder.Create().Theme(ChartTheme.Dark));
+```
+
+**Service usage:**
+
+```csharp
+public class DashboardService
+{
+    private readonly IChartBuilder _charts;
+
+    public DashboardService(IChartBuilder charts) => _charts = charts;
+
+    public string BuildRevenueSvg(IReadOnlyList<double> values, string[] months)
+    {
+        return _charts
+            .Fork()                  // always fork so the injected instance stays clean
+            .Title("Monthly Revenue")
+            .Size(700, 400)
+            .XAxis("Month", months)
+            .YAxis("Revenue ($k)", min: 0)
+            .AsAnimated()
+            .Series(s => s.AddColumn("Revenue", values))
+            .RenderToSvg();
+    }
+}
+```
+
+> **Best practice:** Call `.Fork()` at the beginning of each method that uses the injected `IChartBuilder`. This guarantees that previous calls haven't left stale series or axis configuration on the shared instance.
+
+**Unit test mock:**
+
+```csharp
+// xUnit + NSubstitute
+public class DashboardServiceTests
+{
+    [Fact]
+    public void BuildRevenueSvg_ReturnsSvgContainingTitle()
+    {
+        var mockBuilder = Substitute.For<IChartBuilder>();
+        mockBuilder.Fork().Returns(ChartBuilder.Create());    // return real builder on Fork
+        // … assert on the real ChartBuilder's output
+    }
+}
+```
+
+---
+
+## ChartOptions — Raw Access
+
+For advanced scenarios you can read or mutate the underlying options directly:
+
+```csharp
+ChartBuilder builder = ChartBuilder.Create()
+    .Title("Revenue")
+    .Size(700, 400);
+
+// Read current options (mutable reference):
+ChartOptions opts = builder.GetOptions();
+opts.Title.Text = "Modified Title";      // affects the builder's state
+
+// Take an independent snapshot (deep copy):
+ChartOptions snapshot = builder.Build();
+snapshot.Title.Text = "Snapshot Title"; // does NOT affect the builder
+```
+
+This is useful when you need to pass chart configuration to a custom `ISvgRenderer` implementation or serialise the options for caching.
+
+---
+
+## Multi-Target Compatibility
+
+The library targets `netstandard2.0`, `netstandard2.1`, `net6.0`, `net8.0`, and `net10.0`.
+
+| Feature | netstandard2.0 | netstandard2.1 | net6+ |
+|---|---|---|---|
+| All chart types | ✅ | ✅ | ✅ |
+| All builder methods | ✅ | ✅ | ✅ |
+| `RenderToStreamAsync` | ❌ | ❌ | ✅ |
+| `RenderToFileAsync` | ❌ | ❌ | ✅ |
+| `RenderToHtmlFileAsync` | ❌ | ❌ | ✅ |
+| `double?[]` and `double[]` overloads | ✅ | ✅ | ✅ |
+
+Async methods are guarded by `#if NET6_0_OR_GREATER` and are absent in lower-targeting builds.
+
+**`double?[]` nullable gap support:**
+
+A `null` in a data array is treated as a missing value — the chart skips that data point:
+
+```csharp
+// The line breaks between Jan and Apr; Feb and Mar are not drawn.
+.AddLine("Sales", new double?[] { 120, null, null, 178, 210, 195 })
+```
+
+**Output:** Two separate line segments — one covering Jan, then a gap, then Apr–Jun. Useful for representing missing data without introducing zero distortion.
+
+---
+
+## Custom SVG Renderer
+
+Implement `ISvgRenderer` to replace the rendering engine entirely (for testing, custom styling engines, etc.):
+
+```csharp
+public class StubRenderer : ISvgRenderer
+{
+    public string Render(ChartOptions options)
+        => $"<svg><!-- {options.Title.Text} --></svg>";
+}
+
+// Use it:
+var chart = ChartBuilder.Create(new StubRenderer())
+    .Title("My Chart")
+    .RenderToSvg();
+// → "<svg><!-- My Chart --></svg>"
+```
+
+This pattern is especially useful in unit tests where you want to verify that options are configured correctly without running the full renderer.
+
+
+====================================================================
+TerraFluent.Chart.Reporting — API Reference
+URL: https://terrafluent.dev/docs/chart/api-reference/
+====================================================================
+
+# API Reference
+
+A complete method reference for every public builder, enum, theme, and data type in TerraFluent.Chart.Reporting.
+
+All fluent methods return the builder they were called on, so every call can be chained. Unless noted otherwise, methods validate their arguments and throw `ArgumentException` / `ArgumentOutOfRangeException` / `ArgumentNullException` on invalid input.
+
+> **Namespaces**
+> - Builders: `TerraFluent.Chart.Reporting.Builder`
+> - Models & data types: `TerraFluent.Chart.Reporting.Models`
+> - Enums: `TerraFluent.Chart.Reporting.Enums`
+
+---
+
+## Contents
+
+- [ChartBuilder](#chartbuilder) — the fluent entry point
+- [Series (ChartSeriesBuilder)](#series-chartseriesbuilder) — adding data series
+- [SeriesBuilder](#seriesbuilder) — per-series styling
+- [LegendBuilder](#legendbuilder)
+- [TooltipBuilder](#tooltipbuilder)
+- [Credits / branding](#credits--branding)
+- [AnimationBuilder](#animationbuilder)
+- [AnnotationBuilder](#annotationbuilder)
+- [LabelLayoutBuilder](#labellayoutbuilder)
+- [DataLabelOptions](#datalabeloptions)
+- [DonutCenterOptions](#donutcenteroptions)
+- [Enums](#enums)
+- [ChartTheme](#charttheme)
+- [ChartColor](#chartcolor)
+- [Data-point types](#data-point-types)
+- [IChartBuilder](#ichartbuilder)
+
+---
+
+## ChartBuilder
+
+`TerraFluent.Chart.Reporting.Builder.ChartBuilder`
+
+The fluent entry point for building a chart. Create one with `ChartBuilder.Create()`.
+
+### Creating a builder
+
+| Method | Returns | Description |
+|---|---|---|
+| `ChartBuilder.Create()` | `ChartBuilder` | Creates a fresh builder with the default renderer. |
+| `ChartBuilder.Create(ISvgRenderer renderer)` | `ChartBuilder` | Creates a builder with a custom renderer implementation. |
+| `ChartBuilder.FromJson(string json)` | `ChartBuilder` | Rehydrates a builder from serialized `ChartOptions` JSON. *(net6.0+ only)* |
+
+### Chart type (default for `Add`)
+
+These set the fallback type used by the generic `Series(s => s.Add(...))` method. Prefer the typed `AddLine`/`AddColumn`/… helpers instead.
+
+`AsPie()` · `AsLine()` · `AsArea()` · `AsColumn()` · `AsBar()` · `AsSpline()` · `AsScatter()` · `AsWaterfall()` · `AsGauge()` · `AsDataRing()` · `AsBubble()` · `AsHeatmap()` · `AsColumnRange()` · `AsAreaRange()` · `AsFunnel()` · `AsTreemap()` · `AsDumbbell()` · `AsStream()` · `AsGantt()` · `AsSankey()`
+
+### Render mode
+
+| Method | Description |
+|---|---|
+| `AsStatic()` | Pure SVG — no CSS hover, no JS, no animation. Safe for PDF and email. Also disables animation. |
+| `AsAnimated()` | SVG + CSS hover + SMIL animation. No JavaScript. Ideal for Blazor and browser embedding. |
+| `AsInteractive()` | SVG + CSS + embedded JavaScript (tooltips, legend toggle, export, drill-down). Browser only. |
+
+### Dimensions & background
+
+| Method | Description |
+|---|---|
+| `Size(int width, int height)` | Sets width and height in pixels. |
+| `Width(int? width)` | Sets width; pass `null` for responsive (`width="100%"`). |
+| `Height(int height)` | Sets height. |
+| `ResponsiveWidth()` | Clears the fixed width — SVG renders at `width="100%"`. |
+| `Responsive(bool responsive = true)` | Alias for `ResponsiveWidth()`. |
+| `Background(string color)` | Sets the chart background colour. |
+
+### Theme & palette
+
+| Method | Description |
+|---|---|
+| `Theme(ChartTheme theme)` | Applies a built-in or custom theme. |
+| `Colors(params string[] colors)` | Overrides the series palette. |
+| `Colors(IEnumerable<string> colors)` | Overrides the series palette from any enumerable. |
+| `StackNormal()` | Stacks Column/Area/Bar series cumulatively. |
+| `StackPercent()` | Stacks series normalised to 100 %. |
+
+### Title & subtitle
+
+| Method | Description |
+|---|---|
+| `Title(string text)` | Sets the title text. |
+| `Title(Action<ChartTitle> configure)` | Configures the title (text, alignment, style). |
+| `Subtitle(string text)` | Sets the subtitle text. |
+| `Subtitle(Action<ChartTitle> configure)` | Configures the subtitle. |
+
+### Axes
+
+| Method | Description |
+|---|---|
+| `Labels(params string[] labels)` | Sets slice or X-axis category labels. |
+| `XAxis(Action<Axis> configure)` | Configures the X-axis. |
+| `XAxis(string title, params string[] categories)` | Sets X-axis title + category labels. |
+| `XAxisFormat(string format)` | X-axis tick-label format string, e.g. `"{value} kg"`. |
+| `XAxisTickInterval(double interval)` | X-axis tick interval in data units (> 0). |
+| `XAxisDateTime(IEnumerable<DateTime> values, string? format = null)` | Uses a datetime X-axis with auto tick thinning. |
+| `YAxis(Action<Axis> configure)` | Configures the primary Y-axis. |
+| `YAxis(string title, double? min = null, double? max = null)` | Sets Y-axis title + optional bounds. |
+| `YAxisFormat(string format)` | Y-axis tick-label format string. |
+| `YAxisTickInterval(double interval)` | Y-axis tick interval in data units (> 0). |
+| `YAxisLogarithmic()` | Switches the primary Y-axis to a logarithmic scale. |
+| `YAxisInverted(bool inverted = true)` | Inverts the primary Y-axis direction. |
+| `YAxis2(Action<Axis> configure)` | Configures the secondary (right-hand) Y-axis. |
+| `YAxis2Logarithmic()` | Logarithmic scale on the secondary Y-axis. |
+| `YAxis2Inverted(bool inverted = true)` | Inverts the secondary Y-axis. |
+| `GridLines(bool visible = true)` | Shows/hides plot grid lines. |
+| `HideGridLines()` | Hides plot grid lines. |
+
+### Plot bands & lines
+
+| Method | Description |
+|---|---|
+| `PlotBand(double from, double to, string color = "rgba(68,170,213,0.15)", string? label = null)` | Adds a shaded reference band on the primary Y-axis. |
+| `PlotLine(double value, string color = ChartColor.Red, int width = 1, string? label = null, string? dashStyle = null)` | Adds a reference line on the primary Y-axis. |
+
+### Legend & tooltip
+
+| Method | Description |
+|---|---|
+| `Legend(Action<LegendBuilder> configure)` | Configures the legend. See [LegendBuilder](#legendbuilder). |
+| `HideLegend()` | Hides the legend. |
+| `Tooltip(Action<TooltipBuilder> configure)` | Configures tooltips. See [TooltipBuilder](#tooltipbuilder). |
+| `DisableTooltip()` | Disables tooltips. |
+
+### Credits / branding
+
+| Method | Description |
+|---|---|
+| `ShowCredits()` | Shows the fixed TerraFluent attribution label (`terrafluent.dev`). |
+| `ShowCredits(CreditsPosition position)` | Shows the label in a chosen corner. |
+| `HideCredits()` | Removes the attribution label. |
+
+The label is **shown by default** and links to `https://terrafluent.dev`. Its **text and link are fixed** (set by the library) so output cannot be re-branded — callers may only show/hide it and choose its corner. It always renders as text; the hyperlink is clickable only when the SVG is embedded **inline** in a page — rasterised (PNG/JPEG/PDF) or `<img>`-loaded output keeps the visible text but not the link.
+
+### Animation
+
+| Method | Description |
+|---|---|
+| `Animate(int milliseconds = 800)` | Enables animation with the given duration. |
+| `Animation(Action<AnimationBuilder> configure)` | Configures animation timing and easing. |
+| `DisableAnimation()` | Disables load animations. |
+
+### Series
+
+| Method | Description |
+|---|---|
+| `Series(Action<ChartSeriesBuilder> configure)` | Opens the series scope. See [Series](#series-chartseriesbuilder). |
+| `ClearSeries()` | Removes all series. |
+| `RemoveSeries(string name)` | Removes the first series matching `name`. |
+| `ShowDataLabels()` | Enables data labels on every series. |
+
+### Export & interactivity (Interactive mode only)
+
+| Method | Description |
+|---|---|
+| `ShowExportButton(string label = "⬇ SVG")` | Adds an SVG download button. |
+| `ShowExportMenu(params string[] formats)` | Adds a multi-format export menu (`"SVG"`, `"PNG"`, `"JPEG"`, `"PDF"`). Omit for all four. |
+| `OnPointClick(string handler)` | Registers a JavaScript click handler for data points. |
+
+### Labels, annotations & advanced layout
+
+| Method | Description |
+|---|---|
+| `LabelLayout(Action<LabelLayoutBuilder> configure)` | Controls X-axis label rotation, wrapping, skipping, scaling. See [LabelLayoutBuilder](#labellayoutbuilder). |
+| `Annotations(Action<AnnotationBuilder> configure)` | Adds free-form labels/lines/rects/circles. See [AnnotationBuilder](#annotationbuilder). |
+| `RangeSelector(Action<RangeSelectorOptions> configure)` | Adds the interactive navigator strip (Interactive mode). |
+| `SyncGroup(string groupId)` | Joins a synchronised-tooltip group shared by charts on the same page. |
+| `ShowDataTable(int rowHeight = 20, int fontSize = 10)` | Appends a data table of raw values beneath the chart. |
+| `ApplyTemplate(IChartTemplate template)` | Applies a preset template, overwriting only the settings it touches. |
+
+### Accessibility & localization
+
+| Method | Description |
+|---|---|
+| `AriaLabel(string label)` | Overrides the accessible name (SVG `<title>` / `aria-label`). |
+| `AriaDescription(string description)` | Overrides the accessible description (SVG `<desc>`). |
+| `Culture(CultureInfo culture)` | Sets the culture for number formatting and the SVG `lang`. |
+| `Culture(string cultureName)` | Sets the culture by name, e.g. `"de-DE"`. |
+| `RightToLeft(bool rtl = true)` | Enables RTL text direction. |
+
+### Data quality
+
+| Method | Returns | Description |
+|---|---|---|
+| `ThrowOnDataQualityErrors()` | `ChartBuilder` | Throws `DataQualityException` on render when an `Error`-severity issue is found. |
+| `AnalyzeDataQuality()` | `DataQualityReport` | Runs quality analysis without rendering. |
+| `GetLastDataQualityReport()` | `DataQualityReport?` | Returns the report from the most recent analysis or render (`null` before the first). |
+
+### Render / output
+
+| Method | Returns | Description |
+|---|---|---|
+| `RenderToSvg()` | `string` | Renders and returns the SVG markup. |
+| `RenderToHtml(string? caption = null, string? cssClass = null)` | `string` | Renders a self-contained HTML `<figure>` fragment. |
+| `RenderToBytes()` | `byte[]` | Renders the SVG as UTF-8 bytes. |
+| `RenderToDataUri()` | `string` | Renders as a `data:image/svg+xml;base64,…` URI. |
+| `RenderToStream(Stream stream)` | `void` | Writes UTF-8 SVG bytes to a stream. |
+| `RenderToFile(string filePath)` | `void` | Writes the SVG to a file. |
+| `RenderToHtmlFile(string filePath, string? caption = null, string? cssClass = null)` | `void` | Writes the HTML fragment to a file. |
+| `RenderToStreamAsync(Stream stream, CancellationToken ct = default)` | `Task` | Async stream write. *(net6.0+ only)* |
+| `RenderToFileAsync(string filePath, CancellationToken ct = default)` | `Task` | Async file write. *(net6.0+ only)* |
+| `RenderToHtmlFileAsync(string filePath, string? caption = null, string? cssClass = null, CancellationToken ct = default)` | `Task` | Async HTML file write. *(net6.0+ only)* |
+
+### Snapshot & variants
+
+| Method | Returns | Description |
+|---|---|---|
+| `Fork()` | `ChartBuilder` | Returns a new builder starting from a deep copy of the current configuration. |
+| `Clone()` | `ChartBuilder` | Alias for `Fork()`. |
+| `GetOptions()` | `ChartOptions` | Returns the live options object for advanced customisation. |
+| `GetSnapshot()` | `ChartOptions` | Returns an independent deep-copy snapshot. |
+
+---
+
+## Series (ChartSeriesBuilder)
+
+`TerraFluent.Chart.Reporting.Builder.ChartSeriesBuilder`
+
+Obtained inside `.Series(s => …)`. Each `Add*` method appends one series and returns the series builder so multiple series can be chained. Every method accepts an optional `Action<SeriesBuilder>? configure` to style that series (see [SeriesBuilder](#seriesbuilder)).
+
+### Cartesian series (`double[]` or `double?[]`)
+
+`null` values in a `double?[]` are treated as gaps (see `NullGap`).
+
+| Method | Data | Notes |
+|---|---|---|
+| `AddLine(name, data, configure?)` | `double[]` / `double?[]` | Straight-segment line. |
+| `AddSpline(name, data, configure?)` | `double[]` / `double?[]` | Smooth Bézier curve. |
+| `AddArea(name, data, configure?)` | `double[]` / `double?[]` | Filled area. |
+| `AddColumn(name, data, configure?)` | `double[]` / `double?[]` | Vertical bars. |
+| `AddBar(name, data, configure?)` | `double[]` / `double?[]` | Horizontal bars. |
+| `AddScatter(name, data, configure?)` | `double[]` / `double?[]` | Dots only. |
+| `AddRadar(name, data, configure?)` | `double[]` / `double?[]` | Radar/polar area. |
+| `AddFunnel(name, data, configure?)` | `double[]` / `double?[]` | Funnel stages. |
+| `AddTreemap(name, data, configure?)` | `double[]` / `double?[]` | Proportional rectangles. |
+| `AddStream(name, data, configure?)` | `double[]` / `double?[]` | ThemeRiver stacked band. |
+| `AddPie(name, data, configure?)` | `double[]` / `double?[]` | Pie/donut slices. |
+| `Add(name, data, configure?)` | `double[]` / `double?[]` | Uses the builder's default chart type (`AsX()`). |
+
+### Single-value series
+
+| Method | Data | Notes |
+|---|---|---|
+| `AddGauge(name, double value, configure?)` | `double` | Semi-circular dial. |
+| `AddDataRing(name, double value, configure?)` | `double` | Full 360° progress ring. |
+
+### Structured-point series
+
+| Method | Data type | Notes |
+|---|---|---|
+| `AddWaterfall(name, data, totals?, configure?)` | `double?[]` + `bool[]` | `totals[i]=true` marks absolute/total bars. |
+| `AddBubble(name, data, configure?)` | `BubblePoint[]` | X, Y, and Z (size). |
+| `AddHeatmap(name, data, configure?)` | `HeatmapPoint[]` | Col/row/value grid. |
+| `AddColumnRange(name, data, configure?)` | `RangePoint[]` | Low–high vertical bars. |
+| `AddAreaRange(name, data, configure?)` | `RangePoint[]` | Low–high filled band. |
+| `AddDumbbell(name, data, configure?)` | `RangePoint[]` | Low–high dot pairs. |
+| `AddErrorBar(name, data, configure?)` | `RangePoint[]` | Error whiskers. |
+| `AddBoxPlot(name, data, configure?)` | `BoxPlotPoint[]` | Five-number summary boxes. |
+| `AddCandlestick(name, data, configure?)` | `OhlcPoint[]` | OHLC candles (up/down colours). |
+| `AddOhlc(name, data, configure?)` | `OhlcPoint[]` | OHLC bars. |
+| `AddParliament(name, groups, configure?)` | `ParliamentGroup[]` | Semicircular seat layout. |
+| `AddGantt(name, tasks, configure?)` | `GanttTask[]` | Horizontal task timeline. |
+| `AddSankey(name, nodes, links, configure?)` | `SankeyNode[]` + `SankeyLink[]` | Node-link flow diagram. |
+
+### Computed overlays
+
+Derive a new series from existing data.
+
+| Method | Notes |
+|---|---|
+| `AddLinearRegression(name, sourceData, configure?)` | Least-squares trend line. |
+| `AddMovingAverage(name, sourceData, int period = 3, configure?)` | Simple moving average; first `period − 1` points are `null`. |
+| `AddExponentialSmoothing(name, sourceData, double alpha = 0.3, configure?)` | Exponentially-smoothed series. |
+
+---
+
+## SeriesBuilder
+
+`TerraFluent.Chart.Reporting.Builder.SeriesBuilder`
+
+Passed to the `configure` lambda of every `Add*` method to style that one series.
+
+### Appearance
+
+| Method | Description |
+|---|---|
+| `Color(string color)` | Series colour (accepts a `ChartColor` constant or any CSS colour). |
+| `LineWidth(int px)` | Line/spline stroke width. |
+| `FillOpacity(double opacity)` | Area/column fill opacity `0.0`–`1.0`. |
+| `Solid()` · `Dashed()` · `Dotted()` · `DashDotted()` · `LongDashed()` | Line dash style shortcuts. |
+
+### Fill (gradient & pattern)
+
+| Method | Description |
+|---|---|
+| `LinearGradientFill(int angleDegrees, params (double offset, string color)[] stops)` | Linear gradient fill. |
+| `RadialGradientFill(params (double offset, string color)[] stops)` | Radial gradient fill. |
+| `PatternFill(PatternKind pattern, string foreground, string? background = null, double size = 8)` | Hatched/dotted pattern fill. |
+| `Fill(SeriesFill fill)` | Applies a fully-configured `SeriesFill`. |
+
+### Border
+
+| Method | Description |
+|---|---|
+| `Border(string color, int width = 1, int radius = 0)` | Sets border colour, width, and corner radius together. |
+| `BorderColor(string color)` · `BorderWidth(int px)` · `BorderRadius(int px)` | Individual border properties. |
+
+### Markers
+
+| Method | Description |
+|---|---|
+| `MarkerSize(int radiusPx)` | Marker radius. |
+| `MarkerEnabled(bool enabled = true)` | Show/hide markers. |
+| `MarkerSymbol(MarkerSymbol symbol)` | `Circle`, `Square`, `Diamond`, `Triangle`, `TriangleDown`. |
+
+### Thresholds & gaps
+
+| Method | Description |
+|---|---|
+| `Zone(double? upTo, string color)` | Colours the series up to a threshold value (`null` = to infinity). |
+| `Zones(params (double? upTo, string color)[] zones)` | Multiple threshold colour bands. |
+| `NullGap(GapPolicy policy)` | How `null` points render: `Break`, `Connect`, or `Zero`. |
+| `TargetLine(double value, string? label = null, string? color = null, string? dashStyle = null, int lineWidth = 1)` | Per-series target/reference line. |
+
+### Visibility & legend
+
+| Method | Description |
+|---|---|
+| `Visible(bool visible = true)` · `Hide()` | Show or hide the series. |
+| `ShowInLegend(bool show = true)` · `HideFromLegend()` | Legend inclusion. |
+| `OnYAxis(int index)` · `OnSecondaryAxis()` | Bind the series to a specific Y-axis. |
+
+### Pie / donut, labels & centres
+
+| Member | Description |
+|---|---|
+| `DonutHole(double fraction)` | Sets the donut hole size (0–1). |
+| `DonutCenter` | Property → [DonutCenterOptions](#donutcenteroptions). |
+| `DataLabel` | Property → [DataLabelOptions](#datalabeloptions). |
+| `Label(Action<DataLabelOptions> configure)` | Configure data labels via lambda. |
+| `ParliamentCenter` / `CenterLabel(Action<ParliamentCenterOptions>)` | Parliament centre caption. |
+| `HeatmapRowLabels` | `List<string>` of heatmap row labels. |
+
+### Drill-down & insights
+
+| Method | Description |
+|---|---|
+| `WithDrilldown(ChartOptions childChart)` | Attach a child chart shown on click (Interactive). |
+| `WithDrilldown(int dataIndex, ChartOptions childChart)` | Attach a child chart to a specific point. |
+| `AutoInsight(Action<AutoInsightBuilder> configure)` | Auto-annotate peaks/troughs/trends. |
+
+---
+
+## LegendBuilder
+
+`Legend(l => …)`
+
+| Group | Methods |
+|---|---|
+| Visibility | `Disable()` |
+| Horizontal align | `Align(string)`, `AlignLeft()`, `AlignCenter()`, `AlignRight()` |
+| Vertical align | `VerticalAlign(string)`, `AtTop()`, `AtMiddle()`, `AtBottom()` |
+| Position shorthands | `TopLeft()`, `TopCenter()`, `TopRight()`, `BottomLeft()`, `BottomCenter()`, `BottomRight()` |
+| Offset | `Offset(int x, int y)`, `OffsetX(int)`, `OffsetY(int)` |
+| Layout | `Layout(string)`, `Horizontal()`, `Vertical()`, `Padding(int)`, `Margin(int)` |
+| Item text | `ItemStyle(string css)`, `ItemFontSize(int)`, `ItemFontColor(string)` |
+| Symbol | `SymbolSize(int w, int h)`, `SymbolRadius(int)` |
+| Border | `Border(string color, int width = 1, int radius = 0)`, `BorderColor(string)`, `BorderWidth(int)`, `BorderRadius(int)` |
+| Background | `BackgroundColor(string)` |
+
+---
+
+## TooltipBuilder
+
+`Tooltip(t => …)` *(active in Animated and Interactive modes)*
+
+| Group | Methods |
+|---|---|
+| Visibility | `Disable()` |
+| Background | `BackgroundColor(string)` |
+| Border | `Border(string color, int width = 1, int radius = 4)`, `BorderColor(string)`, `BorderWidth(int)`, `BorderRadius(int)` |
+| Text | `TextColor(string)`, `FontSize(int)`, `FontFamily(string?)` |
+| Layout | `Padding(int)`, `HideArrow()`, `NoShadow()` |
+| Content | `Format(string)`, `HeaderFormat(string)`, `PointFormat(string)` |
+| Value formatting | `ValuePrefix(string)`, `ValueSuffix(string)` |
+| Crosshair | `NoCrosshair()`, `CrosshairStyle(string color, int width = 1)` |
+| Behaviour | `EnableShared()`, `EnableFollowPointer()`, `TransitionDuration(double seconds)` |
+
+Format tokens: `{label}`, `{value}`, `{series}`.
+
+---
+
+## Credits / branding
+
+The chart carries a fixed **`terrafluent.dev`** attribution label (bottom-right by default). Its text and link are set by the library and cannot be changed, so output cannot be re-branded. Callers control only visibility and corner:
+
+```csharp
+ChartBuilder.Create()
+    .Series(s => s.AddColumn("Sales", data))
+    // shown by default; move it or remove it:
+    .ShowCredits(CreditsPosition.BottomLeft)
+    .RenderToSvg();
+
+// Remove branding entirely:
+ChartBuilder.Create()....HideCredits().RenderToSvg();
+```
+
+Renders in **all** modes (including `Static`), is script/CSS-free, and survives export as text.
+
+---
+
+## AnimationBuilder
+
+`Animation(a => …)`
+
+| Group | Methods |
+|---|---|
+| Duration | `Duration(TimeSpan)`, `Duration(int milliseconds)` |
+| Easing | `Linear()`, `EaseIn()`, `EaseOut()`, `EaseInOut()`, `Bounce()`, `Elastic()` |
+
+---
+
+## AnnotationBuilder
+
+`Annotations(a => …)` — coordinates are in data space (category index / axis value).
+
+| Group | Methods |
+|---|---|
+| Layout | `SmartLayout(Action<AnnotationLayoutOptions>? configure = null)` |
+| Shapes | `Label(x, y, text, configure?)`, `Line(x1, y1, x2, y2, configure?)`, `Rect(x1, y1, x2, y2, configure?)`, `Circle(x, y, radiusPx, configure?)` |
+| Placement helpers | `LabelAbove(x, y, text, offsetPx = 18, configure?)`, `LabelBelow(…)`, `LabelLeft(x, y, text, offsetPx = 8, configure?)`, `LabelRight(…)` |
+| Raw | `Add(Annotation annotation)` |
+
+---
+
+## LabelLayoutBuilder
+
+`LabelLayout(l => …)` — controls dense X-axis category labels.
+
+| Group | Methods |
+|---|---|
+| Rotation | `Rotation(int degrees)`, `AutoRotate(int maxDegrees = 90)`, `NoRotation()` |
+| Wrapping | `Wrap(int maxCharsPerLine = 12)`, `NoWrap()` |
+| Skipping | `Skip(int n)`, `AutoSkip(bool enabled = true)` |
+| Font scaling | `FontSizeRange(int min, int max)`, `NoAutoScale()` |
+| Collision | `EnableCollisionDetection()`, `DisableCollisionDetection()` |
+| Positioning | `Stagger(int offsetPx = 10)`, `NoStagger()`, `HorizontalPadding(int px)` |
+
+---
+
+## DataLabelOptions
+
+Accessed via `cfg.DataLabel` or `cfg.Label(dl => …)`.
+
+| Method | Description |
+|---|---|
+| `Show()` / `Hide()` | Enable/disable labels. |
+| `Format(string fmt)` | Format string, e.g. `"{value}%"`, `"${value}k"`. |
+| `Color(string color)` | Text colour. |
+| `FontSize(int px)` | Text size. |
+| `Background(string color)` | Pill background colour. |
+| `Radius(double fraction)` | Pie/donut: label radius (`> 1` places labels outside with a connector). |
+| `OffsetY(double pixels)` | Vertical nudge. |
+
+---
+
+## DonutCenterOptions
+
+Accessed via `cfg.DonutCenter` on pie/donut and data-ring series.
+
+| Method | Description |
+|---|---|
+| `Show()` / `Show(string customText)` / `Hide()` | Toggle the centre label. |
+| `Title(string title)` | Caption shown above the value. |
+| `Text(string text)` | Custom centre text (overrides the computed total). |
+| `FontSize(int px)` / `TitleFontSize(int px)` | Value / caption sizes. |
+| `Color(string color)` / `TitleColor(string color)` | Value / caption colours. |
+
+---
+
+## Enums
+
+`TerraFluent.Chart.Reporting.Enums`
+
+### ChartType
+`Line`, `Spline`, `Area`, `Column`, `Bar`, `Pie`, `Scatter`, `Waterfall`, `Gauge`, `DataRing`, `Bubble`, `Heatmap`, `ColumnRange`, `AreaRange`, `Funnel`, `Treemap`, `Radar`, `BoxPlot`, `ErrorBar`, `Candlestick`, `Ohlc`, `Dumbbell`, `Stream`, `Gantt`, `Sankey`, `Parliament`.
+
+### SvgMode
+`Static` · `Animated` · `Interactive`.
+
+### Easing
+`Linear` · `EaseIn` · `EaseOut` · `EaseInOut` · `Bounce` · `Elastic`.
+
+### MarkerSymbol
+`Circle` · `Square` · `Diamond` · `Triangle` · `TriangleDown`.
+
+### CreditsPosition
+`BottomRight` (default) · `BottomLeft` · `TopRight` · `TopLeft`.
+
+### AxisType
+`Linear` · `Logarithmic` · `DateTime`.
+
+### Stacking
+`None` (side-by-side) · `Normal` (cumulative) · `Percent` (100 %).
+
+### GapPolicy
+`Break` (visible gaps, default) · `Connect` (skip nulls) · `Zero` (plot nulls at zero).
+
+### WarningSeverity
+`Info = 0` · `Warning = 1` · `Error = 2`.
+
+---
+
+## ChartTheme
+
+`TerraFluent.Chart.Reporting.Models.ChartTheme`
+
+### Built-in presets (`static readonly ChartTheme`)
+
+| Preset | Style |
+|---|---|
+| `Default` | Blue-orange on white. |
+| `Dark` | Bright palette on midnight navy. |
+| `Pastel` | Soft palette on off-white. |
+| `Monochrome` | Greyscale on white. |
+| `Ocean` | Blue-teal on deep ocean. |
+| `Sunset` | Warm palette on purple-navy. |
+| `Forest` | Earthy greens on cream. |
+| `Neon` | Electric palette on near-black. |
+| `Minimal` | Muted Tableau-10 on white. |
+| `Warm` | Earth tones on parchment. |
+| `Arctic` | Cool blues on ice-blue. |
+| `Business` | Corporate blue-red on white. |
+| `Material` | Material Design 500 palette. |
+| `TrafficLight` | Green/amber/red status palette. |
+| `Accessible` | Colour-blind-safe (Wong 2011). |
+| `Vivid` | Full-spectrum distinct palette. |
+| `HighContrast` | WCAG AA (≥ 4.5:1) palette. |
+| `Modern` | Material palette on ghost-white, with `ModernStyle` enabled (see below). |
+
+### Properties
+
+`BackgroundColor`, `PlotBackgroundColor`, `GridLineColor`, `AxisLineColor`, `TextColor`, `FontFamily`, `FontScale` (default `1.0`), `Colors` (`string[]`), `ModernStyle` (`bool`, default `true` — see [Modern Styling](/docs/chart/themes-and-styling/#modern-styling)), `TooltipBackground`, `TooltipTextColor`, `PositiveColor`, `NegativeColor`, `AccentColor`.
+
+### Factory
+
+```csharp
+ChartTheme.Custom(
+    string? backgroundColor = null, string? plotBackgroundColor = null,
+    string? gridLineColor = null,   string? axisLineColor = null,
+    string? textColor = null,       string? fontFamily = null,
+    string[]? colors = null,        string? tooltipBackground = null,
+    string? tooltipTextColor = null,string? positiveColor = null,
+    string? negativeColor = null,   string? accentColor = null);
+
+ChartTheme Clone();   // copy an existing theme (e.g. to tweak FontScale)
+```
+
+---
+
+## ChartColor
+
+`TerraFluent.Chart.Reporting.Models.ChartColor`
+
+400+ named `const string` colour constants plus curated palettes and utilities.
+
+### Series palette constants
+
+| Constant | Hex | Slot |
+|---|---|---|
+| `ChartBlue` | `#7CB5EC` | 1 |
+| `ChartOrange` | `#F7A35C` | 2 |
+| `ChartGreen` | `#90ED7D` | 3 |
+| `ChartYellow` | `#E4D354` | 4 |
+| `ChartIndigo` | `#8085E9` | 5 |
+| `ChartRose` | `#F15C80` | 6 |
+| `ChartTeal` | `#2B908F` | 7 |
+| `ChartRed` | `#F45B5B` | 8 |
+
+Also includes all standard CSS named colours (`Red`, `SteelBlue`, `ForestGreen`, …), pastel constants (`PastelSkyBlue`, …), and theme-specific tokens.
+
+### Palette arrays (`ChartColor.Palette.*`)
+
+`Default`, `Dark`, `Pastel`, `Monochrome`, `Ocean`, `Sunset`, `Forest`, `Neon`, `Minimal`, `Warm`, `Arctic`, `Business`, `Material`, `TrafficLight`, `Accessible`, `Vivid` (each 20 colours), and `HighContrast` (16 colours).
+
+### Utility methods
+
+| Method | Returns | Description |
+|---|---|---|
+| `FromRgb(int r, int g, int b)` | `string` | Hex from RGB components. |
+| `WithOpacity(string hex, double alpha)` | `string` | `rgba(…)` with the given alpha. |
+| `Lighten(string hex, double amount = 0.3)` | `string` | Lighter tint. |
+| `Darken(string hex, double amount = 0.3)` | `string` | Darker shade. |
+| `Mix(string hexA, string hexB, double weight = 0.5)` | `string` | Blend of two colours. |
+
+---
+
+## Data-point types
+
+`TerraFluent.Chart.Reporting.Models` — inputs for structured series.
+
+| Type | Constructor | Purpose |
+|---|---|---|
+| `BubblePoint` | `(double x, double y, double z)` | Bubble: position + size. |
+| `HeatmapPoint` | `(int col, int row, double value)` | Heatmap cell. |
+| `RangePoint` | `(double low, double high)` | ColumnRange, AreaRange, Dumbbell, ErrorBar. |
+| `BoxPlotPoint` | `(double low, double q1, double median, double q3, double high)` | Box-and-whisker summary. |
+| `OhlcPoint` | `(double open, double high, double low, double close)` | Candlestick / OHLC. |
+| `GanttTask` | `{ Name, Start, End, Color?, Label? }` | Gantt row. |
+| `ParliamentGroup` | `(string name, string color, int seats)` | Parliament seat block. |
+| `SankeyNode` | `{ Name, Color? }` | Sankey node. |
+| `SankeyLink` | `{ From, To, Value, Color? }` | Sankey flow (indices into the node list). |
+
+---
+
+## IChartBuilder
+
+`TerraFluent.Chart.Reporting.Builder.IChartBuilder`
+
+An interface mirroring the full `ChartBuilder` surface. Depend on `IChartBuilder` in your services for testable, decoupled code, and register the concrete builder in DI:
+
+```csharp
+services.AddScoped<IChartBuilder>(_ => ChartBuilder.Create());
+```
+
+All chaining, configuration, and render methods listed above are available on the interface. The async render methods (`RenderToStreamAsync`, `RenderToFileAsync`, `RenderToHtmlFileAsync`) are present only on `net6.0` and newer targets.
+
+---
+
+See also: [Getting Started](/docs/chart/getting-started/) · [Chart Types](/docs/chart/chart-types/) · [Themes & Styling](/docs/chart/themes-and-styling/) · [Advanced Features](/docs/chart/advanced/) · [Troubleshooting & FAQ](/docs/chart/troubleshooting/)
+
+
+====================================================================
+TerraFluent.Chart.Reporting — Troubleshooting & FAQ
+URL: https://terrafluent.dev/docs/chart/troubleshooting/
+====================================================================
+
+# Troubleshooting & FAQ
+
+Common questions, error messages, and rendering issues — with fixes.
+
+---
+
+## Rendering & display
+
+### My chart shows no animation or hover effects
+Animation and CSS hover are only emitted in **Animated** or **Interactive** render modes. If you called `.AsStatic()` (or nothing, in a context where static was applied), you get a plain SVG.
+
+```csharp
+.AsAnimated()   // SMIL animation + CSS hover, no JS
+```
+
+### The export menu / tooltips / legend toggle don't work
+Those features rely on embedded JavaScript, which is only produced in **Interactive** mode:
+
+```csharp
+.AsInteractive()
+    .ShowExportMenu()   // now the menu is functional
+```
+
+Interactive output is browser-only. For PDF or email, use `.AsStatic()`.
+
+### The chart renders but is blank / tiny inside a PDF or email
+PDF and email clients strip `<script>` and often ignore SMIL animation, so a chart that reveals itself via animation can appear empty. Use **Static** mode, which draws everything immediately:
+
+```csharp
+.AsStatic()
+```
+
+### My responsive chart exports as a 100 px thumbnail
+A responsive chart uses `width="100%"`. When you rasterise it (PNG/PDF), give it an explicit size instead:
+
+```csharp
+.Size(800, 450)   // fixed pixels for raster/PDF export
+```
+
+### Fonts look different in an exported/shared image than on my page
+An SVG loaded as an image (`<img src=...>`) is isolated and cannot see your page's `@font-face` rules — it falls back to a system font. For inline SVG (injected into the DOM) the page fonts apply. Set an explicit, widely-available `FontFamily` on the theme if you need consistent typography in isolated images.
+
+### X-axis labels overlap or get cut off
+Use `LabelLayout` to rotate, wrap, skip, or shrink dense labels:
+
+```csharp
+.LabelLayout(l => l.AutoRotate(45).AutoSkip())
+```
+
+Long horizontal **Bar** category labels widen the left gutter automatically; very long labels can still be wrapped with `.LabelLayout(l => l.Wrap(14))`.
+
+---
+
+## Data & series
+
+### Some points are missing from my line/area
+`null` entries in a `double?[]` are treated as gaps. Control the behaviour with `NullGap`:
+
+```csharp
+.AddLine("Sales", data, cfg => cfg.NullGap(GapPolicy.Connect))  // bridge the gap
+// GapPolicy.Break (default) = leave a gap; GapPolicy.Zero = plot at 0
+```
+
+### My waterfall's first bar is invisible or wrong
+Mark which bars are absolute totals with the `totals` array. The first bar is an absolute start bar (`0 → value`); intermediate bars are deltas; mark running totals with `true`:
+
+```csharp
+.AddWaterfall("P&L",
+    new double?[] { 500, 800, -320, 980 },
+    totals: new[] { true, false, false, true });
+```
+
+If you omit `totals`, the first bar is treated as an absolute start and the last as a total.
+
+### Stacking has no effect
+`StackNormal()` / `StackPercent()` apply to stackable types only: **Column**, **Bar**, **Area**, and **Line**. Stacking is ignored for Pie, Scatter, Gauge, etc.
+
+### Scatter/bubble points look evenly spaced regardless of their X value
+Scatter is **category-indexed** — points are placed by their position in the series, not by a numeric X value. For a true numeric X position with a size dimension, use **Bubble** (`BubblePoint(x, y, z)`).
+
+### Values render with the wrong decimal/grouping format
+Number formatting follows the chart culture. Set it explicitly:
+
+```csharp
+.Culture("de-DE")   // 1.234,56
+```
+
+Coordinates in the SVG geometry always use invariant formatting; only displayed tick/label text is localized.
+
+---
+
+## Exceptions
+
+| Exception | Typical cause | Fix |
+|---|---|---|
+| `ArgumentOutOfRangeException` on `Size` | Width or height ≤ 0 | Pass positive pixel sizes, e.g. `Size(700, 400)`. |
+| `ArgumentException` on `YAxis` | `min` ≥ `max` | Ensure `min < max`. |
+| `ArgumentOutOfRangeException` on `Animate` | Duration ≤ 0 | Pass a positive millisecond value. |
+| `ArgumentOutOfRangeException` on `FillOpacity` | Value outside `0.0`–`1.0` | Clamp to that range. |
+| `ArgumentOutOfRangeException` on `MarkerSize` | Size ≤ 0 | Pass a positive radius. |
+| `ArgumentException` on `XAxisFormat` | Empty/whitespace format | Provide a non-empty format string. |
+| `ArgumentException` on `ChartTheme.Custom(colors: [])` | Empty palette array | Provide at least one colour, or pass `null`. |
+| `DirectoryNotFoundException` on `RenderToFile` | Target folder doesn't exist | Create the directory first. |
+| `DataQualityException` on render | `ThrowOnDataQualityErrors()` + an `Error` finding | Inspect `GetLastDataQualityReport()` and fix the data, or remove the guard. |
+
+### How do I see data-quality warnings without throwing?
+```csharp
+var report = ChartBuilder.Create()
+    .Series(s => s.AddColumn("Sales", data))
+    .AnalyzeDataQuality();   // or GetLastDataQualityReport() after a render
+
+foreach (var w in report.Warnings)
+    Console.WriteLine($"{w.Severity}: {w.Message}");
+```
+
+---
+
+## Integration
+
+### Blazor: my SVG shows as escaped text
+Render it as raw markup:
+
+```razor
+@((MarkupString)ChartSvg)
+```
+
+### ASP.NET Core: what content type should I return?
+```csharp
+return Results.Content(svg, "image/svg+xml");   // Minimal API
+return Content(svg, "image/svg+xml");           // Controller
+```
+Prefer `.AsStatic()` for endpoints consumed by unknown clients.
+
+### Dependency injection: how do I register the builder?
+```csharp
+services.AddScoped<IChartBuilder>(_ => ChartBuilder.Create());
+```
+Each `ChartBuilder.Create()` is independent and stateful, so use a transient/scoped lifetime — never a singleton shared across requests.
+
+### Can I reuse one configured builder for several charts?
+Yes — build a base and `Fork()` (deep copy) per variant so mutations don't leak:
+
+```csharp
+var baseChart = ChartBuilder.Create().Title("Revenue").Size(700, 400)
+    .Series(s => s.AddLine("2025", data));
+
+string light = baseChart.RenderToSvg();
+string dark  = baseChart.Fork().Theme(ChartTheme.Dark).RenderToSvg();
+```
+
+---
+
+## Packaging & targets
+
+### Which frameworks are supported?
+`netstandard2.0`, `netstandard2.1`, `net6.0`, `net8.0`, and `net10.0`.
+
+### Why are the async render methods missing?
+`RenderToStreamAsync` / `RenderToFileAsync` / `RenderToHtmlFileAsync` are available only on **net6.0 and newer** targets. On `netstandard2.0`/`2.1`, use the synchronous `RenderToStream` / `RenderToFile`.
+
+### Does the library pull in any third-party dependencies?
+No. The library uses only the .NET base class library — nothing else is added to your dependency graph.
+
+---
+
+See also: [Getting Started](/docs/chart/getting-started/) · [Chart Types](/docs/chart/chart-types/) · [API Reference](/docs/chart/api-reference/) · [Advanced Features](/docs/chart/advanced/)

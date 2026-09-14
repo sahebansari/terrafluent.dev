@@ -1,0 +1,353 @@
+---
+layout: default
+title: C# SVG Chart Library — Zero JavaScript Required
+nav_title: Chart Reporting
+description: >-
+  Generate 26 chart types as self-contained SVG server-side in C# — zero
+  JavaScript dependency, zero external NuGet packages, 18 built-in themes,
+  three render modes for PDF, browser, and dashboards.
+software:
+  name: TerraFluent.Chart.Reporting
+  key: chart
+  nuget: https://www.nuget.org/packages/TerraFluent.Chart.Reporting
+  repo: https://github.com/sahebansari/TerraFluent.Chart.Reporting
+faq:
+  - q: Does TerraFluent.Chart.Reporting need a browser or JavaScript to render charts?
+    a: >-
+      No. Static and Animated render modes are pure SVG, CSS, and SMIL — no JavaScript,
+      no headless browser, no server-side rendering engine. Interactive mode adds
+      embedded JavaScript only when you opt in, for browser-only hover, tooltips, and
+      an export menu.
+  - q: Which .NET versions does TerraFluent.Chart.Reporting support?
+    a: >-
+      netstandard2.0, netstandard2.1, net6.0, net8.0, and net10.0 from one codebase —
+      so it runs on .NET Framework 4.6.1+, .NET Core 2.0+, and every modern .NET release
+      on Windows, Linux, and macOS. Async render methods require net6.0 or newer.
+  - q: Can I embed these charts inside a PDF, HTML, or Word report?
+    a: >-
+      Yes. Render a chart with AsStatic() to get a self-contained SVG, then draw it as
+      vector graphics in TerraFluent.Pdf.Reporting, place it as an image in
+      TerraFluent.Html.Reporting, or embed it in TerraFluent.Docx.Reporting — all four
+      libraries are independent NuGet packages with no shared dependency.
+  - q: Does it have any third-party dependencies?
+    a: >-
+      No. TerraFluent.Chart.Reporting uses only the .NET base class library — nothing
+      added to your dependency graph, no native binaries, no npm packages.
+  - q: Can charts be interactive, with hover tooltips and a legend toggle?
+    a: >-
+      Yes, in Interactive mode — AsInteractive() emits embedded JavaScript for hover
+      tooltips, a legend that toggles series, and an optional export menu. Interactive
+      output is browser-only; use AsStatic() for PDF or email instead.
+  - q: Is TerraFluent.Chart.Reporting free for commercial use?
+    a: >-
+      Yes. MIT licensed — free for personal, commercial, and open-source projects with
+      no chart limits, watermarks, or paid tiers, matching the rest of the TerraFluent
+      library family.
+---
+
+<section class="hero page-hero accent-scope-chart">
+  <div class="container">
+    <span class="hero-badge"><span class="dot"></span> TerraFluent.Chart.Reporting · v{{ site.data.versions.chart }}</span>
+    <h1>Server-side SVG charts, <span class="grad">zero JavaScript required</span></h1>
+    <p class="hero-lede">
+      A fluent, dependency-free C# library for 26 chart types — line, bar, pie,
+      financial, flow, and statistical — rendered as self-contained SVG with 18
+      built-in themes and three render modes for PDF, browser, and live dashboards.
+    </p>
+    <div class="hero-ctas" style="margin-top: 28px">
+      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">View live chart showcase</a>
+      <a class="btn btn-ghost" href="{{ site.repos.chart }}" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-ghost" href="{{ site.nuget.chart }}" target="_blank" rel="noopener">NuGet</a>
+    </div>
+    <div class="badge-row">
+      <a href="{{ site.nuget.chart }}" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/v/TerraFluent.Chart.Reporting?label=nuget&color=2563eb" alt="NuGet version" width="106" height="20"></a>
+      <a href="{{ site.nuget.chart }}" target="_blank" rel="noopener"><img src="https://img.shields.io/nuget/dt/TerraFluent.Chart.Reporting?label=downloads&color=2f4858" alt="NuGet downloads" width="120" height="20"></a>
+      <a href="{{ site.repos.chart }}/blob/master/LICENSE" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/license-MIT-2f4858" alt="MIT license" width="82" height="20"></a>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <div class="prose" style="padding-bottom: 0">
+    {% include install-row.html package="TerraFluent.Chart.Reporting" %}
+  </div>
+
+  <div class="features accent-scope-chart">
+
+    <!-- Quick start -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Quick start</span>
+        <h3>A complete chart in one fluent chain</h3>
+        <p>
+          Every method returns the builder, so titles, axes, series, and render mode
+          chain freely — then render straight to an SVG string, a file, or an HTML
+          fragment.
+        </p>
+        <ul>
+          <li>Titles, subtitles, and axis labels in the same chain as your data</li>
+          <li>Self-contained SVG output — nothing else to deploy or reference</li>
+          <li><code>RenderToFile</code>, <code>RenderToHtmlFile</code>, and async variants</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+using TerraFluent.Chart.Reporting.Builder;
+
+string svg = ChartBuilder.Create()
+    .Title("Monthly Website Visitors")
+    .Subtitle("Jan – Jun 2025")
+    .Size(700, 400)
+    .XAxis("Month", "Jan", "Feb", "Mar", "Apr", "May", "Jun")
+    .YAxis("Visitors", min: 0)
+    .AsAnimated()
+    .Series(s => s
+        .AddLine("Visitors", new double[]
+            { 12400, 14800, 16200, 18500, 21000, 19800 }))
+    .RenderToSvg();
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 26 chart types -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Chart types</span>
+        <h3>26 chart types, one fluent API</h3>
+        <p>
+          Line, spline, area, column, bar, and pie for everyday reporting; waterfall,
+          gauge, candlestick, and OHLC for financial dashboards; Sankey, treemap,
+          funnel, and Gantt for flow and hierarchy — every type is a single
+          <code>Add…</code> call inside the same series builder.
+        </p>
+        <ul>
+          <li>Standard: Line, Spline, Area, Column, Bar, Pie/Donut, Scatter, Bubble</li>
+          <li>Financial: Waterfall, Candlestick, OHLC, ColumnRange, AreaRange, ErrorBar</li>
+          <li>Flow &amp; hierarchy: Sankey, Treemap, Funnel, Gantt, Stream, Parliament</li>
+          <li>Statistical: BoxPlot, Radar, Heatmap, Dumbbell, DataRing</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+// Part-of-whole, with a donut hole and centered label:
+string svg = ChartBuilder.Create()
+    .Title("Browser Share")
+    .AsPie()
+    .Series(s => s
+        .Add("Shares", new double[] { 61, 25, 9, 5 }, cfg => cfg
+            .DonutHolePercent(50)
+            .DonutCenter("Browsers")))
+    .RenderToSvg();
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Render modes -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Render modes</span>
+        <h3>Pick the right output for every surface</h3>
+        <p>
+          <strong>Static</strong> is pure SVG for PDF and email. <strong>Animated</strong>
+          (the default) adds SMIL animation and CSS hover with no JavaScript — safe for
+          Blazor. <strong>Interactive</strong> adds embedded JavaScript for tooltips, a
+          legend toggle, and an export menu, browser-only.
+        </p>
+        <ul>
+          <li>Static: no CSS hover, no JS — safest for PDF and email clients</li>
+          <li>Animated: SMIL animation + CSS hover, no JS — the default</li>
+          <li>Interactive: hover, legend toggle, export menu — needs a browser</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+// PDF / email — draws everything immediately, no animation:
+chart.AsStatic().RenderToSvg();
+
+// Blazor / browser embedding — SMIL + CSS hover, still no JS:
+chart.AsAnimated().RenderToSvg();
+
+// Browser-only dashboard — hover, legend toggle, export menu:
+chart.AsInteractive().ShowExportMenu().RenderToSvg();
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Themes -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Themes</span>
+        <h3>18 built-in themes, or build your own</h3>
+        <p>
+          Default, Dark, Pastel, Monochrome, Ocean, Sunset, Forest, Neon, Minimal, Warm,
+          Arctic, Business, Material, TrafficLight, Accessible, Vivid, HighContrast, and
+          Modern ship in the box — every one with <code>ModernStyle</code> on by default:
+          rounded bars, gradient fills, and hollow-ring markers.
+        </p>
+        <ul>
+          <li><code>ChartTheme.Custom(...)</code> for a fully custom palette and font</li>
+          <li>Ad-hoc palettes with <code>.Colors(...)</code> for a one-off chart</li>
+          <li><code>Fork()</code> deep-copies a builder for light/dark variants</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+.Theme(ChartTheme.Dark)
+
+.Theme(ChartTheme.Custom(
+    backgroundColor: "#1e1e2e",
+    plotBackgroundColor: "#2a2a3d",
+    textColor: "#cdd6f4",
+    fontFamily: "JetBrains Mono",
+    colors: new[] { "#89b4fa", "#a6e3a1", "#fab387" }))
+
+// Fork a base chart into a dark variant without mutating it:
+var dark = baseChart.Fork().Theme(ChartTheme.Dark);
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Data quality -->
+    <div class="feature">
+      <div class="feature-text">
+        <span class="eyebrow">Data quality</span>
+        <h3>Know before you ship: data-quality warnings</h3>
+        <p>
+          <code>AnalyzeDataQuality()</code> inspects a configured chart for issues —
+          outliers, empty series, mismatched axis counts — before you render it, or opt
+          into <code>ThrowOnDataQualityErrors()</code> to fail fast in a pipeline.
+        </p>
+        <ul>
+          <li>Inspect warnings after configuring, before rendering</li>
+          <li>Every fluent method validates arguments and throws early</li>
+          <li><code>null</code> gaps in a series are a policy choice, not a crash</li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+var report = ChartBuilder.Create()
+    .Series(s => s.AddColumn("Sales", data))
+    .AnalyzeDataQuality();
+
+foreach (var w in report.Warnings)
+    Console.WriteLine($"{w.Severity}: {w.Message}");
+
+// Bridge a gap instead of leaving it:
+.AddLine("Sales", data, cfg => cfg.NullGap(GapPolicy.Connect))
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+
+    <!-- DI and testability -->
+    <div class="feature flip">
+      <div class="feature-text">
+        <span class="eyebrow">Testability</span>
+        <h3>Dependency injection via <code>IChartBuilder</code></h3>
+        <p>
+          Register <code>ChartBuilder.Create()</code> behind the <code>IChartBuilder</code>
+          interface for decoupled, testable services — the same pattern used across the
+          TerraFluent library family.
+        </p>
+        <ul>
+          <li>Each <code>ChartBuilder.Create()</code> is independent and stateful</li>
+          <li>Use a transient or scoped lifetime, never a singleton instance</li>
+          <li>ASP.NET Core minimal APIs and controllers return SVG as <code>image/svg+xml</code></li>
+        </ul>
+      </div>
+      <div class="feature-code">
+        <div class="code-panel">
+{% highlight csharp %}
+// Register
+services.AddScoped<IChartBuilder>(_ => ChartBuilder.Create());
+
+// Use
+public class ReportService(IChartBuilder chart)
+{
+    public string Build() => chart
+        .Title("Revenue")
+        .Series(s => s.AddLine("2025", data))
+        .RenderToSvg();
+}
+{% endhighlight %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's inside -->
+  <div class="whatsnew">
+    <span class="version-chip">v{{ site.data.versions.chart }}</span>
+    <h2>What's inside</h2>
+    <ul>
+      <li><strong>26 chart types</strong> across standard, financial, flow/hierarchy, and statistical families, all through one fluent API.</li>
+      <li><strong>18 built-in themes</strong> plus a <code>ChartTheme.Custom(...)</code> factory for fully custom palettes.</li>
+      <li><strong>Three render modes</strong> — Static, Animated, and Interactive — matched to PDF/email, Blazor, and browser dashboards.</li>
+      <li><strong>Zero dependencies</strong> — pure Base Class Library, multi-targeted from netstandard2.0 to net10.0.</li>
+    </ul>
+    <p style="margin: 12px 0 0; font-size: 0.9rem"><a href="{{ site.repos.chart }}/blob/master/docs/README.md" target="_blank" rel="noopener">Full documentation on GitHub →</a></p>
+  </div>
+
+  <!-- Docs -->
+  <section aria-labelledby="docs-title" style="padding-top: 0">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--accent-chart)">Documentation</span>
+      <h2 id="docs-title">Documented like a product</h2>
+      <p>Seven guides from first chart to the full API reference, plus a visual showcase of every chart type.</p>
+    </div>
+    <div class="docs-grid">
+      <a href="{{ '/docs/chart/getting-started/' | relative_url }}">Getting Started<span>Your first SVG chart</span></a>
+      <a href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">Chart Showcase<span>102 live examples, every chart type</span></a>
+      <a href="{{ '/docs/chart/chart-types/' | relative_url }}">Chart Types<span>All 26 types, full code + output</span></a>
+      <a href="{{ '/docs/chart/themes-and-styling/' | relative_url }}">Themes &amp; Styling<span>Built-in themes, custom palettes</span></a>
+      <a href="{{ '/docs/chart/advanced/' | relative_url }}">Advanced Features<span>Render modes, axes, stacking, DI</span></a>
+      <a href="{{ '/docs/chart/api-reference/' | relative_url }}">API Reference<span>Every builder, enum, and data type</span></a>
+      <a href="{{ '/docs/chart/troubleshooting/' | relative_url }}">Troubleshooting &amp; FAQ<span>Common issues and fixes</span></a>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  {% include faq.html %}
+
+  <!-- Showcase -->
+  <section class="cta-band" aria-labelledby="chart-showcase-cta">
+    <h2 id="chart-showcase-cta">102 live chart examples, hosted right here</h2>
+    <p>
+      Every chart type, theme, and feature rendered as real SVG on one page —
+      no build step, no sample project to clone first.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">View live chart showcase</a>
+      <a class="btn btn-ghost" href="{{ '/docs/chart/getting-started/' | relative_url }}">Getting started</a>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band cta-band-soft" aria-labelledby="chart-cta">
+    <h2 id="chart-cta">Charts that drop straight into your reports</h2>
+    <p>
+      Render a Static SVG once and reuse it across every output — vector graphics in
+      TerraFluent.Pdf.Reporting, an image in TerraFluent.Html.Reporting, or an
+      embedded chart in TerraFluent.Docx.Reporting.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="{{ '/docs/chart/getting-started/' | relative_url }}">Getting started</a>
+      <a class="btn btn-ghost" href="{{ '/' | relative_url }}">See all solutions</a>
+    </div>
+    <p style="margin-top: 18px; font-size: 0.9rem">
+      Need PDF, HTML, or Word output too? See
+      <a href="{{ '/pdf/' | relative_url }}">PDF Reporting</a>,
+      <a href="{{ '/html/' | relative_url }}">HTML Reporting</a>, or
+      <a href="{{ '/docx/' | relative_url }}">DOCX Reporting</a>.
+    </p>
+  </section>
+</div>

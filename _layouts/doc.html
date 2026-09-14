@@ -25,6 +25,13 @@ layout: default
       <li><a href="{{ item.url | relative_url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.title }}</a></li>
       {% endfor %}
     </ul>
+
+    <h2>Chart Reporting</h2>
+    <ul>
+      {% for item in site.data.docs.chart %}
+      <li><a href="{{ item.url | relative_url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.title }}</a></li>
+      {% endfor %}
+    </ul>
   </aside>
 
   <article class="prose doc-content">

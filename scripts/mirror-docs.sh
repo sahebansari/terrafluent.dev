@@ -8,8 +8,9 @@ SITE="$(cd "$(dirname "$0")/.." && pwd)"
 HTML_REPO="https://github.com/sahebansari/TerraFluent.Html.Reporting"
 DOCX_REPO="https://github.com/sahebansari/TerraFluent.Docx.Reporting"
 PDF_REPO="https://github.com/sahebansari/TerraFluent.Pdf.Reporting"
+CHART_REPO="https://github.com/sahebansari/TerraFluent.Chart.Reporting"
 
-mkdir -p "$SITE/docs/html" "$SITE/docs/docx" "$SITE/docs/pdf"
+mkdir -p "$SITE/docs/html" "$SITE/docs/docx" "$SITE/docs/pdf" "$SITE/docs/chart"
 
 DATA_YML="$SITE/_data/docs.yml"
 LLMS_FULL="$SITE/llms-full.txt"
@@ -209,4 +210,67 @@ for slug in "${PDF_ORDER[@]}"; do
   echo "pdf: $slug ('$title')"
 done
 
-echo "DONE. _data/docs.yml + $(ls "$SITE"/docs/html | wc -l) html docs + $(ls "$SITE"/docs/docx | wc -l) docx docs + $(ls "$SITE"/docs/pdf | wc -l) pdf docs + llms-full.txt ($(wc -l < "$LLMS_FULL") lines)"
+# ---------- Chart Reporting docs (repo default branch: master; slugs match filenames) ----------
+echo "chart:" >> "$DATA_YML"
+
+CHART_ORDER=(getting-started showcase chart-types themes-and-styling advanced api-reference troubleshooting)
+
+for slug in "${CHART_ORDER[@]}"; do
+  src="$SCRATCH/docs-chart/$slug.md"
+  out="$SITE/docs/chart/$slug.md"
+  title="$(extract_title "$src")"
+  desc="$(extract_desc "$src")"
+
+  body="$(sed -E \
+    -e 's|\]\(([a-z0-9-]+)\.md(#[^)]*)?\)|](/docs/chart/\1/\2)|g' \
+    -e 's|\]\(showcase\.html\)|](/chart/showcase/)|g' \
+    -e "s|\]\(\.\./|]($CHART_REPO/blob/master/|g" \
+    "$src")"
+
+  # The showcase is a 2.9 MB standalone page, so the rendered doc opens it in a
+  # new tab. That kramdown attribute list is page-only — $body also feeds
+  # llms-full.txt, where the literal braces would just be noise.
+  page_body="$(printf '%s\n' "$body" | sed -E \
+    's|\]\(/chart/showcase/\)|](/chart/showcase/){:target="_blank" rel="noopener"}|g')"
+
+  {
+    printf -- '---\n'
+    printf 'layout: doc\n'
+    printf 'title: "%s — SVG Chart Docs"\n' "$title"
+    printf 'description: "%s"\n' "$desc"
+    printf 'permalink: /docs/chart/%s/\n' "$slug"
+    printf 'doc_section: Chart Reporting docs\n'
+    printf 'doc_section_url: /docs/\n'
+    printf 'doc_nav: chart\n'
+    printf 'source_url: %s/blob/master/docs/%s.md\n' "$CHART_REPO" "$slug"
+    printf -- '---\n\n'
+    printf '%s\n' "$page_body"
+  } > "$out"
+
+  printf '  - title: "%s"\n    url: /docs/chart/%s/\n' "$title" "$slug" >> "$DATA_YML"
+
+  {
+    printf '\n\n====================================================================\n'
+    printf 'TerraFluent.Chart.Reporting — %s\n' "$title"
+    printf 'URL: https://terrafluent.dev/docs/chart/%s/\n' "$slug"
+    printf '====================================================================\n\n'
+    printf '%s\n' "$body"
+  } >> "$LLMS_FULL"
+
+  echo "chart: $slug ('$title')"
+done
+
+# ---------- Chart interactive showcase (hosted locally instead of linking to GitHub) ----------
+CHART_SHOWCASE_SRC="$SCRATCH/docs-chart/showcase.html"
+CHART_SHOWCASE_OUT="$SITE/chart/showcase/index.html"
+if [ -f "$CHART_SHOWCASE_SRC" ]; then
+  mkdir -p "$SITE/chart/showcase"
+  # Strip a leading UTF-8 BOM if present (the upstream file has one; a BOM
+  # before <!DOCTYPE html> is technically valid but pointless to keep).
+  sed '1s/^\xef\xbb\xbf//' "$CHART_SHOWCASE_SRC" > "$CHART_SHOWCASE_OUT"
+  echo "chart: showcase.html -> chart/showcase/index.html ($(wc -c < "$CHART_SHOWCASE_OUT") bytes)"
+else
+  echo "WARNING: $CHART_SHOWCASE_SRC not found — chart/showcase/index.html NOT refreshed. Download it (see scripts/README.md) and re-run." >&2
+fi
+
+echo "DONE. _data/docs.yml + $(ls "$SITE"/docs/html | wc -l) html docs + $(ls "$SITE"/docs/docx | wc -l) docx docs + $(ls "$SITE"/docs/pdf | wc -l) pdf docs + $(ls "$SITE"/docs/chart | wc -l) chart docs + llms-full.txt ($(wc -l < "$LLMS_FULL") lines)"

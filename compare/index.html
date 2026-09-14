@@ -29,6 +29,11 @@ faq:
       Yes. They are independent NuGet packages with no shared dependency — adding
       more than one costs nothing but the package references, and the fluent API
       skills transfer between them.
+  - q: Where does TerraFluent.Chart.Reporting fit in this decision?
+    a: >-
+      It's a separate concern from this page — a chart isn't a document format. Use
+      TerraFluent.Chart.Reporting to render SVG charts, then embed that SVG in
+      whichever of Pdf.Reporting, Html.Reporting, or Docx.Reporting you pick above.
 ---
 
 <section class="hero page-hero">
@@ -39,11 +44,14 @@ faq:
       Short answer: pick by what your users open. A final, portable file — PDF Reporting.
       A browser or an HTML pipeline — HTML Reporting. Microsoft Word — DOCX Reporting.
       All three share the same fluent mental model, and many teams ship more than one.
+      Need a chart rather than a document? See
+      <a href="{{ '/chart/' | relative_url }}">Chart Reporting</a> — its SVG output drops
+      into any of the three below.
     </p>
   </div>
 </section>
 
-<div class="container prose" style="max-width: 1000px">
+<div class="container prose">
   <h2>By requirement</h2>
   <div class="table-scroll">
     <table class="compare-table">
@@ -77,8 +85,15 @@ faq:
         <tr>
           <td>Charts</td>
           <td><span class="yes-pdf">✓ Vector canvas</span><small>Draw bars, lines, shapes with the Canvas API</small></td>
-          <td>—<small>Bring your own SVG via raw HTML</small></td>
+          <td><span class="yes">✓ Via SVG</span><small>Embed TerraFluent.Chart.Reporting's SVG output as raw HTML</small></td>
           <td><span class="yes-docx">✓ Native</span><small>Editable Word charts: bar, line, pie, stacked</small></td>
+        </tr>
+        <tr>
+          <td>26 chart types, themes, and render modes</td>
+          <td colspan="3">
+            <span class="yes-chart">✓ TerraFluent.Chart.Reporting</span>
+            <small>A separate library — render Static SVG once, then embed it in any of the three above. <a href="{{ '/chart/' | relative_url }}">See Chart Reporting →</a></small>
+          </td>
         </tr>
         <tr>
           <td>Barcodes &amp; QR codes</td>
@@ -146,7 +161,7 @@ faq:
   </p>
 </div>
 
-<div class="container" style="max-width: 1200px">
+<div class="container">
   <div class="compare-pair">
     <div>
       <h3>TerraFluent.Pdf.Reporting</h3>
@@ -216,7 +231,7 @@ Document.Create(doc =>
   </div>
 </div>
 
-<div class="container prose" style="max-width: 900px; padding-top: 8px">
+<div class="container prose" style="padding-top: 8px">
   <h2>Honest counter-signals</h2>
   <ul>
     <li><strong>Pick Html.Reporting even for PDF asks</strong> if your report must also live on a web page or in an email — one HTML output serves the browser, and printing covers the occasional PDF.</li>
