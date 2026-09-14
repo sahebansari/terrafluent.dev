@@ -9,6 +9,13 @@ url: "https://terrafluent.dev"
 baseurl: ""
 lang: en
 
+# Cache-busting token appended to main.css and main.js as ?v=…
+# Leave blank to use the build timestamp — every deploy then gets a fresh URL,
+# which is the safe default. Set it to a fixed string (e.g. "2026-09-14a") only
+# if you want the token to change solely when you say so; you must then
+# remember to bump it whenever those two files change.
+asset_version:
+
 github_user: sahebansari
 repos:
   html: https://github.com/sahebansari/TerraFluent.Html.Reporting

@@ -1,3 +1,15 @@
+{%- comment -%}
+  Cache-busting token for main.css / main.js. `asset_version` in _config.yml
+  wins if it is set; otherwise it falls back to the build timestamp, so every
+  deploy serves a fresh URL and no visitor is left on a stale stylesheet.
+  GitHub Pages builds this repo in safe mode, so a real content hash (which
+  would need a plugin) is not available here.
+{%- endcomment -%}
+{%- if site.asset_version -%}
+  {%- assign asset_v = site.asset_version -%}
+{%- else -%}
+  {%- assign asset_v = site.time | date: "%Y%m%d%H%M%S" -%}
+{%- endif -%}
 <!doctype html>
 <html lang="{{ site.lang }}">
 <head>
@@ -39,7 +51,7 @@
   </script>
 
   <link rel="preload" href="{{ '/assets/fonts/inter-latin.woff2' | relative_url }}" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v={{ asset_v }}">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -48,6 +60,6 @@
     {{ content }}
   </main>
   {% include footer.html %}
-  <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/main.js' | relative_url }}?v={{ asset_v }}"></script>
 </body>
 </html>
