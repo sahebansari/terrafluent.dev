@@ -65,13 +65,19 @@ or access that live outside the repo, roughly in order of impact:
 - Share the home page in Slack/X and confirm the og-card shows the current headline
   (True PDF · HTML · DOCX · Charts), not a stale card — the og-card image itself
   (`assets/img/og-card.png`) still needs regenerating to mention Charts.
-- `site:terrafluent.dev` in Google after a few days — expect 59 pages per
-  `sitemap.xml` (added `/solutions/`, `/chart/`, 7 `/docs/chart/*` pages, and
-  `/chart/showcase/` on 2026-09-14).
-- `/chart/showcase/` is a ~2.9 MB static page (102 self-contained SVG charts,
-  copied verbatim from the Chart repo's `docs/showcase.html` — see
-  `scripts/mirror-docs.sh`). It carries no front matter so it bypasses the site
-  layout entirely (no header/footer/nav) — that's intentional, matching how the
-  upstream file is designed to be viewed standalone. Confirm Google can still
-  crawl/index a page this size; consider `<link rel="canonical">` back to itself
-  if it ever gets embedded elsewhere.
+- `site:terrafluent.dev` in Google after a few days — expect 95 pages per
+  `sitemap.xml` (59 before 2026-09-21; the chart showcase split added 27
+  `/chart/types/*`, 8 `/chart/features/*` and `/chart/cookbook/`).
+- The chart showcase is now a hub-and-spoke set, not one page. `/chart/showcase/`
+  is a ~27 KB index carrying the site layout, a self-canonical and a meta
+  description; the 102 SVG specimens moved out to the 36 spoke pages, each
+  specimen at exactly one URL. `scripts/split_showcase.py` generates all of it
+  from `_showcase-source/showcase.html` — never hand-edit the generated pages.
+- Check the type pages are ranking for their own query rather than the hub:
+  "sankey diagram in c#", "gantt chart .net", "candlestick chart c#". Each has a
+  matching `<title>`, `<h1>`, URL slug and meta description. If the hub outranks
+  a type page for a type query, the hub's copy is probably too specific — keep it
+  generic and let the spokes carry the intent.
+- All specimens are inline `<svg>` with `<title>` and `<desc>`, not images. That
+  is the crawlable-text advantage over competitors who ship screenshots — do not
+  let a future change convert any of them to `<img>` or PNG.

@@ -1,0 +1,105 @@
+{%- comment -%}
+  The gallery hub at /chart/showcase/.
+
+  It used to be a single 2.9 MB standalone file holding all 102 specimens, with
+  no canonical URL, no meta description and no site chrome. The specimens now
+  live on the 36 spoke pages — one specimen at exactly one URL — and this page
+  is the index that links to every one of them.
+
+  Everything here is driven by _data/chart_spokes.yml, which
+  scripts/split_showcase.py regenerates whenever the upstream showcase is
+  re-mirrored, so a new chart type upstream shows up here without an edit.
+{%- endcomment -%}
+{%- assign spokes = site.data.chart_spokes -%}
+
+<article class="container hub-page">
+  {% include chart-breadcrumbs.html current="Chart Showcase" %}
+
+  <header class="type-head">
+    <span class="eyebrow">TerraFluent.Chart.Reporting</span>
+    <h1>C# Chart Showcase</h1>
+    <p class="type-lede">
+      Every chart type and feature in the library, rendered server-side from C# as
+      self-contained SVG — no JavaScript, no headless browser, no image files. Each
+      entry below opens the page that holds its live specimen.
+    </p>
+    <ul class="fact-list hub-facts">
+      <li><strong>26</strong> chart types</li>
+      <li><strong>{{ spokes.types | size }}</strong> type pages</li>
+      <li><strong>{{ page.specimen_count }}</strong> live SVG specimens</li>
+      <li><strong>18</strong> built-in themes</li>
+      <li><strong>Zero</strong> third-party dependencies</li>
+    </ul>
+  </header>
+
+  <section class="hub-section">
+    <div class="section-head">
+      <h2>Chart types</h2>
+      <p>One page per type, each with its specimen, the C# that produces it, and
+         guidance on when the type is the wrong choice.</p>
+    </div>
+    <div class="hub-grid">
+      {%- for t in spokes.types %}
+      <a class="hub-card" href="{{ t.url | relative_url }}">
+        <strong>{{ t.h1 }}</strong>
+        <span>{{ t.description | truncatewords: 17 }}</span>
+      </a>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section class="hub-section">
+    <div class="section-head">
+      <h2>Features</h2>
+      <p>Themes, axes, labels, render modes and interactivity — the options that
+         apply across chart types rather than defining one.</p>
+    </div>
+    <div class="hub-grid">
+      {%- for f in spokes.features %}
+      <a class="hub-card" href="{{ f.url | relative_url }}">
+        <strong>{{ f.h1 }}</strong>
+        <span>{{ f.description | truncatewords: 17 }}</span>
+        <em class="hub-count">{{ f.count }} specimens</em>
+      </a>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section class="hub-section">
+    <div class="section-head">
+      <h2>Cookbook</h2>
+      <p>Finished results rather than single features — dashboards, report
+         templates, and charts assembled from several calls.</p>
+    </div>
+    <div class="hub-grid">
+      <a class="hub-card" href="{{ spokes.cookbook.url | relative_url }}">
+        <strong>{{ spokes.cookbook.h1 }}</strong>
+        <span>{{ spokes.cookbook.description | truncatewords: 17 }}</span>
+        <em class="hub-count">{{ spokes.cookbook.count }} recipes</em>
+      </a>
+      <a class="hub-card" href="{{ '/docs/chart/getting-started/' | relative_url }}">
+        <strong>Getting started</strong>
+        <span>Install the package and render your first chart in a few lines of C#.</span>
+      </a>
+      <a class="hub-card" href="{{ '/docs/chart/api-reference/' | relative_url }}">
+        <strong>API reference</strong>
+        <span>Every builder method, series type, enum and theme in one page.</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="hub-section hub-install">
+    <div class="section-head">
+      <h2>Install</h2>
+    </div>
+    {% include install-row.html package="TerraFluent.Chart.Reporting" %}
+    <ul class="fact-list">
+      <li><strong>MIT licensed</strong> — free for commercial use, no chart limits, no watermarks.</li>
+      <li><strong>Zero dependencies</strong> — nothing but the .NET base class library.</li>
+      <li><strong>netstandard2.0 through net10.0</strong> — .NET Framework 4.6.1+, .NET Core 2.0+, and every modern release.</li>
+    </ul>
+    {%- if page.upstream_stamp %}
+    <p class="hub-stamp">{{ page.upstream_stamp }}</p>
+    {%- endif %}
+  </section>
+</article>

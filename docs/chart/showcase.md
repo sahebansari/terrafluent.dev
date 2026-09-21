@@ -13,7 +13,7 @@ source_url: https://github.com/sahebansari/TerraFluent.Chart.Reporting/blob/mast
 
 A live visual catalogue of every chart type and feature in TerraFluent.Chart.Reporting — each entry is a self-contained SVG rendered entirely server-side, with zero JavaScript dependency.
 
-> **[▶ Open the interactive showcase (showcase.html)](/chart/showcase/){:target="_blank" rel="noopener"}** — a single browsable page with all charts rendered inline. Best viewed in a browser.
+> **[▶ Open the interactive showcase (showcase.html)](/chart/showcase/)** — a single browsable page with all charts rendered inline. Best viewed in a browser.
 
 For copy-paste code behind each chart type, see **[Chart Types](/docs/chart/chart-types/)**.
 

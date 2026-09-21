@@ -62,14 +62,16 @@ added 2026-09-14.
    (`sed '1s/^\xef\xbb\xbf//'`) when converting, so this no longer blocks a mirror
    run — but strip the BOM from both files upstream anyway so the repo's own
    copies are clean.
-12. **Chart repo `docs/showcase.html` is now hosted directly on the site** at
-   `/chart/showcase/` (2026-09-14 — see `scripts/mirror-docs.sh`'s "Chart
-   interactive showcase" step) instead of linking out to the GitHub blob view.
-   It's a ~2.9 MB static file copied verbatim, with no Jekyll front matter, so it
-   renders standalone (no site header/footer). Every doc's `showcase.html` link
-   was repointed at `/chart/showcase/` in the same change. Keep re-running the
-   mirror script (not a manual copy) whenever the upstream file changes, so this
-   copy and the doc links stay in sync.
+12. **Chart repo `docs/showcase.html` is hosted on the site, and split up.**
+   `scripts/mirror-docs.sh` stages the upstream file in `_showcase-source/` and
+   `scripts/split_showcase.py` fans it out (2026-09-21) into `/chart/showcase/`
+   (a ~27 KB gallery index), 27 `/chart/types/<slug>/` landing pages, 8
+   `/chart/features/<slug>/` galleries and `/chart/cookbook/`. Every specimen SVG
+   is moved, not copied, so each lives at exactly one URL, and all of it carries
+   the site header/footer. Keep re-running the mirror script (not a manual copy)
+   whenever the upstream file changes. If upstream adds a chart, the splitter
+   fails and names the unclassified card — classify it in `split_showcase.py`
+   rather than letting its specimen drop.
 
 ## Policy statements to keep true
 

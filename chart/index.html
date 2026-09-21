@@ -55,7 +55,7 @@ faq:
       built-in themes and three render modes for PDF, browser, and live dashboards.
     </p>
     <div class="hero-ctas" style="margin-top: 28px">
-      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">View live chart showcase</a>
+      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}">View live chart showcase</a>
       <a class="btn btn-ghost" href="{{ site.repos.chart }}" target="_blank" rel="noopener">GitHub</a>
       <a class="btn btn-ghost" href="{{ site.nuget.chart }}" target="_blank" rel="noopener">NuGet</a>
     </div>
@@ -306,7 +306,7 @@ public class ReportService(IChartBuilder chart)
     </div>
     <div class="docs-grid">
       <a href="{{ '/docs/chart/getting-started/' | relative_url }}">Getting Started<span>Your first SVG chart</span></a>
-      <a href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">Chart Showcase<span>102 live examples, every chart type</span></a>
+      <a href="{{ '/chart/showcase/' | relative_url }}">Chart Showcase<span>102 live examples across 36 pages</span></a>
       <a href="{{ '/docs/chart/chart-types/' | relative_url }}">Chart Types<span>All 26 types, full code + output</span></a>
       <a href="{{ '/docs/chart/themes-and-styling/' | relative_url }}">Themes &amp; Styling<span>Built-in themes, custom palettes</span></a>
       <a href="{{ '/docs/chart/advanced/' | relative_url }}">Advanced Features<span>Render modes, axes, stacking, DI</span></a>
@@ -318,15 +318,33 @@ public class ReportService(IChartBuilder chart)
   <!-- FAQ -->
   {% include faq.html %}
 
+  <!-- Chart types -->
+  <section aria-labelledby="chart-types-title" style="padding-top: 0">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--accent-chart)">Chart types</span>
+      <h2 id="chart-types-title">Every type, with the code and the caveats</h2>
+      <p>Each type has its own page: a live SVG specimen, the C# that renders it,
+         and an honest note on when to pick something else.</p>
+    </div>
+    <div class="hub-grid">
+      {%- for t in site.data.chart_spokes.types %}
+      <a class="hub-card" href="{{ t.url | relative_url }}">
+        <strong>{{ t.h1 }}</strong>
+        <span>{{ t.description | truncatewords: 15 }}</span>
+      </a>
+      {%- endfor %}
+    </div>
+  </section>
+
   <!-- Showcase -->
   <section class="cta-band" aria-labelledby="chart-showcase-cta">
     <h2 id="chart-showcase-cta">102 live chart examples, hosted right here</h2>
     <p>
-      Every chart type, theme, and feature rendered as real SVG on one page —
-      no build step, no sample project to clone first.
+      Every chart type, theme, and feature rendered as real SVG — no build step,
+      no sample project to clone first.
     </p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">View live chart showcase</a>
+      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}">View live chart showcase</a>
       <a class="btn btn-ghost" href="{{ '/docs/chart/getting-started/' | relative_url }}">Getting started</a>
     </div>
   </section>

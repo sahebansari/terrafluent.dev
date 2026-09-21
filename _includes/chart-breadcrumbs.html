@@ -1,0 +1,17 @@
+{%- comment -%}
+  Visible breadcrumbs for the chart hub-and-spoke pages. The matching
+  BreadcrumbList JSON-LD is emitted by _includes/jsonld.html from the same
+  page.doc_section / page.doc_section_url front matter, so the two never drift.
+
+  Params: current — the trail's last crumb (plain text, not a link).
+{%- endcomment -%}
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="{{ '/' | relative_url }}">Home</a></li>
+    <li><a href="{{ '/chart/' | relative_url }}">Charts</a></li>
+    {%- if include.parent_url %}
+    <li><a href="{{ include.parent_url | relative_url }}">{{ include.parent }}</a></li>
+    {%- endif %}
+    <li><span aria-current="page">{{ include.current }}</span></li>
+  </ol>
+</nav>

@@ -1,0 +1,474 @@
+# Prose for the /chart/types/<slug>/ landing pages.
+#
+# The specimen SVG and the C# snippet on those pages are generated — the SVG is
+# sliced out of the upstream showcase, the snippet is lifted verbatim from
+# docs/chart/chart-types.md — so neither is edited here. This file holds only
+# what a human writes: the headings, the meta description, and the judgement
+# about when the chart type is and is not the right choice.
+#
+# Keys must match the slugs in scripts/split_showcase.py.
+#
+# h1          rendered as the page's only <h1>; always names the language
+# title       <title>, appended with " · TerraFluent" by the layout
+# description <meta name="description">, unique per page, ~150 chars
+# use / avoid the "when to use this" section; real guidance, 3-4 items each
+# related     exactly 3 sibling slugs
+
+line:
+  h1: Line Chart in C#
+  nav_title: Line Chart
+  title: Line Chart in C# — Server-Side SVG, No JavaScript
+  description: >-
+    Draw line charts in C# as self-contained SVG with TerraFluent.Chart.Reporting.
+    One AddLine call, 18 themes, no JavaScript and no browser. MIT licensed.
+  use:
+    - A continuous measure sampled at even intervals, where the reader's question is "which way is it going?"
+    - Comparing the shape of two to five series that share one unit and a similar range.
+    - Long category runs — a line stays readable at 50 points where columns turn into a picket fence.
+  avoid:
+    - Categories with no inherent order. Connecting Belgium to Denmark implies a trend that does not exist; use a column or bar chart.
+    - A single data point per category, where the line's slope is the only thing drawn and it carries no meaning.
+    - Series whose ranges differ by an order of magnitude — put the smaller one on a secondary axis or use a log scale, or it flatlines against the axis.
+  related: [spline, area, column]
+
+spline:
+  h1: Spline Chart in C#
+  nav_title: Spline Chart
+  title: Spline Chart in C# — Smooth Bézier Curves as SVG
+  description: >-
+    Render smooth spline curves in C# with AddSpline — true Bézier interpolation,
+    self-contained SVG, zero dependencies. Part of TerraFluent.Chart.Reporting.
+  use:
+    - Data that genuinely varies continuously between samples — temperature, pressure, a physical signal.
+    - Presentation charts where the eye should follow one overall shape rather than each segment.
+    - Smoothed or modelled output, where the curve is already an interpolation and drawing it as one is honest.
+  avoid:
+    - Discrete measurements. A spline invents values between your points and can overshoot past the real maximum, which reads as data you never recorded.
+    - Any chart where the exact value at a point matters — the curve does not pass through the sample as visibly as a straight segment does.
+    - Sparse series. With four points a spline is mostly invention; use AddLine.
+  related: [line, area, scatter]
+
+area:
+  h1: Area Chart in C#
+  nav_title: Area Chart
+  title: Area Chart in C# — Filled Trend Charts as SVG
+  description: >-
+    Create filled area charts in C# with AddArea — gradient and opacity control,
+    stacking, self-contained SVG output. Zero-dependency .NET charting library.
+  use:
+    - A single series where the magnitude under the curve is part of the story — cumulative volume, total usage.
+    - Stacked composition over time, when the total and its parts both matter.
+    - A baseline of zero that is meaningful. The fill is a claim about the distance to zero.
+  avoid:
+    - Overlapping unstacked series beyond two or three — the fills occlude one another even at reduced opacity.
+    - An axis that does not start at zero. The filled region then exaggerates a small difference into a large block of colour.
+    - Comparing precise values between stacked bands; only the bottom band sits on a flat baseline, so the rest are hard to read.
+  related: [line, stream, area-range]
+
+column:
+  h1: Column Chart in C#
+  nav_title: Column Chart
+  title: Column Chart in C# — Vertical Bar Charts as SVG
+  description: >-
+    Generate column charts in C# with AddColumn — grouped, stacked, and 100%
+    stacked, rendered as self-contained SVG with no JavaScript dependency.
+  use:
+    - Comparing a value across a modest number of discrete categories — the default choice, and usually the right one.
+    - Time buckets that are genuinely discrete: months, quarters, sprints.
+    - Grouped or stacked composition where each category's parts sum to something meaningful.
+  avoid:
+    - More than about fifteen categories, or long category names — switch to a horizontal bar chart, which has room for the labels.
+    - A truncated Y axis. Column length is the encoding, so a non-zero baseline misstates the comparison.
+    - Continuous data sampled densely; use a line chart.
+  related: [bar, line, waterfall]
+
+bar:
+  h1: Horizontal Bar Chart in C#
+  nav_title: Horizontal Bar Chart
+  title: Horizontal Bar Chart in C# — Ranked Categories as SVG
+  description: >-
+    Draw horizontal bar charts in C# with AddBar — room for long category labels,
+    natural for ranked lists. Self-contained SVG, MIT licensed, zero dependencies.
+  use:
+    - Long category names. Horizontal bars give the label a full line of text instead of a rotated sliver.
+    - Ranked lists — top products, slowest endpoints — sorted descending so the eye reads down the order.
+    - Many categories. A bar chart scrolls vertically without the labels colliding.
+  avoid:
+    - Time on the category axis. Readers expect time to run left to right; use a column chart.
+    - Two or three categories, where the horizontal layout wastes the page's width.
+    - Negative and positive values you want compared precisely — the shared centre baseline is easier to read in a column chart.
+  related: [column, dumbbell, funnel]
+
+pie:
+  h1: Pie Chart in C#
+  nav_title: Pie Chart
+  title: Pie Chart in C# — Part-of-Whole Charts as SVG
+  description: >-
+    Render pie charts in C# with AsPie and Add — outside labels with connector
+    lines, legend placement, self-contained SVG. TerraFluent.Chart.Reporting, MIT.
+  use:
+    - Parts of a single whole that genuinely sums to 100% — market share, budget allocation.
+    - Three to six slices. Past that the small slices become indistinguishable wedges.
+    - When "roughly half" or "about a quarter" is the takeaway, not a precise ranking.
+  avoid:
+    - Comparing slices of similar size. Humans compare angles badly; a bar chart makes the same comparison exact.
+    - Values that do not sum to a whole, or that can be negative.
+    - Change over time. Two pies side by side are far harder to read than one column or line chart.
+  related: [donut, column, treemap]
+
+donut:
+  h1: Donut Chart in C#
+  nav_title: Donut Chart
+  title: Donut Chart in C# — Ring Charts with Centre Labels as SVG
+  description: >-
+    Build donut charts in C# with DonutHole and DonutCenter — a total in the
+    middle, labelled slices around it, rendered as self-contained SVG.
+  use:
+    - A part-of-whole breakdown where the total itself is worth stating — put it in the hole with DonutCenter.
+    - Dashboard tiles, where the ring reads as a compact shape at small sizes.
+    - The same cases as a pie chart, when the centre space is useful rather than empty.
+  avoid:
+    - The comparisons a pie chart is already bad at. Removing the centre makes angle judgement slightly harder, not easier.
+    - Many slices — the ring is thinner than a pie, so small slices disappear sooner.
+    - A single percentage. Use a data ring or a gauge, which are built for one value.
+  related: [pie, data-ring, gauge]
+
+scatter:
+  h1: Scatter Plot in C#
+  nav_title: Scatter Plot
+  title: Scatter Plot in C# — XY Correlation Charts as SVG
+  description: >-
+    Create scatter plots in C# with AddScatter — marker shapes, borders, and
+    regression overlays. Self-contained SVG from .NET, no JavaScript required.
+  use:
+    - Looking for correlation, clusters, or outliers between two measures.
+    - Distributions with many points, where individual markers show density that a line would hide.
+    - Paired with AddLinearRegression when you want to state the trend as well as show it.
+  avoid:
+    - Few points. With six markers there is no distribution to see; a table or column chart says more.
+    - Heavy overplotting without reduced opacity or smaller markers — a solid blob encodes nothing.
+    - A third dimension crammed in by colour alone; use a bubble chart and encode it as size.
+  related: [bubble, line, box-plot]
+
+bubble:
+  h1: Bubble Chart in C#
+  nav_title: Bubble Chart
+  title: Bubble Chart in C# — Three-Variable Scatter as SVG
+  description: >-
+    Plot three variables at once in C# with AddBubble and BubblePoint — X, Y, and
+    size. Self-contained SVG output, zero third-party dependencies.
+  use:
+    - Three numeric measures per item where the third is a magnitude — revenue, population, spend.
+    - Portfolio and quadrant views: two axes of position, one of weight.
+    - Twenty to sixty items. Enough for a pattern, few enough that the bubbles do not merge.
+  avoid:
+    - A third variable that is not a magnitude. Area reads as "how much", so encoding a rate or an index misleads.
+    - Precise comparison of the third value — area is judged poorly, so pair it with labels or a table.
+    - Dense data. Overlapping bubbles hide each other far faster than scatter markers do.
+  related: [scatter, heatmap, treemap]
+
+waterfall:
+  h1: Waterfall Chart in C#
+  nav_title: Waterfall Chart
+  title: Waterfall Chart in C# — Bridge Charts for P&L as SVG
+  description: >-
+    Build waterfall and bridge charts in C# with AddWaterfall — running totals,
+    absolute total bars, rendered as self-contained SVG. MIT licensed .NET library.
+  use:
+    - Showing how a starting figure becomes an ending figure through named contributions — P&L bridges, variance analysis.
+    - Headcount, inventory, or cash movement where additions and subtractions both matter.
+    - Any narrative of the form "we started here, these things happened, we ended here".
+  avoid:
+    - Contributions that do not actually sum to the end value. The chart asserts they do.
+    - More than about ten steps — the running baseline gets hard to follow.
+    - Unordered categories. The sequence is the chart's argument, so it must be meaningful.
+  related: [column, funnel, bar]
+
+gauge:
+  h1: Gauge Chart in C#
+  nav_title: Gauge Chart
+  title: Gauge Chart in C# — KPI Dials as SVG
+  description: >-
+    Render semi-circular gauge charts in C# with AddGauge — one KPI against its
+    range, as self-contained SVG. Embeds into PDF, HTML, and Word reports.
+  use:
+    - One value against a known, meaningful range — SLA attainment, capacity used, a score out of 100.
+    - Dashboard tiles where the reader needs "are we in the green?" at a glance.
+    - Cases where the range boundaries carry as much meaning as the value.
+  avoid:
+    - A value with no natural maximum. Without a real ceiling the needle position is arbitrary.
+    - Comparing several gauges. Five dials in a row is harder to read than one bar chart of the same five values.
+    - Precise readings — a dial is a coarse instrument; print the number alongside it.
+  related: [data-ring, donut, column]
+
+data-ring:
+  h1: Data Ring Chart in C#
+  nav_title: Data Ring Chart
+  title: Data Ring Chart in C# — 360° KPI Rings as SVG
+  description: >-
+    Draw full-circle progress rings in C# with AddDataRing — one KPI per ring,
+    ideal for dashboard tiles. Self-contained SVG, no JavaScript dependency.
+  use:
+    - A single percentage or progress value, shown as a full 360° sweep.
+    - KPI dashboard tiles — several rings side by side read as a consistent set.
+    - Completion and attainment metrics where 100% is a real, reachable target.
+  avoid:
+    - Values that can exceed the maximum; the ring has nowhere to go past a full circle.
+    - Multi-part breakdowns — that is a donut chart, not a progress ring.
+    - Very small render sizes without a centre label. The ring alone is not precise enough to read.
+  related: [gauge, donut, pie]
+
+heatmap:
+  h1: Heatmap in C#
+  nav_title: Heatmap
+  title: Heatmap in C# — Matrix and Correlation Charts as SVG
+  description: >-
+    Generate heatmaps in C# with AddHeatmap and HeatmapPoint — colour-scaled
+    grids for matrices and correlations, rendered as self-contained SVG.
+  use:
+    - A value across two categorical dimensions — hour by weekday, region by product.
+    - Correlation matrices and confusion matrices, where the pattern matters more than each cell.
+    - Spotting hot spots and gaps in a dense grid that a table of numbers would bury.
+  avoid:
+    - Precise comparison. Colour is the weakest quantitative encoding; add cell labels when the numbers matter.
+    - Diverging data on a sequential palette — a scale that does not mark the midpoint hides the sign of the value.
+    - Grids so large the cells fall below a few pixels, where nothing is distinguishable.
+  related: [treemap, bubble, column]
+
+column-range:
+  h1: Column Range Chart in C#
+  nav_title: Column Range Chart
+  title: Column Range Chart in C# — Low-High Bars as SVG
+  description: >-
+    Draw floating low-high column ranges in C# with AddColumnRange and RangePoint
+    — temperature and spread charts as self-contained SVG. Zero dependencies.
+  use:
+    - A minimum and maximum per category — daily temperature range, price range, min/max latency.
+    - Spreads where the gap itself is the message, not either endpoint alone.
+    - Comparing the width of a range across categories.
+  avoid:
+    - Data with a meaningful zero baseline you want compared; a floating bar deliberately hides the distance to zero.
+    - Distributions where the quartiles matter — use a box plot, which shows shape as well as extent.
+    - Uncertainty around a central estimate; use an error bar, which draws the estimate too.
+  related: [area-range, error-bar, box-plot]
+
+area-range:
+  h1: Area Range Chart in C#
+  nav_title: Area Range Chart
+  title: Area Range Chart in C# — Confidence Bands as SVG
+  description: >-
+    Render low-high confidence bands in C# with AddAreaRange and RangePoint —
+    forecast ranges and uncertainty envelopes as self-contained SVG.
+  use:
+    - Forecast and prediction intervals, usually with the central estimate drawn over the band as a line.
+    - Min/max or percentile envelopes over a continuous axis.
+    - Any "expected range" that should read as a region rather than a set of points.
+  avoid:
+    - Discrete categories — the band implies continuity between them.
+    - More than two overlapping bands; the fills compound and nothing stays legible.
+    - Showing the band without its central series, which leaves the reader no estimate to anchor on.
+  related: [column-range, area, error-bar]
+
+funnel:
+  h1: Funnel Chart in C#
+  nav_title: Funnel Chart
+  title: Funnel Chart in C# — Conversion and Pipeline Charts as SVG
+  description: >-
+    Build funnel charts in C# with AddFunnel — stage-by-stage conversion and
+    sales pipelines rendered as self-contained SVG. MIT licensed, no dependencies.
+  use:
+    - A sequential process where each stage is a subset of the one before it — signup to paid, lead to close.
+    - Drop-off analysis, where the narrowing itself is the finding.
+    - Four to seven stages. Fewer is a bar chart; more and the bottom stages vanish.
+  avoid:
+    - Stages that are not nested. If a step can gain items the funnel shape is a lie; use a Sankey diagram.
+    - Precise comparison between adjacent stages — the tapering shape distorts width judgement.
+    - Processes that branch. A funnel has one path; flows that split need a Sankey.
+  related: [sankey, waterfall, bar]
+
+treemap:
+  h1: Treemap in C#
+  nav_title: Treemap
+  title: Treemap in C# — Proportional Area Charts as SVG
+  description: >-
+    Render treemaps in C# with AddTreemap — proportional rectangles for
+    part-of-whole with many categories. Self-contained SVG from .NET.
+  use:
+    - Part-of-whole with too many categories for a pie chart — twenty or more still works.
+    - Where relative magnitude across a wide dynamic range should be visible at once.
+    - Space-constrained layouts; a treemap fills its rectangle completely.
+  avoid:
+    - Comparing similarly-sized items. Rectangles of different aspect ratios are hard to compare by area.
+    - Negative or zero values, which have no area to draw.
+    - Change over time — the layout reshuffles between periods and the reader loses track of items.
+  related: [pie, heatmap, bubble]
+
+radar:
+  h1: Radar Chart in C#
+  nav_title: Radar Chart
+  title: Radar Chart in C# — Spider Charts as SVG
+  description: >-
+    Create radar and spider charts in C# with AddRadar — multivariate profiles on
+    a shared scale, rendered as self-contained SVG with zero dependencies.
+  use:
+    - Comparing two or three items across five to eight attributes on one common scale.
+    - Profile and capability comparisons, where the overall shape is the takeaway.
+    - Normalised scores — ratings out of ten, percentages — where every axis means the same thing.
+  avoid:
+    - Axes with different units or ranges. The enclosed area becomes meaningless.
+    - More than three overlaid series; the polygons occlude each other.
+    - Precise reading. Values far from the centre occupy more area than values near it, which overstates them.
+  related: [line, column, parliament]
+
+box-plot:
+  h1: Box Plot in C#
+  nav_title: Box Plot
+  title: Box Plot in C# — Box-and-Whisker Charts as SVG
+  description: >-
+    Draw box-and-whisker plots in C# with AddBoxPlot and BoxPlotPoint — median,
+    quartiles, and whiskers as self-contained SVG. Zero-dependency .NET charting.
+  use:
+    - Comparing the distribution — not just the average — of a measure across groups.
+    - Latency and response-time analysis, where the spread and the tail are the point.
+    - Showing skew and outliers that a mean would conceal.
+  avoid:
+    - An audience unfamiliar with the five-number summary; annotate it or use a simpler chart.
+    - Small samples, where quartiles computed from a handful of values are noise.
+    - Multimodal data — a box plot shows the same box for one cluster or two, so check the shape first.
+  related: [error-bar, scatter, column-range]
+
+error-bar:
+  h1: Error Bar Chart in C#
+  nav_title: Error Bar Chart
+  title: Error Bar Chart in C# — Uncertainty and Variance as SVG
+  description: >-
+    Add error bars in C# with AddErrorBar and RangePoint — confidence intervals
+    and variance whiskers over columns, rendered as self-contained SVG.
+  use:
+    - Measurements with known uncertainty — confidence intervals, standard deviation, measurement tolerance.
+    - Overlaid on columns, so the reader sees both the estimate and how much to trust it.
+    - Experimental results where overlapping intervals are the honest answer to "is this difference real?".
+  avoid:
+    - Charts where you have not defined what the bar represents. State whether it is SD, SE, or a CI.
+    - Decorative use on data with no uncertainty model behind it.
+    - Dense series, where the whiskers overlap into a hedge — use an area range band instead.
+  related: [box-plot, column-range, column]
+
+candlestick:
+  h1: Candlestick Chart in C#
+  nav_title: Candlestick Chart
+  title: Candlestick Chart in C# — OHLC Price Charts as SVG
+  description: >-
+    Render financial candlestick charts in C# with AddCandlestick and OhlcPoint —
+    open, high, low, close with up/down colouring. Self-contained SVG, MIT.
+  use:
+    - Price series where each period's open, high, low, and close all matter.
+    - Financial reporting and trading dashboards, where the candle body convention is already understood.
+    - Twenty to a hundred and twenty periods — enough to see pattern, few enough that candles stay distinct.
+  avoid:
+    - Any data that is not genuinely OHLC. The body and wick have fixed meanings.
+    - Long ranges — years of daily candles compress into an unreadable comb; aggregate to weekly first.
+    - Audiences outside finance, for whom the convention needs explaining; a line of closing prices is clearer.
+  related: [ohlc, line, column-range]
+
+ohlc:
+  h1: OHLC Chart in C#
+  nav_title: OHLC Chart
+  title: OHLC Chart in C# — Open-High-Low-Close Bars as SVG
+  description: >-
+    Draw OHLC bar charts in C# with AddOhlc and OhlcPoint — high-low bars with
+    open and close ticks, rendered as self-contained SVG from .NET.
+  use:
+    - The same OHLC data as a candlestick, when you want the thinner, more traditional bar form.
+    - Dense series — OHLC bars stay legible at narrower spacing than candle bodies do.
+    - Print and greyscale output, where the open/close ticks survive without colour.
+  avoid:
+    - Small render sizes, where the open and close ticks fall below a pixel or two and disappear.
+    - Readers who find the tick convention harder than candle bodies — candlesticks are more widely recognised.
+    - Non-financial data, for the same reason as candlesticks.
+  related: [candlestick, line, column-range]
+
+dumbbell:
+  h1: Dumbbell Chart in C#
+  nav_title: Dumbbell Chart
+  title: Dumbbell Chart in C# — Before-and-After Dot Plots as SVG
+  description: >-
+    Build dumbbell and dot-plot charts in C# with AddDumbbell and RangePoint —
+    before/after comparison per category as self-contained SVG.
+  use:
+    - Two points in time per category, where the size of the change is the finding — before and after, plan and actual.
+    - Comparing gaps across categories; the connector length is easy to compare at a glance.
+    - Cases where two grouped columns would waste ink to say the same thing.
+  avoid:
+    - More than two values per category — a dumbbell has exactly two ends.
+    - Series where the direction of change flips between categories without a colour cue; the reader cannot tell which dot is which.
+    - Data where the absolute values matter more than the gap; grouped columns read those better.
+  related: [column-range, bar, scatter]
+
+stream:
+  h1: Stream Graph in C#
+  nav_title: Stream Graph
+  title: Stream Graph in C# — ThemeRiver Charts as SVG
+  description: >-
+    Render stream graphs and ThemeRiver charts in C# with AddStream — stacked
+    bands around a centred baseline, as self-contained SVG. Zero dependencies.
+  use:
+    - Composition evolving over many time steps, where the overall silhouette tells the story.
+    - Many series — a stream graph tolerates more bands than a stacked area chart before it fails.
+    - Presentation and editorial contexts, where the organic shape is the point.
+  avoid:
+    - Reading exact values. No band sits on a flat baseline, so every one is judged by thickness alone.
+    - Few time steps; with five points it is a lumpy stacked area chart.
+    - Analytical work where the total must be read off the chart — the centred baseline hides it.
+  related: [area, line, treemap]
+
+gantt:
+  h1: Gantt Chart in C#
+  nav_title: Gantt Chart
+  title: Gantt Chart in C# — Project Timelines as SVG
+  description: >-
+    Generate Gantt charts in C# with AddGantt and GanttTask — task bars on a time
+    axis, per-task colours, rendered as self-contained SVG for reports and PDFs.
+  use:
+    - Project schedules and release plans, where overlap between tasks is what the reader is checking.
+    - Resource and occupancy timelines — anything with a start, an end, and a name.
+    - Embedding a schedule into a generated PDF or Word status report.
+  avoid:
+    - Dependency networks. A Gantt shows position, not "B cannot start until A finishes".
+    - Very many tasks — past thirty rows it becomes a wall; group or filter first.
+    - Plans that change hourly, where a rendered snapshot is stale before it is read.
+  related: [column-range, bar, sankey]
+
+sankey:
+  h1: Sankey Diagram in C#
+  nav_title: Sankey Diagram
+  title: Sankey Diagram in C# — Flow Diagrams as SVG
+  description: >-
+    Draw Sankey flow diagrams in C# with AddSankey, SankeyNode and SankeyLink —
+    proportional ribbons between stages, as self-contained SVG. MIT licensed.
+  use:
+    - Quantities flowing and splitting between stages — conversion funnels that branch, energy budgets, traffic sources.
+    - Showing where volume is lost, and to what, in one picture.
+    - Processes where a stage feeds more than one downstream stage; this is what a funnel cannot do.
+  avoid:
+    - Flows that do not conserve quantity. A Sankey asserts that what enters a node also leaves it.
+    - Many nodes and links — ribbon crossings turn into a tangle past roughly a dozen links.
+    - Precise value comparison; label the links when the numbers matter.
+  related: [funnel, treemap, gantt]
+
+parliament:
+  h1: Parliament Chart in C#
+  nav_title: Parliament Chart
+  title: Parliament Chart in C# — Seat and Composition Charts as SVG
+  description: >-
+    Render parliament seating charts in C# with AddParliament and ParliamentGroup
+    — one dot per seat, grouped by party, as self-contained SVG.
+  use:
+    - Election results and assembly composition, where the count of seats is discrete and countable.
+    - Any whole made of individually meaningful units — committee seats, allocated slots.
+    - Showing whether a group reaches a threshold such as a majority; the arc makes the halfway point visible.
+  avoid:
+    - Continuous proportions. If the units are not countable seats, a pie or bar chart is more honest.
+    - Very large assemblies at small render sizes, where individual dots merge.
+    - Comparing two compositions side by side; the arcs are harder to compare than paired bars.
+  related: [pie, radar, treemap]
