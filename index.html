@@ -94,12 +94,12 @@ faq:
    </div>
 
    {%- comment -%}
-     The four packages as one figure: a 2x2 quad whose outer corners are heavily
-     rounded and inner corners are not, so the group reads as a single squircle
-     split by a cross-shaped gutter rather than four loose cards. The brand mark
-     sits in the gutter and holds the four together.
+     The four packages as one figure: solid panels split by a hairline gutter,
+     a hexagon where they meet, and each panel's icon pinned to the outer edge
+     so it straddles it. Panel colours are the same four accents the rest of
+     the site uses for these packages, deepened so white text clears 6:1.
 
-     Each quadrant is a real link, so this is also four contextual routes out of
+     Each panel is a real link, so this is also four contextual routes out of
      the home page — the audit found it had only the nav and footer.
    {%- endcomment -%}
    <div class="hero-visual">
@@ -109,8 +109,8 @@ faq:
        </figcaption>
 
        <a class="quad-cell cell-pdf" href="{{ '/pdf/' | relative_url }}">
-         <span class="quad-icon" aria-hidden="true">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
              <path d="M14 3v5h5"/>
              <path d="M9 13h2.2a1.4 1.4 0 0 1 0 2.8H9V13v5"/>
@@ -122,8 +122,8 @@ faq:
        </a>
 
        <a class="quad-cell cell-html" href="{{ '/html/' | relative_url }}">
-         <span class="quad-icon" aria-hidden="true">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
              <path d="M8.5 8.5 4.5 12l4 3.5"/>
              <path d="m15.5 8.5 4 3.5-4 3.5"/>
              <path d="m13.4 5.5-2.8 13"/>
@@ -134,8 +134,8 @@ faq:
        </a>
 
        <a class="quad-cell cell-docx" href="{{ '/docx/' | relative_url }}">
-         <span class="quad-icon" aria-hidden="true">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
              <path d="M14 3v5h5"/>
              <path d="M8.5 12.5h7M8.5 16h7M8.5 9h2.5"/>
@@ -146,8 +146,8 @@ faq:
        </a>
 
        <a class="quad-cell cell-chart" href="{{ '/chart/' | relative_url }}">
-         <span class="quad-icon" aria-hidden="true">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
              <path d="M4 19.5V4"/>
              <path d="M4 19.5h16"/>
              <rect x="7.4" y="11" width="3" height="5.6" rx="1"/>
@@ -160,7 +160,10 @@ faq:
        </a>
 
        <span class="quad-core" aria-hidden="true">
-         {% include logo-mark.svg %}
+         <span class="quad-core-inner">
+           {% include logo-mark.svg %}
+           <span class="quad-core-label">One fluent API</span>
+         </span>
        </span>
      </figure>
    </div>
