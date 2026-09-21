@@ -201,6 +201,19 @@ pre code {
   padding-inline: 24px;
 }
 
+/* Available to assistive technology, removed from the visual layout. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 .skip-link {
   position: absolute;
   left: -9999px;
@@ -507,6 +520,7 @@ body.nav-open .nav-toggle .icon-close { display: block; }
 .hero {
   padding-block: 64px 0;
   position: relative;
+  overflow: hidden;
   background: var(--hero-bg);
   border-bottom: 1px solid var(--border);
 }
@@ -1862,6 +1876,185 @@ div.highlighter-rouge {
    page. It follows the install row directly, which leaves no breathing room
    of its own. */
 .features-head { margin-top: 56px; }
+
+/* ---------- Home hero: two columns ---------- */
+
+.hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  align-items: center;
+  gap: clamp(32px, 5vw, 72px);
+  padding-bottom: 64px;
+}
+.hero-layout .hero-copy > :last-child { margin-bottom: 0; }
+
+/* ---------- The package quad ----------
+   Four quadrants of one squircle: the corner pointing away from the centre
+   takes a large radius, the three facing inward stay tight. That reads as a
+   single shape cut by a cross-shaped gutter rather than four separate cards,
+   which is the point — the packages are one API family. The brand mark sits in
+   the gutter where the four meet. */
+
+.quad {
+  --quad-gap: 12px;
+  --quad-r-out: clamp(44px, 9vw, 72px);
+  --quad-r-in: 10px;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: var(--quad-gap);
+  margin: 0 auto;
+  width: 100%;
+  max-width: 460px;
+  aspect-ratio: 1;
+}
+/* A soft brand glow behind the shape so it sits on the hero wash rather than
+   floating on it. Decorative only. */
+.quad::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--brand) 26%, transparent),
+    transparent 70%
+  );
+  filter: blur(26px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.quad-cell {
+  --cell: var(--brand);
+  --cell-soft: var(--bg-inset);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  min-height: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: inherit;
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.quad-cell:hover,
+.quad-cell:focus-visible {
+  text-decoration: none;
+  border-color: var(--cell);
+  box-shadow: var(--shadow-2);
+  transform: translateY(-3px);
+}
+/* A wash of the package's own accent, strongest at the outer corner. */
+.quad-cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 100% at var(--wash-x) var(--wash-y),
+    color-mix(in srgb, var(--cell) 15%, transparent),
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.cell-pdf   { --cell: var(--accent-pdf);   --wash-x: 0%;   --wash-y: 0%;
+  border-radius: var(--quad-r-out) var(--quad-r-in) var(--quad-r-in) var(--quad-r-in); }
+.cell-html  { --cell: var(--accent-html);  --wash-x: 100%; --wash-y: 0%;
+  border-radius: var(--quad-r-in) var(--quad-r-out) var(--quad-r-in) var(--quad-r-in); }
+.cell-docx  { --cell: var(--accent-docx);  --wash-x: 0%;   --wash-y: 100%;
+  border-radius: var(--quad-r-in) var(--quad-r-in) var(--quad-r-in) var(--quad-r-out); }
+.cell-chart { --cell: var(--accent-chart); --wash-x: 100%; --wash-y: 100%;
+  border-radius: var(--quad-r-in) var(--quad-r-in) var(--quad-r-out) var(--quad-r-in); }
+
+.quad-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cell) 14%, var(--bg-raised));
+  color: var(--cell);
+  margin-bottom: 4px;
+}
+.quad-icon svg { width: 20px; height: 20px; display: block; }
+
+.quad-name {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.quad-note {
+  font-size: 0.79rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  text-wrap: balance;
+}
+
+/* The mark where the four meet. It overlaps the cells deliberately — that is
+   what ties them into one object. No background ring: the hero sits on a
+   gradient, so any solid ring shows up as a patch of the wrong colour. */
+.quad-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-2), 0 0 0 5px color-mix(in srgb, var(--bg) 82%, transparent);
+  pointer-events: none;
+}
+.quad-core .logo-mark { width: 40px; height: 40px; }
+
+
+@media (max-width: 980px) {
+  .hero-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 48px;
+    padding-bottom: 56px;
+  }
+  .hero-layout .hero-copy { max-width: 72ch; }
+  .quad { max-width: 420px; }
+}
+
+@media (max-width: 480px) {
+  .quad { --quad-gap: 10px; --quad-r-out: 34px; }
+  .quad-cell { padding: 15px 14px; }
+  .quad-note { font-size: 0.75rem; }
+  .quad-core { width: 58px; height: 58px; border-radius: 18px; }
+  .quad-core .logo-mark { width: 32px; height: 32px; }
+}
+
+/* Under ~380px a square cell is too short for the note text, so content drives
+   the height and the quad stops being a perfect square. The silhouette — big
+   outer corners, tight inner ones — still reads. */
+@media (max-width: 380px) {
+  .quad {
+    aspect-ratio: auto;
+    grid-template-rows: auto auto;
+  }
+  .quad-cell { min-height: 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quad-cell,
+  .quad-cell:hover,
+  .quad-cell:focus-visible { transition: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
