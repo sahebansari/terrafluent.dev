@@ -53,33 +53,33 @@ SPOKES_YML = ROOT / "_data" / "chart_spokes.yml"
 # ---------------------------------------------------------------------------
 
 TYPES: dict[str, dict] = {
-    "line":         {"cards": [1],      "docs": 1,  "block": 0},
-    "spline":       {"cards": [7, 11],  "docs": 2,  "block": 0},
-    "area":         {"cards": [3],      "docs": 3,  "block": 0},
-    "column":       {"cards": [4],      "docs": 4,  "block": 0},
-    "bar":          {"cards": [12],     "docs": 5,  "block": 0},
-    "pie":          {"cards": [6, 28],  "docs": 6,  "block": 0},
-    "donut":        {"cards": [18, 37, 38], "docs": 6, "block": 1},
-    "scatter":      {"cards": [13],     "docs": 7,  "block": 0},
-    "waterfall":    {"cards": [24],     "docs": 8,  "block": 0},
-    "gauge":        {"cards": [25],     "docs": 9,  "block": 0},
-    "data-ring":    {"cards": [39, 40], "docs": 10, "block": 0},
-    "bubble":       {"cards": [46],     "docs": 11, "block": 0},
-    "heatmap":      {"cards": [47],     "docs": 12, "block": 0},
-    "column-range": {"cards": [48],     "docs": 13, "block": 0},
-    "area-range":   {"cards": [49],     "docs": 14, "block": 0},
-    "funnel":       {"cards": [50],     "docs": 15, "block": 0},
-    "treemap":      {"cards": [51],     "docs": 16, "block": 0},
-    "radar":        {"cards": [63],     "docs": 17, "block": 0},
-    "box-plot":     {"cards": [64],     "docs": 18, "block": 0},
-    "error-bar":    {"cards": [65],     "docs": 19, "block": 0},
-    "candlestick":  {"cards": [70],     "docs": 20, "block": 0},
-    "ohlc":         {"cards": [71],     "docs": 21, "block": 0},
-    "dumbbell":     {"cards": [95],     "docs": 22, "block": 0},
-    "stream":       {"cards": [96],     "docs": 23, "block": 0},
-    "gantt":        {"cards": [97],     "docs": 24, "block": 0},
-    "sankey":       {"cards": [98],     "docs": 25, "block": 0},
-    "parliament":   {"cards": [60],     "docs": 26, "block": 0},
+    "line":         {"cards": [1],      "docs": 1,  "method": "AddLine", "block": 0},
+    "spline":       {"cards": [7, 11],  "docs": 2,  "method": "AddSpline", "block": 0},
+    "area":         {"cards": [3],      "docs": 3,  "method": "AddArea", "block": 0},
+    "column":       {"cards": [4],      "docs": 4,  "method": "AddColumn", "block": 0},
+    "bar":          {"cards": [12],     "docs": 5,  "method": "AddBar", "block": 0},
+    "pie":          {"cards": [6, 28],  "docs": 6,  "method": "Add + .AsPie()", "block": 0},
+    "donut":        {"cards": [18, 37, 38], "docs": 6, "method": "Add + .AsPie() + .DonutHole()", "block": 1},
+    "scatter":      {"cards": [13],     "docs": 7,  "method": "AddScatter", "block": 0},
+    "waterfall":    {"cards": [24],     "docs": 8,  "method": "AddWaterfall", "block": 0},
+    "gauge":        {"cards": [25],     "docs": 9,  "method": "AddGauge", "block": 0},
+    "data-ring":    {"cards": [39, 40], "docs": 10, "method": "AddDataRing", "block": 0},
+    "bubble":       {"cards": [46],     "docs": 11, "method": "AddBubble", "block": 0},
+    "heatmap":      {"cards": [47],     "docs": 12, "method": "AddHeatmap", "block": 0},
+    "column-range": {"cards": [48],     "docs": 13, "method": "AddColumnRange", "block": 0},
+    "area-range":   {"cards": [49],     "docs": 14, "method": "AddAreaRange", "block": 0},
+    "funnel":       {"cards": [50],     "docs": 15, "method": "AddFunnel", "block": 0},
+    "treemap":      {"cards": [51],     "docs": 16, "method": "AddTreemap", "block": 0},
+    "radar":        {"cards": [63],     "docs": 17, "method": "AddRadar", "block": 0},
+    "box-plot":     {"cards": [64],     "docs": 18, "method": "AddBoxPlot", "block": 0},
+    "error-bar":    {"cards": [65],     "docs": 19, "method": "AddErrorBar", "block": 0},
+    "candlestick":  {"cards": [70],     "docs": 20, "method": "AddCandlestick", "block": 0},
+    "ohlc":         {"cards": [71],     "docs": 21, "method": "AddOhlc", "block": 0},
+    "dumbbell":     {"cards": [95],     "docs": 22, "method": "AddDumbbell", "block": 0},
+    "stream":       {"cards": [96],     "docs": 23, "method": "AddStream", "block": 0},
+    "gantt":        {"cards": [97],     "docs": 24, "method": "AddGantt", "block": 0},
+    "sankey":       {"cards": [98],     "docs": 25, "method": "AddSankey", "block": 0},
+    "parliament":   {"cards": [60],     "docs": 26, "method": "AddParliament", "block": 0},
 }
 
 FEATURES: dict[str, dict] = {
@@ -171,6 +171,29 @@ FEATURES: dict[str, dict] = {
                 "default. These examples override them, switch direction, and format "
                 "for a non-English culture.",
         "docs": "/docs/chart/api-reference/#accessibility--localization",
+        "notes": [
+            "**The chart is text, not a picture.** Output is inline SVG whose labels, "
+            "titles and legends are real `<text>` nodes. A screen reader reads them, "
+            "a crawler indexes them, and Ctrl+F finds them — none of which is true of "
+            "a chart shipped as a PNG.",
+            "**Every chart is labelled by default.** Each SVG gets a `<title>` and a "
+            "`<desc>`, wired up with `aria-labelledby` and `aria-describedby`, and the "
+            "`<desc>` summarises the series and value range in words. Override either "
+            "when you have better context than the generator does.",
+            "**Culture affects more than the decimal separator.** Passing a "
+            "`CultureInfo` changes number grouping, date formats and currency "
+            "placement together, so a de-DE chart reads 1.234,5 and a date axis "
+            "follows the same culture rather than drifting to the invariant format.",
+            "**Right-to-left is a layout change, not a text change.** RTL mirrors the "
+            "axis order and legend placement as well as the label direction, which is "
+            "what an Arabic or Hebrew reader expects.",
+            "**Gaps must be a decision.** `GapPolicy` decides whether a `null` breaks "
+            "the line or is bridged. Leaving it implicit means a missing measurement "
+            "and a measured zero can end up drawn the same way.",
+            "**Colour is never the only channel.** Marker symbols, fill patterns and "
+            "the high-contrast theme keep series distinguishable for readers with "
+            "colour-vision deficiency, and in greyscale print.",
+        ],
     },
     "analytics-overlays": {
         "cards": [58, 59, 83, 84, 85],
@@ -428,6 +451,7 @@ def main() -> int:
             "doc_section_url": SECTION_URL,
             "lede": spec["lede"],
             "api_docs": spec["docs"],
+            "notes": spec.get("notes", []),
             "generated_by": "scripts/split_showcase.py",
         })
         body = [
@@ -539,6 +563,55 @@ def main() -> int:
         _, tail = rest.split(end, 1)
         llms.write_text(f"{head}{begin}\n\n{block}\n\n{end}{tail}",
                         encoding="utf-8", newline="\n")
+
+    # ---- llms-full.txt -----------------------------------------------------
+    # mirror-docs.sh rebuilds llms-full.txt from the library docs alone, so the
+    # when-to-use guidance on the type pages — the one part of the site that is
+    # written here rather than mirrored — was missing from the corpus an agent
+    # reads. Appended under a marker so re-running this alone replaces the block
+    # instead of stacking copies of it.
+    full_lines = [
+        "",
+        "",
+        "====================================================================",
+        "TerraFluent.Chart.Reporting — Choosing a chart type",
+        "URL: https://terrafluent.dev/chart/showcase/",
+        "====================================================================",
+        "",
+        "One page per chart type, each with a live SVG specimen and the C# that",
+        "renders it. The guidance below is about fit: which type answers which",
+        "question, and where each one misleads.",
+        "",
+    ]
+    for t in spokes["types"]:
+        pr = prose[t["slug"]]
+        full_lines += [
+            f"## {pr['h1']}",
+            f"URL: https://terrafluent.dev{t['url']}",
+            f"Builder: {TYPES[t['slug']]['method']}",
+            "",
+            t["description"],
+            "",
+            "Use it when:",
+        ]
+        full_lines += [f"  - {x}" for x in pr["use"]]
+        full_lines += ["", "Use something else when:"]
+        full_lines += [f"  - {x}" for x in pr["avoid"]]
+        full_lines += ["", f"Related: {', '.join(pr['related'])}", ""]
+
+    llms_full = ROOT / "llms-full.txt"
+    if not args.check and llms_full.exists():
+        ft = llms_full.read_text(encoding="utf-8")
+        fbegin = "<!-- BEGIN chart-type-guidance (generated by scripts/split_showcase.py) -->"
+        fend = "<!-- END chart-type-guidance -->"
+        body = f"{fbegin}\n" + "\n".join(full_lines) + f"\n{fend}\n"
+        if fbegin in ft and fend in ft:
+            head, rest = ft.split(fbegin, 1)
+            _, tail = rest.split(fend, 1)
+            ft = f"{head}{body}{tail.lstrip()}"
+        else:
+            ft = ft.rstrip("\n") + "\n\n" + body
+        llms_full.write_text(ft, encoding="utf-8", newline="\n")
 
     if not args.check:
         SPOKES_YML.write_text(

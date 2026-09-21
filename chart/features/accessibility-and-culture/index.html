@@ -10,6 +10,26 @@ doc_section_url: /chart/
 lede: Every chart carries a `<title>` and `<desc>` and `aria-label`s by default. These examples
   override them, switch direction, and format for a non-English culture.
 api_docs: /docs/chart/api-reference/#accessibility--localization
+notes:
+- '**The chart is text, not a picture.** Output is inline SVG whose labels, titles and legends
+  are real `<text>` nodes. A screen reader reads them, a crawler indexes them, and Ctrl+F
+  finds them — none of which is true of a chart shipped as a PNG.'
+- '**Every chart is labelled by default.** Each SVG gets a `<title>` and a `<desc>`, wired
+  up with `aria-labelledby` and `aria-describedby`, and the `<desc>` summarises the series
+  and value range in words. Override either when you have better context than the generator
+  does.'
+- '**Culture affects more than the decimal separator.** Passing a `CultureInfo` changes number
+  grouping, date formats and currency placement together, so a de-DE chart reads 1.234,5 and
+  a date axis follows the same culture rather than drifting to the invariant format.'
+- '**Right-to-left is a layout change, not a text change.** RTL mirrors the axis order and
+  legend placement as well as the label direction, which is what an Arabic or Hebrew reader
+  expects.'
+- '**Gaps must be a decision.** `GapPolicy` decides whether a `null` breaks the line or is
+  bridged. Leaving it implicit means a missing measurement and a measured zero can end up
+  drawn the same way.'
+- '**Colour is never the only channel.** Marker symbols, fill patterns and the high-contrast
+  theme keep series distinguishable for readers with colour-vision deficiency, and in greyscale
+  print.'
 generated_by: scripts/split_showcase.py
 ---
 

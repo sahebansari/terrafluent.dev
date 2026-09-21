@@ -1,0 +1,63 @@
+# Meta-description overrides, keyed by page.url. Read by _layouts/default.html,
+# which prefers an entry here over the page's own `description` front matter.
+#
+# Why this file exists: docs/**/*.md is regenerated from the library repos by
+# scripts/mirror-docs.sh, which derives each description from the page's first
+# prose paragraph. That works for most pages and fails for the few whose first
+# paragraph is a shell command, a lead-in to a code block, or a horizontal rule
+# — so those pages shipped descriptions like "---" and
+# "dotnet add package TerraFluent.Pdf.Reporting".
+#
+# The extractor has since been hardened, but a first paragraph is rarely a good
+# meta description anyway: it is written to open a document, not to win a click.
+# Entries here are written for the SERP — what the page does, for whom, in
+# roughly 120-160 characters — and survive re-mirroring because nothing
+# regenerates this file.
+#
+# Add a page here whenever its generated description reads poorly. Keep each one
+# unique; duplicates are worse than an imperfect extract.
+
+/docs/pdf/getting-started/: >-
+  Create your first PDF in C# with TerraFluent.Pdf.Reporting — install, build
+  a document with the fluent API, write real PDF bytes with no dependencies.
+
+/docs/pdf/page-sizes-and-units/: >-
+  Set PDF page size and units in C# — A4, Letter, Legal and custom dimensions,
+  with points, millimetres and inches converted for you.
+
+/docs/pdf/text-and-spans/: >-
+  Style text in a C# PDF — block-level text, inline spans, fonts, sizes,
+  colours and alignment, composed through the fluent TerraFluent API.
+
+/docs/pdf/row-and-column-layout/: >-
+  Arrange PDF content in C# with Row and Column layouts — how children are
+  distributed, sized and nested to build report structure without absolute
+  coordinates.
+
+/docs/pdf/components-and-templates/: >-
+  Reuse PDF layout in C# with components and templates — two interfaces for
+  factoring repeated structure out of TerraFluent.Pdf.Reporting documents.
+
+/docs/chart/getting-started/: >-
+  Render your first SVG chart in C# with TerraFluent.Chart.Reporting — install
+  the package, build with the fluent API, get a self-contained SVG string.
+
+/docs/chart/troubleshooting/: >-
+  Fix common TerraFluent.Chart.Reporting problems in C# — rendering issues,
+  missing fonts, clipped labels and interactive-mode questions.
+
+/docs/docx/getting-started/: >-
+  Create your first Word .docx in C# with TerraFluent.Docx.Reporting — from an
+  empty project to a generated, styled document without Word or COM interop.
+
+/docs/docx/features/: >-
+  Word document features in C# — styled tables, native editable charts,
+  images, barcodes, QR codes, captions and document protection.
+
+/docs/docx/api/: >-
+  API reference for TerraFluent.Docx.Reporting — every public fluent builder,
+  method and option for generating Word .docx documents from C#.
+
+/docs/docx/samples/: >-
+  Runnable TerraFluent.Docx.Reporting samples in C# — a sample project that
+  generates several realistic .docx reports you can open, inspect and adapt.

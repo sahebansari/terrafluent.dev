@@ -24,6 +24,17 @@
     {%- endif %}
   </header>
 
+  {%- if page.notes and page.notes.size > 0 %}
+  <section class="type-when gallery-notes">
+    <h2>What to know</h2>
+    <ul class="note-list">
+      {%- for note in page.notes %}
+      <li>{{ note | markdownify | remove: '<p>' | remove: '</p>' | strip }}</li>
+      {%- endfor %}
+    </ul>
+  </section>
+  {%- endif %}
+
   {{ include.specimens }}
 
   <section class="type-related">

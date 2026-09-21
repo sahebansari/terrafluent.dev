@@ -32,19 +32,38 @@ extract_title () { # first H1
   grep -m1 '^# ' "$1" | sed 's/^# //; s/"/\\"/g'
 }
 
-extract_desc () { # first prose paragraph, joined to one line
+extract_desc () { # first usable prose paragraph, joined to one line
+  # Takes the first paragraph that actually reads like a description. Earlier
+  # this took the first paragraph, full stop, which produced meta descriptions
+  # like "---", "dotnet add package TerraFluent.Pdf.Reporting" and "Project
+  # reference (before NuGet publishing):" — a horizontal rule, a shell command,
+  # and a lead-in to a code block. So: skip rules and fenced blocks, reject a
+  # paragraph that merely introduces the block after it (ends in a colon), and
+  # keep scanning until one is at least 60 characters.
+  #
+  # A page whose every paragraph fails this is better fixed by hand: add it to
+  # _data/seo_descriptions.yml, which the layout prefers over this extract.
   awk '
-    /^# /        { seen=1; next }
-    !seen        { next }
-    inpara && /^\s*$/ { exit }
-    /^\s*$/      { next }
-    /^#/         { if (inpara) exit; next }
-    /^```/       { if (inpara) exit; next }
-    /^\|/        { if (inpara) exit; next }
+    /^# /             { seen=1; next }
+    !seen             { next }
+    /^---+[ \t]*$/    { if (inpara) { check() } ; next }
+    /^```/            { infence = !infence; if (inpara) { check() } ; next }
+    infence           { next }
+    /^[ \t]*$/        { if (inpara) { check() } ; next }
+    /^#/              { if (inpara) { check() } ; next }
+    /^\|/             { if (inpara) { check() } ; next }
     /^\[Documentation Home\]/ { next }
-    /^>/         { if (inpara) exit; next }
-    /^[-*] /     { if (inpara) exit; next }
-    { inpara=1; printf "%s ", $0 }
+    /^>/              { if (inpara) { check() } ; next }
+    /^[-*] /          { if (inpara) { check() } ; next }
+    { inpara = 1; para = para $0 " "; next }
+    function check() {
+      sub(/ +$/, "", para)
+      # Reject a paragraph that only introduces what follows, and anything too
+      # short to say something useful in a search result.
+      if (length(para) >= 60 && para !~ /:$/) { print para; exit }
+      para = ""; inpara = 0
+    }
+    END { if (inpara) { sub(/ +$/, "", para); if (length(para) >= 60 && para !~ /:$/) print para } }
   ' "$1" | sed 's/\\/\\\\/g; s/`//g; s/\*\*//g; s/__//g; s/\[\([^]]*\)\]([^)]*)/\1/g; s/"/\\"/g; s/ *$//' | awk '{ if (length($0) <= 155) print; else { s = substr($0, 1, 155); sub(/ [^ ]*$/, "", s); print s } }'
 }
 

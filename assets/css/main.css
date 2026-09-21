@@ -1830,6 +1830,39 @@ div.highlighter-rouge {
   .hub-facts strong { display: inline; font-size: 1rem; margin-right: 6px; }
 }
 
+/* Feature-gallery "What to know" notes. */
+.gallery-notes { margin-bottom: 44px; }
+.note-list {
+  list-style: none;
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  max-width: 82ch;
+}
+.note-list li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 0.97rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.note-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.66em;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--accent-chart);
+}
+.note-list strong { color: var(--text); font-weight: 650; }
+
+/* The capabilities heading that introduces the .feature list on a solution
+   page. It follows the install row directly, which leaves no breathing room
+   of its own. */
+.features-head { margin-top: 56px; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .btn:hover { transform: none; }

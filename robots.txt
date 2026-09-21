@@ -2,3 +2,9 @@ User-agent: *
 Allow: /
 
 Sitemap: https://terrafluent.dev/sitemap.xml
+
+# Plain-text corpora for LLMs and agents (see https://llmstxt.org/).
+# llms.txt is the index; llms-full.txt is every documentation page inlined.
+# Both are also declared as <link rel="alternate"> on every page.
+# LLM-Content: https://terrafluent.dev/llms.txt
+# LLM-Full-Content: https://terrafluent.dev/llms-full.txt

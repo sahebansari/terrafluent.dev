@@ -25,6 +25,13 @@ Key facts:
 - [PDF Reporting — Vector Graphics](https://terrafluent.dev/docs/pdf/vector-graphics/): canvas, shapes, charts
 - [PDF Reporting — Table of Contents](https://terrafluent.dev/docs/pdf/table-of-contents/)
 - [PDF Reporting — Bookmarks](https://terrafluent.dev/docs/pdf/bookmarks/)
+- [PDF Reporting — Images](https://terrafluent.dev/docs/pdf/images/): PNG and JPEG placement and sizing
+- [PDF Reporting — Colors](https://terrafluent.dev/docs/pdf/colors/): palettes, gradients, transparency
+- [PDF Reporting — Page Sizes and Units](https://terrafluent.dev/docs/pdf/page-sizes-and-units/): A4/Letter/Legal/custom, points, mm, inches
+- [PDF Reporting — Row and Column Layout](https://terrafluent.dev/docs/pdf/row-and-column-layout/): how children are arranged and sized
+- [PDF Reporting — Components and Templates](https://terrafluent.dev/docs/pdf/components-and-templates/): reusing document structure
+- [PDF Reporting — Metadata](https://terrafluent.dev/docs/pdf/metadata/): title, author, subject, keywords
+- [PDF Reporting — Unicode and Encoding](https://terrafluent.dev/docs/pdf/unicode-and-encoding/): non-Latin scripts, font subsetting
 - [HTML Reporting — Getting Started](https://terrafluent.dev/docs/html/getting-started/)
 - [HTML Reporting — Core Concepts](https://terrafluent.dev/docs/html/core-concepts/)
 - [HTML Reporting — Content Elements](https://terrafluent.dev/docs/html/content-elements/)
@@ -33,10 +40,17 @@ Key facts:
 - [HTML Reporting — Pagination and Layout](https://terrafluent.dev/docs/html/pagination-and-layout/)
 - [HTML Reporting — Cookbook](https://terrafluent.dev/docs/html/cookbook/): invoices, certificates, barcode labels
 - [HTML Reporting — FAQ / Troubleshooting](https://terrafluent.dev/docs/html/faq-troubleshooting/)
+- [HTML Reporting — Styling](https://terrafluent.dev/docs/html/styling/): CSS model, themes, print styles
+- [HTML Reporting — Rendering](https://terrafluent.dev/docs/html/rendering/): output targets and async streaming
+- [HTML Reporting — Text Measurement](https://terrafluent.dev/docs/html/text-measurement/): how line breaking and pagination are computed
+- [HTML Reporting — Composition Patterns](https://terrafluent.dev/docs/html/composition-patterns/): structuring larger reports
+- [HTML Reporting — Extending](https://terrafluent.dev/docs/html/extending/): custom elements and renderers
 - [DOCX Reporting — Getting Started](https://terrafluent.dev/docs/docx/getting-started/)
 - [DOCX Reporting — Feature Guide](https://terrafluent.dev/docs/docx/features/)
 - [DOCX Reporting — API Reference](https://terrafluent.dev/docs/docx/api/)
 - [DOCX Reporting — Troubleshooting](https://terrafluent.dev/docs/docx/troubleshooting/)
+- [DOCX Reporting — Core Concepts](https://terrafluent.dev/docs/docx/core-concepts/): the document model
+- [DOCX Reporting — Samples](https://terrafluent.dev/docs/docx/samples/): a runnable sample project
 - [Chart Reporting — Getting Started](https://terrafluent.dev/docs/chart/getting-started/)
 - [Chart Reporting — Chart Showcase](https://terrafluent.dev/docs/chart/showcase/)
 - [Chart Reporting — Chart Types](https://terrafluent.dev/docs/chart/chart-types/): all 26 chart types
@@ -95,6 +109,7 @@ One page per chart type — specimen, C# source, and when not to use it.
 
 ## Solution pages
 
+- [Home](https://terrafluent.dev/): what TerraFluent is and which package solves which problem
 - [All solutions](https://terrafluent.dev/solutions/): overview of all four packages
 - [TerraFluent.Pdf.Reporting](https://terrafluent.dev/pdf/): free C# PDF library, zero dependencies
 - [TerraFluent.Html.Reporting](https://terrafluent.dev/html/): C# HTML report generator, no PDF engine
@@ -103,6 +118,14 @@ One page per chart type — specimen, C# source, and when not to use it.
 - [Live chart showcase](https://terrafluent.dev/chart/showcase/): the gallery index — 26 chart types, 8 feature groups and a cookbook, 102 live SVG specimens across 36 pages
 - [Which package do I need?](https://terrafluent.dev/compare/): PDF vs HTML vs DOCX decision guide
 - [Sample output](https://terrafluent.dev/samples/): live rendered reports, Word documents, and runnable PDF samples
+
+## Project and policies
+
+- [Enterprise evaluation](https://terrafluent.dev/enterprise/): licensing, support posture, and supply-chain answers for procurement
+- [Releases](https://terrafluent.dev/releases/): version history and changelogs for all four packages
+- [Security policy](https://terrafluent.dev/security/): how to report a vulnerability, and the disclosure process
+- [Support](https://terrafluent.dev/support/): where to ask questions and file issues
+- [Privacy policy](https://terrafluent.dev/privacy/): what the site collects, which is almost nothing
 
 ## Source and packages
 
