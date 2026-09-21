@@ -15,19 +15,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {% if page.title %}
-  <title>{{ page.title }} · {{ site.title }}</title>
-  {% else %}
-  <title>{{ site.title }} — {{ site.tagline }}</title>
-  {% endif %}
-  <meta name="description" content="{{ page.description | default: site.description | strip_newlines | strip }}">
+  {%- comment -%}
+    Google truncates the SERP title around 60 characters, and the " · TerraFluent"
+    suffix is 14 of them — long enough to push a keyword-bearing title out of
+    sight. So the brand is appended only when it still fits. Nothing is lost when
+    it is dropped: og:site_name and the WebSite schema both name the site, and
+    Google appends the site name itself when it wants to.
+  {%- endcomment -%}
+  {%- if page.title -%}
+    {%- assign branded = page.title | append: " · " | append: site.title -%}
+    {%- if branded.size <= 60 -%}
+      {%- assign head_title = branded -%}
+    {%- else -%}
+      {%- assign head_title = page.title -%}
+    {%- endif -%}
+  {%- else -%}
+    {%- assign head_title = site.title | append: " — " | append: site.tagline -%}
+  {%- endif -%}
+  <title>{{ head_title }}</title>
+  {%- comment -%}
+    _data/seo_descriptions.yml overrides a page's own description by URL. It
+    exists because docs/*.md front matter is regenerated from the library repos
+    by scripts/mirror-docs.sh, which derives the description from the first
+    prose paragraph — fine for most pages, useless for the few whose first
+    paragraph is a shell command or a lead-in to a code block. Overrides live
+    here so re-mirroring cannot overwrite them.
+  {%- endcomment -%}
+  {%- assign seo_desc = site.data.seo_descriptions[page.url] -%}
+  {%- assign meta_desc = seo_desc | default: page.description | default: site.description | strip_newlines | strip -%}
+  <meta name="description" content="{{ meta_desc }}">
   {% if page.noindex %}<meta name="robots" content="noindex">{% endif %}
   <link rel="canonical" href="{{ page.url | absolute_url }}">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ site.title }}">
   <meta property="og:title" content="{{ page.title | default: site.tagline }}">
-  <meta property="og:description" content="{{ page.description | default: site.description | strip_newlines | strip }}">
+  <meta property="og:description" content="{{ meta_desc }}">
   <meta property="og:url" content="{{ page.url | absolute_url }}">
   <meta property="og:image" content="{{ '/assets/img/og-card.png' | absolute_url }}">
   <meta property="og:image:width" content="1200">
@@ -38,6 +61,12 @@
   <meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/svg+xml" href="{{ '/assets/img/favicon.svg' | relative_url }}">
   <link rel="apple-touch-icon" href="{{ '/assets/img/apple-touch-icon.png' | relative_url }}">
+  {%- comment -%}
+    Declared so an agent that fetches a page can find the plain-text corpus
+    without guessing at /llms.txt. robots.txt points at both as well.
+  {%- endcomment -%}
+  <link rel="alternate" type="text/plain" href="{{ '/llms.txt' | absolute_url }}" title="llms.txt — site summary for LLMs">
+  <link rel="alternate" type="text/plain" href="{{ '/llms-full.txt' | absolute_url }}" title="llms-full.txt — full documentation as plain text">
   {% include jsonld.html %}
 
   <!-- Set theme before first paint to avoid a flash of the wrong theme. -->

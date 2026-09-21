@@ -32,19 +32,38 @@ extract_title () { # first H1
   grep -m1 '^# ' "$1" | sed 's/^# //; s/"/\\"/g'
 }
 
-extract_desc () { # first prose paragraph, joined to one line
+extract_desc () { # first usable prose paragraph, joined to one line
+  # Takes the first paragraph that actually reads like a description. Earlier
+  # this took the first paragraph, full stop, which produced meta descriptions
+  # like "---", "dotnet add package TerraFluent.Pdf.Reporting" and "Project
+  # reference (before NuGet publishing):" — a horizontal rule, a shell command,
+  # and a lead-in to a code block. So: skip rules and fenced blocks, reject a
+  # paragraph that merely introduces the block after it (ends in a colon), and
+  # keep scanning until one is at least 60 characters.
+  #
+  # A page whose every paragraph fails this is better fixed by hand: add it to
+  # _data/seo_descriptions.yml, which the layout prefers over this extract.
   awk '
-    /^# /        { seen=1; next }
-    !seen        { next }
-    inpara && /^\s*$/ { exit }
-    /^\s*$/      { next }
-    /^#/         { if (inpara) exit; next }
-    /^```/       { if (inpara) exit; next }
-    /^\|/        { if (inpara) exit; next }
+    /^# /             { seen=1; next }
+    !seen             { next }
+    /^---+[ \t]*$/    { if (inpara) { check() } ; next }
+    /^```/            { infence = !infence; if (inpara) { check() } ; next }
+    infence           { next }
+    /^[ \t]*$/        { if (inpara) { check() } ; next }
+    /^#/              { if (inpara) { check() } ; next }
+    /^\|/             { if (inpara) { check() } ; next }
     /^\[Documentation Home\]/ { next }
-    /^>/         { if (inpara) exit; next }
-    /^[-*] /     { if (inpara) exit; next }
-    { inpara=1; printf "%s ", $0 }
+    /^>/              { if (inpara) { check() } ; next }
+    /^[-*] /          { if (inpara) { check() } ; next }
+    { inpara = 1; para = para $0 " "; next }
+    function check() {
+      sub(/ +$/, "", para)
+      # Reject a paragraph that only introduces what follows, and anything too
+      # short to say something useful in a search result.
+      if (length(para) >= 60 && para !~ /:$/) { print para; exit }
+      para = ""; inpara = 0
+    }
+    END { if (inpara) { sub(/ +$/, "", para); if (length(para) >= 60 && para !~ /:$/) print para } }
   ' "$1" | sed 's/\\/\\\\/g; s/`//g; s/\*\*//g; s/__//g; s/\[\([^]]*\)\]([^)]*)/\1/g; s/"/\\"/g; s/ *$//' | awk '{ if (length($0) <= 155) print; else { s = substr($0, 1, 155); sub(/ [^ ]*$/, "", s); print s } }'
 }
 
@@ -227,11 +246,11 @@ for slug in "${CHART_ORDER[@]}"; do
     -e "s|\]\(\.\./|]($CHART_REPO/blob/master/|g" \
     "$src")"
 
-  # The showcase is a 2.9 MB standalone page, so the rendered doc opens it in a
-  # new tab. That kramdown attribute list is page-only — $body also feeds
-  # llms-full.txt, where the literal braces would just be noise.
-  page_body="$(printf '%s\n' "$body" | sed -E \
-    's|\]\(/chart/showcase/\)|](/chart/showcase/){:target="_blank" rel="noopener"}|g')"
+  # The showcase used to be a 2.9 MB standalone page, so the rendered doc opened
+  # it in a new tab. split_showcase.py has since broken it into a ~27 KB index
+  # plus 36 spoke pages, all carrying the site's own chrome, so it is now an
+  # ordinary in-site link and keeps the reader in the same tab.
+  page_body="$body"
 
   {
     printf -- '---\n'
@@ -261,16 +280,32 @@ for slug in "${CHART_ORDER[@]}"; do
 done
 
 # ---------- Chart interactive showcase (hosted locally instead of linking to GitHub) ----------
+# Upstream ships one 2.9 MB page holding every specimen. Landing it whole would
+# put ~102 chart types, features and recipes on a single URL, so it is staged
+# here and split_showcase.py fans it out into the hub-and-spoke pages under
+# /chart/. The staged copy is what the splitter reads, which keeps the split
+# re-runnable without re-downloading.
 CHART_SHOWCASE_SRC="$SCRATCH/docs-chart/showcase.html"
-CHART_SHOWCASE_OUT="$SITE/chart/showcase/index.html"
+CHART_SHOWCASE_OUT="$SITE/_showcase-source/showcase.html"
 if [ -f "$CHART_SHOWCASE_SRC" ]; then
-  mkdir -p "$SITE/chart/showcase"
+  mkdir -p "$SITE/_showcase-source"
   # Strip a leading UTF-8 BOM if present (the upstream file has one; a BOM
   # before <!DOCTYPE html> is technically valid but pointless to keep).
   sed '1s/^\xef\xbb\xbf//' "$CHART_SHOWCASE_SRC" > "$CHART_SHOWCASE_OUT"
-  echo "chart: showcase.html -> chart/showcase/index.html ($(wc -c < "$CHART_SHOWCASE_OUT") bytes)"
+  echo "chart: showcase.html -> _showcase-source/showcase.html ($(wc -c < "$CHART_SHOWCASE_OUT") bytes)"
 else
-  echo "WARNING: $CHART_SHOWCASE_SRC not found — chart/showcase/index.html NOT refreshed. Download it (see scripts/README.md) and re-run." >&2
+  echo "NOTE: $CHART_SHOWCASE_SRC not found — keeping the staged _showcase-source/showcase.html. Download it (see scripts/README.md) to refresh the specimens." >&2
 fi
 
-echo "DONE. _data/docs.yml + $(ls "$SITE"/docs/html | wc -l) html docs + $(ls "$SITE"/docs/docx | wc -l) docx docs + $(ls "$SITE"/docs/pdf | wc -l) pdf docs + $(ls "$SITE"/docs/chart | wc -l) chart docs + llms-full.txt ($(wc -l < "$LLMS_FULL") lines)"
+# ---------- Split the showcase into the hub-and-spoke pages ----------
+# Must run after the chart docs above: it lifts each type's C# snippet out of
+# the docs/chart/chart-types.md this script just wrote, so the code on every
+# landing page is the library's own documented API rather than a paraphrase.
+# It fails loudly if upstream adds a specimen that is not yet classified.
+if [ -f "$SITE/_showcase-source/showcase.html" ]; then
+  python "$SITE/scripts/split_showcase.py"
+else
+  echo "WARNING: no _showcase-source/showcase.html — chart hub-and-spoke pages NOT regenerated." >&2
+fi
+
+echo "DONE. _data/docs.yml + $(ls "$SITE"/docs/html | wc -l) html docs + $(ls "$SITE"/docs/docx | wc -l) docx docs + $(ls "$SITE"/docs/pdf | wc -l) pdf docs + $(ls "$SITE"/docs/chart | wc -l) chart docs + $(ls -d "$SITE"/chart/types/*/ 2>/dev/null | wc -l) chart type pages + llms-full.txt ($(wc -l < "$LLMS_FULL") lines)"

@@ -1,9 +1,28 @@
 # scripts
 
 `mirror-docs.sh` — regenerates `docs/html/*.md`, `docs/docx/*.md`, `docs/pdf/*.md`,
-`docs/chart/*.md`, `_data/docs.yml`, `llms-full.txt`, and `chart/showcase/index.html`
-(a full local copy of the Chart repo's interactive showcase page — hosted here
-instead of linking out to GitHub) from the library repos' docs folders.
+`docs/chart/*.md`, `_data/docs.yml` and `llms-full.txt` from the library repos'
+docs folders, stages the Chart repo's showcase page in `_showcase-source/`, and
+then runs `split_showcase.py`.
+
+`split_showcase.py` — splits that one 2.9 MB showcase page into the hub-and-spoke
+set under `/chart/`: the gallery index at `/chart/showcase/`, 27 chart-type
+landing pages at `/chart/types/<slug>/`, 8 feature galleries at
+`/chart/features/<slug>/`, and `/chart/cookbook/`. Every specimen SVG is *moved*,
+so each one lives at exactly one URL and is never re-rendered — the renderer is
+the C# library, not this repo. Each type page's C# snippet is lifted from the
+`docs/chart/chart-types.md` that `mirror-docs.sh` just wrote, so the code is
+always the library's documented API. The prose (headings, meta descriptions and
+the when-to-use guidance) is hand-written in `_data/chart_types.yml`; edit it
+there, then re-run the script.
+
+If upstream adds a chart to the showcase, the script **fails** and names the
+unclassified card rather than dropping its specimen. Add it to `TYPES`,
+`FEATURES` or `RECIPES` at the top of `split_showcase.py` — and to
+`_data/chart_types.yml` if it is a new chart type. Run `python
+scripts/split_showcase.py --check` to validate without writing.
+
+Requires Python 3 with PyYAML (`pip install pyyaml`).
 
 Usage:
 ```bash
@@ -24,8 +43,9 @@ done
 for f in getting-started showcase chart-types themes-and-styling advanced api-reference troubleshooting; do
   curl -sf "https://raw.githubusercontent.com/sahebansari/TerraFluent.Chart.Reporting/master/docs/$f.md" -o "$SCRATCH/docs-chart/$f.md"
 done
-# the interactive showcase gallery (a standalone HTML page, not markdown) — copied
-# verbatim into chart/showcase/index.html by the script below, BOM stripped
+# the interactive showcase gallery (a standalone HTML page, not markdown) — staged
+# in _showcase-source/ by the script below (BOM stripped), then split into the
+# /chart/ hub-and-spoke pages by split_showcase.py
 curl -sf "https://raw.githubusercontent.com/sahebansari/TerraFluent.Chart.Reporting/master/docs/showcase.html" -o "$SCRATCH/docs-chart/showcase.html"
 # 2. convert
 bash scripts/mirror-docs.sh

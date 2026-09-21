@@ -1,10 +1,9 @@
 ---
 layout: default
-title: Open-Source .NET Reporting & Chart Solutions — PDF, HTML, Word, SVG
+title: .NET Reporting Libraries — PDF, HTML, Word & Charts
 description: >-
-  TerraFluent builds open-source C# solutions for reports and charts: true PDF
-  files with zero dependencies, paginated print-ready HTML, native Word .docx,
-  and server-side SVG charts. MIT licensed.
+  Open-source C# libraries for reports and charts: true PDF files with zero
+  dependencies, print-ready HTML, native Word .docx and SVG charts. MIT.
 faq:
   - q: Is TerraFluent free for commercial use?
     a: >-
@@ -56,7 +55,8 @@ faq:
 
 <!-- ============ Hero ============ -->
 <section class="hero">
-  <div class="container">
+  <div class="container hero-layout">
+   <div class="hero-copy">
     <span class="hero-badge"><span class="dot"></span> Open source · MIT licensed · Four solutions</span>
     <h1 id="hero-headline">Four .NET libraries. <span class="grad">One fluent API.</span></h1>
     <script>
@@ -91,6 +91,82 @@ faq:
       <li>{{ chip }}</li>
       {% endfor %}
     </ul>
+   </div>
+
+   {%- comment -%}
+     The four packages as one figure: solid panels split by a hairline gutter,
+     a hexagon where they meet, and each panel's icon pinned to the outer edge
+     so it straddles it. Panel colours are the same four accents the rest of
+     the site uses for these packages, deepened so white text clears 6:1.
+
+     Each panel is a real link, so this is also four contextual routes out of
+     the home page — the audit found it had only the nav and footer.
+   {%- endcomment -%}
+   <div class="hero-visual">
+     <figure class="quad" aria-labelledby="quad-caption">
+       <figcaption id="quad-caption" class="visually-hidden">
+         The four TerraFluent packages: PDF, HTML, DOCX and Chart reporting.
+       </figcaption>
+
+       <a class="quad-cell cell-pdf" href="{{ '/pdf/' | relative_url }}">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+             <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+             <path d="M14 3v5h5"/>
+             <path d="M9 13h2.2a1.4 1.4 0 0 1 0 2.8H9V13v5"/>
+             <path d="M14.5 13v5h1a2 2 0 0 0 2-2v-1a2 2 0 0 0-2-2z"/>
+           </svg>
+         </span>
+         <span class="quad-name">PDF</span>
+         <span class="quad-note">True PDF 1.7 bytes, no native binaries</span>
+       </a>
+
+       <a class="quad-cell cell-html" href="{{ '/html/' | relative_url }}">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+             <path d="M8.5 8.5 4.5 12l4 3.5"/>
+             <path d="m15.5 8.5 4 3.5-4 3.5"/>
+             <path d="m13.4 5.5-2.8 13"/>
+           </svg>
+         </span>
+         <span class="quad-name">HTML</span>
+         <span class="quad-note">Paginated print-ready pages, no engine</span>
+       </a>
+
+       <a class="quad-cell cell-docx" href="{{ '/docx/' | relative_url }}">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+             <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+             <path d="M14 3v5h5"/>
+             <path d="M8.5 12.5h7M8.5 16h7M8.5 9h2.5"/>
+           </svg>
+         </span>
+         <span class="quad-name">DOCX</span>
+         <span class="quad-note">Real Open XML Word, no Office interop</span>
+       </a>
+
+       <a class="quad-cell cell-chart" href="{{ '/chart/' | relative_url }}">
+         <span class="quad-badge" aria-hidden="true">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+             <path d="M4 19.5V4"/>
+             <path d="M4 19.5h16"/>
+             <rect x="7.4" y="11" width="3" height="5.6" rx="1"/>
+             <rect x="12.4" y="7.6" width="3" height="9" rx="1"/>
+             <path d="m7.9 8.4 3.9-3.3 3.6 2.2 3.8-3"/>
+           </svg>
+         </span>
+         <span class="quad-name">SVG charts</span>
+         <span class="quad-note">26 types server-side, no JavaScript</span>
+       </a>
+
+       <span class="quad-core" aria-hidden="true">
+         <span class="quad-core-inner">
+           {% include logo-mark.svg %}
+           <span class="quad-core-label">One fluent API</span>
+         </span>
+       </span>
+     </figure>
+   </div>
   </div>
 </section>
 

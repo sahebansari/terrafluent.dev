@@ -3,9 +3,8 @@ layout: default
 title: C# SVG Chart Library — Zero JavaScript Required
 nav_title: Chart Reporting
 description: >-
-  Generate 26 chart types as self-contained SVG server-side in C# — zero
-  JavaScript dependency, zero external NuGet packages, 18 built-in themes,
-  three render modes for PDF, browser, and dashboards.
+  Generate 26 chart types as self-contained SVG in C# — zero JavaScript, zero
+  NuGet dependencies, 18 built-in themes, three render modes.
 software:
   name: TerraFluent.Chart.Reporting
   key: chart
@@ -55,7 +54,7 @@ faq:
       built-in themes and three render modes for PDF, browser, and live dashboards.
     </p>
     <div class="hero-ctas" style="margin-top: 28px">
-      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">View live chart showcase</a>
+      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}">View live chart showcase</a>
       <a class="btn btn-ghost" href="{{ site.repos.chart }}" target="_blank" rel="noopener">GitHub</a>
       <a class="btn btn-ghost" href="{{ site.nuget.chart }}" target="_blank" rel="noopener">NuGet</a>
     </div>
@@ -70,6 +69,12 @@ faq:
 <div class="container">
   <div class="prose" style="padding-bottom: 0">
     {% include install-row.html package="TerraFluent.Chart.Reporting" %}
+  </div>
+
+  <div class="section-head features-head">
+    <span class="eyebrow" style="color: var(--accent-chart)">Capabilities</span>
+    <h2 id="chart-features-title">SVG chart features</h2>
+    <p>26 chart types, 18 themes and three render modes, emitted as self-contained SVG you can drop into a page, a PDF or a Word file.</p>
   </div>
 
   <div class="features accent-scope-chart">
@@ -306,7 +311,7 @@ public class ReportService(IChartBuilder chart)
     </div>
     <div class="docs-grid">
       <a href="{{ '/docs/chart/getting-started/' | relative_url }}">Getting Started<span>Your first SVG chart</span></a>
-      <a href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">Chart Showcase<span>102 live examples, every chart type</span></a>
+      <a href="{{ '/chart/showcase/' | relative_url }}">Chart Showcase<span>102 live examples across 36 pages</span></a>
       <a href="{{ '/docs/chart/chart-types/' | relative_url }}">Chart Types<span>All 26 types, full code + output</span></a>
       <a href="{{ '/docs/chart/themes-and-styling/' | relative_url }}">Themes &amp; Styling<span>Built-in themes, custom palettes</span></a>
       <a href="{{ '/docs/chart/advanced/' | relative_url }}">Advanced Features<span>Render modes, axes, stacking, DI</span></a>
@@ -318,15 +323,33 @@ public class ReportService(IChartBuilder chart)
   <!-- FAQ -->
   {% include faq.html %}
 
+  <!-- Chart types -->
+  <section aria-labelledby="chart-types-title" style="padding-top: 0">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--accent-chart)">Chart types</span>
+      <h2 id="chart-types-title">Every type, with the code and the caveats</h2>
+      <p>Each type has its own page: a live SVG specimen, the C# that renders it,
+         and an honest note on when to pick something else.</p>
+    </div>
+    <div class="hub-grid">
+      {%- for t in site.data.chart_spokes.types %}
+      <a class="hub-card" href="{{ t.url | relative_url }}">
+        <strong>{{ t.h1 }}</strong>
+        <span>{{ t.description | truncatewords: 15 }}</span>
+      </a>
+      {%- endfor %}
+    </div>
+  </section>
+
   <!-- Showcase -->
   <section class="cta-band" aria-labelledby="chart-showcase-cta">
     <h2 id="chart-showcase-cta">102 live chart examples, hosted right here</h2>
     <p>
-      Every chart type, theme, and feature rendered as real SVG on one page —
-      no build step, no sample project to clone first.
+      Every chart type, theme, and feature rendered as real SVG — no build step,
+      no sample project to clone first.
     </p>
     <div class="hero-ctas">
-      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}" target="_blank" rel="noopener">View live chart showcase</a>
+      <a class="btn btn-primary" href="{{ '/chart/showcase/' | relative_url }}">View live chart showcase</a>
       <a class="btn btn-ghost" href="{{ '/docs/chart/getting-started/' | relative_url }}">Getting started</a>
     </div>
   </section>
